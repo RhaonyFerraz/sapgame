@@ -93,7 +93,7 @@ function updateHUD() {
 }
 
 function startTurn() {
-    UI.btnNext.style.display = 'none';
+    UI.btnNext.classList.add('hidden');
     
     if (state.pos >= 10) {
         showGameOver();
