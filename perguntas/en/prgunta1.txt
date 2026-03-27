@@ -1,0 +1,93 @@
+📌 Pergunta:
+
+In SAP Business One, what is the main difference between the "Select Company" and "Create Company" options when accessing the system?
+
+🔘 Alternatives:
+
+A) Select Company allows accessing an existing database, while Create Company generates a new base with initial configurations.
+
+B) Select Company is used to delete a database, while Create Company only views existing reports.
+
+C) Select Company creates users in the system, while Create Company changes the chart of accounts.
+
+D) Select Company configures tax parameters, while Create Company accesses customer data.
+
+E) Select Company is used only by consultants, while Create Company is used by regular users.
+
+F) Select Company allows editing suppliers, while Create Company is used only to change currencies.
+
+⚙️ REGRAS DE RESPOSTA (MUITO IMPORTANTE):
+A resposta correta é: A
+✅ SE O USUÁRIO ACERTAR (responder A):
+
+✔ Correct response!
+
+Justification:
+Alternative A is correct because it exactly reflects how the system works:
+Select Company → accessing an already existing base for normal use.
+Create Company → creating a new database with initial settings, such as country, currency, and chart of accounts.
+
+❌ SE O USUÁRIO ERRAR:
+
+👉 Se responder B:
+❌ Incorrect
+Select Company does not delete data, and Create Company is not just for visualization. Both have completely different functions than those described.
+
+👉 Se responder C:
+❌ Incorrect
+Creating users and changing the chart of accounts are administrative actions within an existing company, not directly related to selecting or creating a company.
+
+👉 Se responder D:
+❌ Incorrect
+Tax configuration occurs during the creation or parameterization of the company, not when selecting it. And selecting is not specific for accessing only customers.
+
+👉 Se responder E:
+❌ Incorrect
+Select Company is used by any user. Create Company is usually done by consultants or IT, not by regular users.
+
+👉 Se responder F:
+❌ Incorrect
+Editing suppliers and changing currencies are internal company activities; they do not define the function of selecting or creating a company.
+
+🎁 BÔNUS:
+In SAP Business One, the "Select / Create Company" option appears when you enter the system and need to choose or register a database (company).
+🏢 What does "Company" mean in SAP B1?
+In SAP B1, company = database. Each company has its own information:
+ Customers
+ Vendors
+ Products
+ Finance
+ Reports
+👉 In other words, each company is a separate environment within the system.
+
+🔹 Select Company
+Is when you:
+ Choose an already existing company
+ Example: “Test Company”, “Fortaleza Store”, “Headquarters”
+📌 You use this to enter and work normally.
+
+🔹 Create Company
+Is when you:
+ Create a new database
+ Define initial settings, such as:
+ Country
+ Currency
+ Chart of accounts
+ Fiscal structure
+📌 This is usually done by:
+ Consultants
+ IT
+ System Implementation
+
+⚖️ Summary
+Select = entering a company that already exists
+Create = building a new company from scratch in the system
+
+💡 Professional Tip (Interview Level):
+“In SAP Business One, selecting a company allows accessing an existing base, while creating a company involves generating a new database with initial configurations such as accounting period, currency, and chart of accounts.”
+
+🚀 Extra Tip (Consultant Level):
+Always have:
+ 1 test company (sandbox)
+ 1 production company
+👉 This avoids breaking the real system.

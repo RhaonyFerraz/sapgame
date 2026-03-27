@@ -1,0 +1,47 @@
+📌 Pergunta:
+
+In SAP Business One, what is the goal of the "Chart of Accounts"?
+
+🔘 Alternatives:
+
+A) Organize product photos in the catalog.
+
+B) List all users who have access to the system.
+
+C) Structure and organize all of the company's accounting accounts (Assets, Liabilities, Revenue, and Expenses). ✅
+
+D) Define the delivery routes for logistics trucks.
+
+E) Store resumes of job applicants.
+
+F) Control the validity of fire extinguishers in the factory.
+
+✅ Correct response: C
+
+✔ Justification: C
+The Chart of Accounts is the financial backbone of SAP B1. It is divided into drawers (Assets, Liabilities, Equity, Revenues, Cost of Sales, Expenses, Other Revenues and Expenses). In Brazil, it follows current accounting standards (IFRS).
+
+❌ SE O USUÁRIO ERRAR:
+
+👉 Se responder A:
+❌ Incorrect
+Product photos stay in Item Master Data.
+
+👉 Se responder B:
+❌ Incorrect
+The list of users is in Administration > Setup > General > Users.
+
+👉 Se responder D:
+❌ Incorrect
+Routes are controlled in user-defined fields or logistics add-ons.
+
+👉 Se responder E:
+❌ Incorrect
+Resumes belong to HR or recruitment systems.
+
+👉 Se responder F:
+❌ Incorrect
+That would be asset maintenance or building management, not accounting.
+
+🎁 BÔNUS:
+🚀 Curious Fact: SAP B1 generates the Balance Sheet and P&L (Profit and Loss Statement) automatically based on real-time movements in the Chart of Accounts!

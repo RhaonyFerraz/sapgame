@@ -1,0 +1,48 @@
+📌 Pergunta:
+
+In SAP Business One, what is the main function of the Item Master Data?
+
+🔘 Alternatives:
+
+A) Registering only the names of the company's employees.
+
+B) Centralizing all information for products and services, such as prices, inventory, and purchase/sales data. ✅
+
+C) Serving exclusively as a history of emails sent to customers.
+
+D) Configuring the colors of the system windows for each user.
+
+E) Generating only bank slips, without any connection to inventory.
+
+F) Registering the physical address of all foreign suppliers on the world map.
+
+✅ Correct response: B
+
+✔ Justification: B
+Alternative B is correct because Item Master Data is the heart of the Inventory module. In it, you define whether the item is a physical product or service, its costs, unit of measure groups (UoM), and how the system should handle inventory (FIFO, Moving Average, or Serial/Batch).
+
+❌ SE O USUÁRIO ERRAR:
+
+👉 Se responder A:
+❌ Incorrect
+Employee registration is in the Human Resources module, not in Item Master Data.
+
+👉 Se responder C:
+❌ Incorrect
+Contact history can be seen in Activities or Business Partner Master Data, but it does not define the item's function.
+
+👉 Se responder D:
+❌ Incorrect
+Color customization is done in User Settings, not in the items master data.
+
+👉 Se responder E:
+❌ Incorrect
+Item registration is directly linked to inventory and accounting. Slips are generated from financial documents.
+
+👉 Se responder F:
+❌ Incorrect
+Supplier addresses are registered in Business Partner Master Data.
+
+🎁 BÔNUS:
+Item Master Data in SAP B1 allows managing the lifecycle of everything your company buys or sells.
+💡 Pro Tip: Mark the "Inventory Item" option only if you need to control physical quantity in stock. If it is a service (like consulting), unmark this option to avoid accounting errors!

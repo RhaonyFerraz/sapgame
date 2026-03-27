@@ -1,0 +1,67 @@
+📌 Pergunta:
+
+In SAP Business One, what is the main difference between Exchange Rates and Indices?
+
+🔘 Alternatives:
+
+A) Exchange rates are used to convert values between currencies, while indices correct or update values over time. ✅
+
+B) Exchange rates update rental contracts, while indices convert dollar or euro values to local currency.
+
+C) Exchange rates are used only in reports, while indices record international purchases and sales.
+
+D) Exchange rates define taxes on transactions, while indices control customer accounts.
+
+E) Exchange rates correct values over time, while indices convert foreign currencies to local currency.
+
+F) Exchange rates and indices have the same function, serving only to record accounting entries.
+
+✅ Correct response: A
+
+✔ Justification: A
+Alternative A is correct because it exactly reflects the function of each resource in SAP B1:
+
+Exchange rates → converting foreign currency values to local currency.
+Indices → correcting or updating financial values over time, such as contract adjustments or inflation updates.
+
+❌ SE O USUÁRIO ERRAR (responder B, C, D, E ou F):
+
+👉 Se responder B:
+❌ Incorrect
+Exchange rates do not update contracts; indices are not used for currency conversion. Both functions are inverted.
+
+👉 Se responder C:
+❌ Incorrect
+Exchange rates are not just for reports, and indices do not record international purchases and sales directly.
+
+👉 Se responder D:
+❌ Incorrect
+Exchange rates do not define taxes, and indices do not control customer accounts directly.
+
+👉 Se responder E:
+❌ Incorrect
+Exchange rates do not correct values over time; that is the function of indices. And indices do not convert currencies.
+
+👉 Se responder F:
+❌ Incorrect
+Exchange rates and indices do not have the same function; each has a specific purpose in the system.
+
+🎁 BÔNUS:
+“Exchange Rates and Indices” is used to control foreign currency values and economic indices that impact finance and accounting.
+
+💱 Exchange Rates
+These are the conversion values between currencies.
+
+📌 What are they for?
+• Converting foreign currency values → local currency
+• Recording:
+  - International purchases
+  - Sales in dollar/euro
+  - Payments and receipts
+
+📊 Indices
+Used for corrections and updates of values, usually linked to inflation or contracts.
+
+📌 What are they for?
+• Readjusting contracts (rent, services, etc.)
+• Updating financial values based on economic indices

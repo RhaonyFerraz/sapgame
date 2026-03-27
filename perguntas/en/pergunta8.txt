@@ -1,0 +1,47 @@
+📌 Pergunta:
+
+In SAP Business One, what is a "Draft Document"?
+
+🔘 Alternatives:
+
+A) A document that cannot be edited after being created.
+
+B) A temporary version of a document that does not affect accounting or inventory until finalized. ✅
+
+C) A piece of paper that must be printed and drawn freehand.
+
+D) A user's personal grocery list for the supermarket.
+
+E) A system error that must be deleted immediately.
+
+F) A warranty certificate for electronic products.
+
+✅ Correct response: B
+
+✔ Justification: B
+Drafts are ideal for preparing complex documents that need later review or are part of an approval process (Workflow). They allow you to save work without impacting the company's real numbers.
+
+❌ SE O USUÁRIO ERRAR:
+
+👉 Se responder A:
+❌ Incorrect
+On the contrary, drafts are made to be edited and reviewed.
+
+👉 Se responder C:
+❌ Incorrect
+Drafts are electronic records within the SAP database.
+
+👉 Se responder D:
+❌ Incorrect
+SAP should be used for professional and corporate purposes.
+
+👉 Se responder E:
+❌ Incorrect
+Drafts are useful resources, not errors.
+
+👉 Se responder F:
+❌ Incorrect
+Warranties can be generated from invoices, but a draft is just a state of the document.
+
+🎁 BÔNUS:
+🛡️ In SAP B1, if a document requires a manager's approval, it automatically enters as a Draft until it is authorized!

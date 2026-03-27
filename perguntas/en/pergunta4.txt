@@ -1,0 +1,50 @@
+📌 Pergunta:
+
+When making a purchase in SAP Business One, what is the recommended logical sequence of documents (Best Practice)?
+
+🔘 Alternatives:
+
+A) A/P Invoice → Payment → Purchase Order.
+
+B) Purchase Order → Goods Receipt PO → A/P Invoice. ✅
+
+C) Payment → A/P Invoice → Purchase Order.
+
+D) Goods Receipt PO → Purchase Order → Payment.
+
+E) A/P Invoice → Goods Receipt PO → Purchase Order.
+
+F) Purchase Order → Payment → Goods Receipt PO.
+
+✅ Correct response: B
+
+✔ Justification: B
+Alternative B reflects the standard Purchasing (A/P) flow:
+1. **Purchase Order**: Commitment to the supplier.
+2. **Goods Receipt PO (GRPO)**: Physical entry into inventory.
+3. **A/P Invoice**: Financial and accounting record.
+
+❌ SE O USUÁRIO ERRAR:
+
+👉 Se responder A:
+❌ Incorrect
+You are recording the debt before ordering the product. In SAP B1, the ideal flow starts with the request/order.
+
+👉 Se responder C:
+❌ Incorrect
+Paying before recording the invoice does not follow the system's standard reconciliation flow.
+
+👉 Se responder D:
+❌ Incorrect
+The receipt should be based on a previously approved order to ensure verification.
+
+👉 Se responder E:
+❌ Incorrect
+The Invoice usually ends the physical entry flow, it doesn't start it.
+
+👉 Se responder F:
+❌ Incorrect
+Although it's possible to pay in advance, the standard "Best Practice" for the inventory flow is to receive before invoicing.
+
+🎁 BÔNUS:
+💡 In SAP B1, you can use the "Document Generation Wizard" to copy information from the Order to the Receipt with one click (Copy To button). This avoids typos and saves a lot of time!

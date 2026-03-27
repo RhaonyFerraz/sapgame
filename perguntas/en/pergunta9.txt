@@ -1,0 +1,47 @@
+📌 Pergunta:
+
+What is the "Query Generator" in SAP Business One?
+
+🔘 Alternatives:
+
+A) A search engine to find cooking recipes on the internet.
+
+B) A tool that allows creating custom reports by extracting data directly from the database (SQL/HANA). ✅
+
+C) A voice assistant that reads bank balances aloud.
+
+D) A hidden game inside the system's help menu.
+
+E) A function to translate the system to Latin.
+
+F) A random company name generator for new business partners.
+
+✅ Correct response: B
+
+✔ Justification: B
+The Query Generator is one of the most powerful tools for advanced users and consultants. It allows crossing tables (such as OINV for invoices and OITM for items) and extracting information that is not in standard reports, giving total flexibility in data analysis.
+
+❌ SE O USUÁRIO ERRAR:
+
+👉 Se responder A:
+❌ Incorrect
+The Query Generator works only with internal data from your ERP.
+
+👉 Se responder C:
+❌ Incorrect
+SAP B1 has integration with dashboards and visual reports, but it is not focused on native voice assistants for balances.
+
+👉 Se responder D:
+❌ Incorrect
+The ERP is serious productivity software; the focus is management, not hidden entertainment.
+
+👉 Se responder E:
+❌ Incorrect
+The system supports dozens of languages (localizations), but this is defined in Work Centers and General Settings.
+
+👉 Se responder F:
+❌ Incorrect
+Partner names must be entered manually or via integration, according to the real data.
+
+🎁 BÔNUS:
+💡 Expert Level: The queries you create in the Query Generator can be used to create Alerts, Dashboards in Fiori, and even calculated fields!

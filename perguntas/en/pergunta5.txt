@@ -1,0 +1,47 @@
+📌 Pergunta:
+
+What does a "Business Partner" represent in the context of SAP Business One?
+
+🔘 Alternatives:
+
+A) Only the company's internal employees.
+
+B) Only the banks where the company has an account.
+
+C) Customers, Vendors, and Leads (Potential Customers). ✅
+
+D) Only the third-party software installed on the server.
+
+E) Anyone who visits the company's website, even without interacting.
+
+F) Exclusively the organization's managing partners.
+
+✅ Correct response: C
+
+✔ Justification: C
+The Business Partner (BP) master data is unified. The same partner can be a customer and a vendor (although with distinct linked registrations). The "Lead" type is used in the CRM module for prospects who haven't closed a sale yet.
+
+❌ SE O USUÁRIO ERRAR:
+
+👉 Se responder A:
+❌ Incorrect
+Employees have a specific registration in the HR module.
+
+👉 Se responder B:
+❌ Incorrect
+Banks are configured in "House Banks", although they can exist as Business Partners if you buy services from them.
+
+👉 Se responder D:
+❌ Incorrect
+This would be assets or extensions, not commercial partners.
+
+👉 Se responder E:
+❌ Incorrect
+Anonymous visitors are not listed in the ERP until there is a record of interest/lead.
+
+👉 Se responder F:
+❌ Incorrect
+Partners are registered in corporate data or as users, as needed.
+
+🎁 BÔNUS:
+💡 Strategic Tip: Use the "Transaction Report by Business Partner" to see the full history of debts and credits of a specific customer in seconds!

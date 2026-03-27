@@ -10,15 +10,18 @@
 <body>
     <div class="hud">
         <div class="hud-group">
-            <div class="stat">💰 Dinheiro: R$ <span id="money">0</span></div>
-            <div class="stat">🏭 Nível: <span id="level">Pequena</span></div>
-            <div class="stat">👨‍💼 Consultores: <span id="consultants">0</span>/2</div>
+            <div class="stat"><span data-t="money">Dinheiro</span>: R$ <span id="money">0</span></div>
+            <div class="stat"><span data-t="level">Nível</span>: <span id="level" data-t-level="level_small">Pequena</span></div>
+            <div class="stat"><span data-t="consultants">Consultores</span>: <span id="consultants">0</span>/2</div>
+            <button id="btn-open-bank" class="bank-btn-hud" data-t="bank">💰 Banco</button>
+            <button id="btn-open-invest" class="invest-btn-hud" data-t="investments">💼 Investimentos</button>
         </div>
         <div class="powerups">
-            <button id="btn-elimina" disabled title="Remove uma alternativa errada">Eliminar (1)</button>
-            <button id="btn-pula" disabled title="Pula a questão atual">Pular (1)</button>
-            <button id="btn-dica" disabled title="Mostra uma dica para a questão">Dica (1)</button>
-            <button id="btn-buy-consultant" title="Custará R$ 500" class="buy-btn">Contratar Consultor</button>
+            <button id="btn-buy-consultant" data-t-title="hire_cost" data-t="hire_consultant" class="buy-btn">Contratar Consultor</button>
+            <div class="lang-switcher">
+                <button id="btn-lang-pt" class="lang-btn active">PT</button>
+                <button id="btn-lang-en" class="lang-btn">EN</button>
+            </div>
         </div>
     </div>  
 
@@ -30,18 +33,15 @@
 
         <!-- Central Company Animation -->
         <div class="company-hub">
-            <div id="company-visual" class="level-1">
-                <video id="company-video" src="videopixel/Gen-4%20Turbo%20CRIE%20UM%20VIDEO%20EM%20PIXEL%20ART%20DE%20UMA%20PEQUENA%20INDUTRIA%201366922282.mp4" autoplay loop muted playsinline class="pixel-building"></video>
-            </div>
             <h2 id="company-name">Sua Empresa (Inicial)</h2>
-            <button id="btn-roll-dice" class="action-btn">Jogar os Dados 🎲</button>
+            <button id="btn-roll-dice" class="action-btn" data-t="play_dice">Jogar os Dados 🎲</button>
         </div>
     </main> 
 
     <!-- Modal for questions/events -->
     <div id="modal" class="modal-overlay hidden">
         <div class="modal-content glass">
-            <h3 id="modal-title">Evento do Turno</h3>
+            <h3 id="modal-title" data-t="event_title">Evento do Turno</h3>
             <p id="modal-text">Texto descritivo</p>
             <img id="modal-image" class="hidden" src="" alt="">
             <button id="btn-reveal" class="hidden reveal-btn">🔍 REVELAR TELA (SAP)</button>
@@ -50,12 +50,196 @@
             </div>
             <p id="modal-feedback" class="hidden"></p>
             <div class="modal-actions">
-                <button id="modal-action-btn" class="hidden">Continuar</button>
-                <button id="mBtnBonus" class="hidden bonus-btn">🎁 BÔNUS</button>
+                <button id="modal-action-btn" class="hidden" data-t="btn_continue">Continuar</button>
+                <button id="mBtnBonus" class="hidden bonus-btn" data-t="btn_bonus">🎁 BÔNUS</button>
             </div>
         </div>
     </div>
 
+    <!-- Bank Modal -->
+    <div id="bank-modal" class="modal-overlay hidden">
+        <div class="modal-content bank-content glass">
+            <h2 id="bank-title" data-t="bank_title">💰 Banco Corporativo SAP</h2>
+            
+            <div class="bank-tabs">
+                <button class="bank-tab active" data-tab="status" data-t="bank_summary">Resumo</button>
+                <button class="bank-tab" data-tab="loans" data-t="bank_loans">Empréstimos</button>
+                <button class="bank-tab" data-tab="investments" data-t="bank_invest">Investimentos</button>
+            </div>
+
+            <div id="bank-status-panel" class="bank-panel">
+                <div class="bank-stats-grid">
+                    <div class="bank-stat-card">
+                        <span data-t="bank_balance">Saldo Total</span>
+                        <h3 id="bank-balance-val">R$ 0</h3>
+                    </div>
+                    <div class="bank-stat-card">
+                        <span data-t="bank_debts">Dívidas Ativas</span>
+                        <h3 id="bank-debt-val">R$ 0</h3>
+                    </div>
+                    <div class="bank-stat-card">
+                        <span data-t="bank_yield">Rendimento Previsto</span>
+                        <h3 id="bank-yield-val">R$ 0</h3>
+                    </div>
+                </div>
+                <div id="bank-active-items" class="active-items-list">
+                    <!-- Dynamic list here -->
+                </div>
+            </div>
+
+            <div id="bank-loans-panel" class="bank-panel hidden">
+                <div class="bank-form">
+                    <div class="form-group">
+                        <label data-t="loan_amount_label">Valor do Empréstimo (R$)</label>
+                        <input type="number" id="loan-amount" placeholder="Ex: 1000" min="100">
+                    </div>
+                    <div class="form-group">
+                        <label data-t="loan_installments_label">Parcelas</label>
+                        <div class="radio-group">
+                            <label><input type="radio" name="loan-installments" value="3" checked> 3x</label>
+                            <label><input type="radio" name="loan-installments" value="6"> 6x</label>
+                            <label><input type="radio" name="loan-installments" value="12"> 12x</label>
+                            <label><input type="radio" name="loan-installments" value="24"> 24x</label>
+                        </div>
+                    </div>
+                    <div class="loan-info">
+                        <p><span data-t="loan_interest">Juros</span>: <span id="loan-rate">5%</span></p>
+                        <p><span data-t="loan_total">Total a pagar</span>: <span id="loan-total">R$ 0</span></p>
+                        <p><span data-t="loan_installment_val">Valor por parcela</span>: <span id="loan-installment-val">R$ 0</span></p>
+                    </div>
+                    <button id="btn-confirm-loan" class="action-btn" data-t="btn_request_loan">Solicitar Empréstimo</button>
+                </div>
+            </div>
+
+            <div id="bank-investments-panel" class="bank-panel hidden">
+                <div class="bank-form">
+                    <div class="form-group">
+                        <label data-t="invest_amount_label">Valor do Investimento (R$)</label>
+                        <input type="number" id="invest-amount" placeholder="Ex: 500" min="50">
+                    </div>
+                    <div class="form-group">
+                        <label data-t="invest_duration_label">Prazo (Rodadas)</label>
+                        <input type="number" id="invest-duration" placeholder="Ex: 5" min="1" max="10">
+                    </div>
+                    <div class="invest-info">
+                        <p><span data-t="invest_rate">Rendimento</span>: <span id="invest-rate">3%</span></p>
+                        <p><span data-t="invest_final">Valor final</span>: <span id="invest-total">R$ 0</span></p>
+                    </div>
+                    <button id="btn-confirm-invest" class="action-btn" data-t="btn_do_invest">Realizar Investimento</button>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button id="btn-close-bank" class="secondary-btn" data-t="btn_close">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Strategic Investments Modal -->
+    <div id="invest-modal" class="modal-overlay hidden">
+        <div class="modal-content invest-content glass">
+            <h2 id="invest-title">💼 Investimentos Estratégicos</h2>
+            <p class="invest-subtitle">Aprimore sua operação para aumentar a eficiência e o lucro por rodada.</p>
+            
+            <div class="invest-summary-bar">
+                <div class="invest-summary-item">
+                    <span>Ganhos por Turno:</span>
+                    <h3 id="total-revenue-val">R$ 0</h3>
+                </div>
+                <div class="invest-summary-item">
+                    <span>Saldo Disponível:</span>
+                    <h3 id="invest-balance-val">R$ 0</h3>
+                </div>
+            </div>
+
+            <div id="invest-list" class="invest-grid">
+                <!-- Infraestrutura -->
+                <div class="invest-card" data-area="infra">
+                    <div class="invest-card-header">
+                        <span class="invest-icon">🏢</span>
+                        <div class="invest-card-title">
+                            <h4 data-t="infra_name">Infraestrutura</h4>
+                            <span class="invest-level">Nível 0</span>
+                        </div>
+                    </div>
+                    <p class="invest-benefit" data-t="infra_desc">Aumenta o limite de produção e reduz gargalos.</p>
+                    <div class="invest-stats">
+                        <span class="benefit-tag">+ R$ 0 <span data-t="per_round"> / rodada</span></span>
+                    </div>
+                    <button class="upgrade-btn" onclick="upgradeArea('infra')" data-t="btn_upgrade">Melhorar (R$ 500)</button>
+                </div>
+
+                <!-- Máquinas -->
+                <div class="invest-card" data-area="machines">
+                    <div class="invest-card-header">
+                        <span class="invest-icon">⚙️</span>
+                        <div class="invest-card-title">
+                            <h4 data-t="machines_name">Máquinas</h4>
+                            <span class="invest-level">Nível 0</span>
+                        </div>
+                    </div>
+                    <p class="invest-benefit" data-t="machines_desc">Aumenta produtividade e reduz custos operacionais.</p>
+                    <div class="invest-stats">
+                        <span class="benefit-tag">+ R$ 0 <span data-t="per_round"> / rodada</span></span>
+                    </div>
+                    <button class="upgrade-btn" onclick="upgradeArea('machines')" data-t="btn_upgrade">Melhorar (R$ 800)</button>
+                </div>
+
+                <!-- Treinamento -->
+                <div class="invest-card" data-area="training">
+                    <div class="invest-card-header">
+                        <span class="invest-icon">👨‍🏫</span>
+                        <div class="invest-card-title">
+                            <h4 data-t="training_name">Treinamento</h4>
+                            <span class="invest-level">Nível 0</span>
+                        </div>
+                    </div>
+                    <p class="invest-benefit" data-t="training_desc">Aumenta eficiência da equipe e reduz erros.</p>
+                    <div class="invest-stats">
+                        <span class="benefit-tag">+ R$ 0 <span data-t="per_round"> / rodada</span></span>
+                    </div>
+                    <button class="upgrade-btn" onclick="upgradeArea('training')" data-t="btn_upgrade">Melhorar (R$ 400)</button>
+                </div>
+
+                <!-- Propaganda -->
+                <div class="invest-card" data-area="marketing">
+                    <div class="invest-card-header">
+                        <span class="invest-icon">📢</span>
+                        <div class="invest-card-title">
+                            <h4 data-t="marketing_name">Propaganda</h4>
+                            <span class="invest-level">Nível 0</span>
+                        </div>
+                    </div>
+                    <p class="invest-benefit" data-t="marketing_desc">Atrai mais clientes e eleva o faturamento.</p>
+                    <div class="invest-stats">
+                        <span class="benefit-tag">+ R$ 0 <span data-t="per_round"> / rodada</span></span>
+                    </div>
+                    <button class="upgrade-btn" onclick="upgradeArea('marketing')" data-t="btn_upgrade">Melhorar (R$ 600)</button>
+                </div>
+
+                <!-- Logística -->
+                <div class="invest-card" data-area="logistics">
+                    <div class="invest-card-header">
+                        <span class="invest-icon">🚚</span>
+                        <div class="invest-card-title">
+                            <h4 data-t="logistics_name">Logística</h4>
+                            <span class="invest-level">Nível 0</span>
+                        </div>
+                    </div>
+                    <p class="invest-benefit" data-t="logistics_desc">Reduz custos de entrega e aumenta velocidade.</p>
+                    <div class="invest-stats">
+                        <span class="benefit-tag">+ R$ 0 <span data-t="per_round"> / rodada</span></span>
+                    </div>
+                    <button class="upgrade-btn" onclick="upgradeArea('logistics')" data-t="btn_upgrade">Melhorar (R$ 700)</button>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button id="btn-close-invest" class="secondary-btn" data-t="btn_close">Fechar</button>
+            </div>
+        </div>
+    </div> 
+
     <script type="module" src="js/game.js"></script>
 </body>
-</html> 
+</html>

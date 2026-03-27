@@ -1,0 +1,47 @@
+📌 Pergunta:
+
+What is the purpose of the "Messages and Alerts Overview" in SAP Business One?
+
+🔘 Alternatives:
+
+A) Send text messages (SMS) to anyone's personal cell phone.
+
+B) Notify users about important events, such as low stock or pending approvals. ✅
+
+C) Post photos and videos of company parties.
+
+D) Block the computer of employees who arrive late.
+
+E) Measure server temperature in real-time.
+
+F) Play background music on company premises.
+
+✅ Correct response: B
+
+✔ Justification: B
+The alert system allows the ERP to be proactive. You can set it up to receive alerts when a customer exceeds their credit limit or when an item reaches the minimum stock level, allowing for quick action.
+
+❌ SE O USUÁRIO ERRAR:
+
+👉 Se responder A:
+❌ Incorrect
+SMS alerts require external integration services; it is not the standard primary function.
+
+👉 Se responder C:
+❌ Incorrect
+SAP B1 is a management tool, not a corporate social network.
+
+👉 Se responder D:
+❌ Incorrect
+Access is controlled by login, but there is no native "late block".
+
+👉 Se responder E:
+❌ Incorrect
+This is the function of infrastructure (IT) monitoring software.
+
+👉 Se responder F:
+❌ Incorrect
+SAP B1 does not have an integrated audio player for background music.
+
+🎁 BÔNUS:
+💡 Master Tip: You can set up User Alerts via custom "Queries", creating smart notifications for any business situation!

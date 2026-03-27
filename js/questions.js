@@ -1,27 +1,40 @@
 export let questionsList = [];
 
-async function loadQuestions() {
+export async function loadQuestions(lang = 'pt') {
+    questionsList.length = 0; // Clear existing
+    const folder = lang === 'pt' ? 'perguntas' : `perguntas/${lang}`;
+    
     // Array para suportar a carga dinâmica de vários arquivos TXT na pasta 'perguntas'
     for (let i = 1; i <= 30; i++) {
         try {
-            // Tenta buscar o arquivo (considera variações comuns de nome, ex: prgunta1.txt ou pergunta1.txt)
+            // Tenta buscar o arquivo
             let urls = [
-                `perguntas/prgunta${i}.txt`,
-                `perguntas/pergunta${i}.txt`,
-                `perguntas/prgunta0${i}.txt`,
-                `perguntas/pergunta0${i}.txt`
+                `${folder}/pergunta${i}.txt`,
+                `${folder}/prgunta${i}.txt`,
+                `${folder}/pergunta0${i}.txt`,
+                `${folder}/prgunta0${i}.txt`
             ];
             
             let response = null;
             for (let url of urls) {
-                let res = await fetch(url);
-                if (res.ok) {
-                    response = res;
-                    break;
+                try {
+                    let res = await fetch(url);
+                    if (res.ok) {
+                        console.log(`Successfully loaded: ${url}`);
+                        response = res;
+                        break;
+                    } else {
+                        console.warn(`Failed to load (Status ${res.status}): ${url}`);
+                    }
+                } catch (e) {
+                    console.error(`Fetch error for ${url}:`, e);
                 }
             }
 
-            if (!response) break; // Para quando um numero não existir (chegou no fim das perguntas)
+            if (!response) {
+                console.warn(`No variations found for question ${i}. Stopping load.`);
+                break; // Para quando um numero não existir
+            }
 
             const rawText = await response.text();
             
@@ -113,21 +126,23 @@ async function loadQuestions() {
             break;
         }
     }
-    console.log(`Perguntas carregadas com sucesso: ${questionsList.length}`);
-}
 
-// O top-level await pausa as importações do game.js até que todos os arquivos txt sejam processados!
-await loadQuestions();
-
-// Fallback caso não seja encontrado o arquivo na pasta correta ou ocorra erro de digitação no formato
-if (questionsList.length === 0) {
-    questionsList = [
-        {
+    if (questionsList.length === 0) {
+        console.warn(`No questions loaded for ${lang}. Using fallback.`);
+        questionsList.push({
             id: 1,
-            text: "Não foi possível carregar as perguntas da pasta 'perguntas'. Verifique os nomes dos arquivos (ex: prgunta1.txt) e a formatação interna do TXT.",
+            text: `Selected language: ${lang}. No question files found in ${folder}. Please check file names (pergunta1.txt, etc.).`,
             image: "",
             options: [{id: 'A', text: "Ok", isCorrect: true}],
             hint: ""
-        }
-    ];
+        });
+    }
+
+    console.log(`Perguntas carregadas com sucesso: ${questionsList.length}`);
 }
+
+// Initialization moved to game.js explicitly or handled here
+// await loadQuestions('pt'); 
+
+
+

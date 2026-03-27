@@ -1,0 +1,47 @@
+📌 Pergunta:
+
+How does SAP Business One help in managing "Batches and Serial Numbers"?
+
+🔘 Alternatives:
+
+A) It generates random numbers just for label decoration.
+
+B) It allows tracking each unit or group of products from entry up to the sale to the end customer. ✅
+
+C) It renames all products as "Batch 1" to simplify.
+
+D) It deletes purchase history every 30 days to save space.
+
+E) It forces the user to memorize all serial numbers by heart.
+
+F) It works only with products that do not have barcodes.
+
+✅ Correct response: B
+
+✔ Justification: B
+Traceability is crucial for food, medicine, and electronics industries. With SAP B1, you know exactly which supplier delivered a specific batch and to which customer it was sold, facilitating Recall processes.
+
+❌ SE O USUÁRIO ERRAR:
+
+👉 Se responder A:
+❌ Incorrect
+Serial numbers and batches have fundamental legal and logistical value.
+
+👉 Se responder C:
+❌ Incorrect
+Each batch has its own unique and original identification.
+
+👉 Se responder D:
+❌ Incorrect
+The history is permanent and auditable in the ERP.
+
+👉 Se responder E:
+❌ Incorrect
+The system stores and consults the data; the user only needs to read/beep the labels.
+
+👉 Se responder F:
+❌ Incorrect
+SAP B1 is fully integrated with barcode scanners.
+
+🎁 BÔNUS:
+🔬 Reverse Traceability: If a customer complains about a defect, you can find out in seconds which raw material was used in that specific product!
