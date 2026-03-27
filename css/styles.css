@@ -129,6 +129,28 @@ button.buy-btn:hover:not(:disabled) {
     background: #cba038;
 }
 
+/* All HUD buttons - yellow theme */
+button.bank-btn-hud,
+button.invest-btn-hud,
+button.lang-btn {
+    background: var(--warning);
+    color: #000;
+    font-weight: 700;
+}
+
+button.bank-btn-hud:hover:not(:disabled),
+button.invest-btn-hud:hover:not(:disabled),
+button.lang-btn:hover:not(:disabled) {
+    background: #cba038;
+    transform: translateY(-2px);
+}
+
+button.lang-btn.active {
+    background: #cba038;
+    box-shadow: 0 0 10px rgba(255, 221, 87, 0.5);
+    outline: 2px solid rgba(255, 221, 87, 0.6);
+}
+
 button:disabled {
     background: var(--border-color);
     color: var(--text-muted);
@@ -152,7 +174,7 @@ button:disabled {
     position: absolute;
     bottom: 5%;
     width: 90%;
-    pointer-events: none;
+    pointer-events: auto;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -194,14 +216,34 @@ button:disabled {
     background: rgba(0, 129, 213, 0.4);
     box-shadow: 0 0 30px var(--primary-glow), inset 0 0 10px var(--primary-glow);
     color: white;
-    transform: scale(1.15) translateY(-5px);
+    transform: scale(1.1);
     z-index: 10;
 }
 
-.space.start.active { 
+.space.clickable {
+    cursor: pointer;
+    animation: pulse-glow 2s infinite ease-in-out;
+    pointer-events: auto;
+}
+
+.space.clickable:hover {
+    transform: scale(1.15) translateY(-5px);
+    background: rgba(0, 129, 213, 0.6);
+    box-shadow: 0 0 40px var(--primary-glow);
+}
+
+@keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 15px var(--primary-shadow); }
+    50% { box-shadow: 0 0 40px var(--primary-glow), inset 0 0 15px var(--primary-glow); }
+}
+
+.space.start { 
     background: var(--success); 
     border-color: var(--success); 
     box-shadow: 0 0 30px var(--success-glow); 
+    width: 160px; /* Wider for the button */
+    padding: 0;
+    overflow: hidden;
 }
 
 .space.finish { 
@@ -238,6 +280,27 @@ button:disabled {
     border-radius: 12px;
     margin-top: 1rem;
     box-shadow: 0 4px 15px rgba(0,129,213,0.4);
+}
+
+.action-btn.on-board {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    font-size: 0.85rem;
+    padding: 0.5rem;
+    border-radius: 0;
+    box-shadow: none;
+    border: none;
+    background: transparent;
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+.action-btn.on-board:hover {
+    background: rgba(255,255,255,0.1);
 }
 
 /* Modals */
@@ -709,6 +772,32 @@ button:disabled {
     border-top: 4px solid var(--accent);
     max-width: 950px;
 }
+
+.modal-divider {
+    border: none;
+    border-top: 1px solid var(--border-color);
+    margin: 1rem 0;
+}
+
+.consultant-section {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding-top: 0;
+}
+
+.consultant-label {
+    color: var(--warning);
+    margin: 0;
+    font-size: 1rem;
+}
+
+.consultant-info {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin: 0;
+}
+
 
 .invest-subtitle {
     color: var(--text-muted);

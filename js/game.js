@@ -45,10 +45,9 @@ const UI = {
     money: document.getElementById('money'),
     level: document.getElementById('level'),
     consultants: document.getElementById('consultants'),
+    consultantsModal: document.getElementById('consultants-modal'),
     btnBuy: document.getElementById('btn-buy-consultant'),
     board: document.getElementById('board-container'),
-    companyName: document.getElementById('company-name'),
-    btnNext: document.getElementById('btn-roll-dice'),
     modal: document.getElementById('modal'),
     mTitle: document.getElementById('modal-title'),
     mText: document.getElementById('modal-text'),
@@ -138,7 +137,6 @@ async function changeLanguage(lang) {
 
 async function initGame() {
     await loadQuestions(state.language);
-    UI.btnNext.innerHTML = t('next_turn');
     state.questions = [...questionsList];
 
     
@@ -146,7 +144,6 @@ async function initGame() {
     updateHUD();
     
     // Binding events
-    UI.btnNext.addEventListener('click', startTurn);
     UI.mAction.addEventListener('click', closeModal);
     UI.btnBuy.addEventListener('click', buyConsultant);
     
@@ -186,10 +183,17 @@ function renderBoard() {
     for (let idx = 1; idx <= 10; idx++) {
         const div = document.createElement('div');
         div.className = 'space';
-        if (idx === 1) div.classList.add('start');
-        if (idx === state.pos) div.classList.add('active');
-        
-        if (idx === 10) {
+        if (idx === 1 && state.pos === 1) {
+            div.classList.add('start');
+            div.classList.add('clickable');
+            div.innerHTML = `<span>Iniciar</span>`;
+            div.onclick = startTurn;
+        } else if (idx === state.pos) {
+            div.classList.add('active');
+            div.classList.add('clickable');
+            div.innerHTML = `<span>Click</span>`; // Prompt to click
+            div.onclick = startTurn;
+        } else if (idx === 10) {
             div.classList.add('finish');
             div.innerHTML = '🏁';
         } else {
@@ -205,6 +209,7 @@ function updateHUD() {
     const levelKeys = ["level_small", "level_medium", "level_large"];
     UI.level.innerText = t(levelKeys[state.level - 1]);
     UI.consultants.innerText = state.consultants;
+    if (UI.consultantsModal) UI.consultantsModal.innerText = state.consultants;
     
     // Background Image (Consistent with slideshow)
     updateBackgroundImage();
@@ -219,7 +224,8 @@ function updateBackgroundImage() {
 }
 
 function startTurn() {
-    UI.btnNext.classList.add('hidden');
+    // Disable clicks during the animation/modal to prevent triple-clicks
+    document.querySelectorAll('.space').forEach(s => s.onclick = null);
     
     // Process Bank logic BEFORE the turn starts
     processBankTurn();
@@ -275,7 +281,7 @@ function triggerEvent() {
         closeModal();
         updateHUD();
         checkLevelUp();
-        UI.btnNext.classList.remove('hidden');
+        renderBoard(); // Refresh board so next house is clickable
     };
 }
 

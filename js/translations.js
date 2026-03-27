@@ -1,7 +1,7 @@
 export const translations = {
     pt: {
         // HUD
-        money: "Dinheiro",
+        money: "Caixa",
         level: "Nível",
         consultants: "Consultores",
         hire_consultant: "Contratar Consultor",
@@ -11,7 +11,7 @@ export const translations = {
         level_small: "Pequena",
         level_medium: "Média",
         level_large: "Grande",
-        play_dice: "Jogar os Dados 🎲",
+        play_dice: "Iniciar Empresa 🏢",
         next_turn: "Próximo Turno 📄",
 
         // Bank Modal
@@ -107,7 +107,7 @@ export const translations = {
     },
     en: {
         // HUD
-        money: "Money",
+        money: "Cash",
         level: "Level",
         consultants: "Consultants",
         hire_consultant: "Hire Consultant",
@@ -117,7 +117,7 @@ export const translations = {
         level_small: "Small",
         level_medium: "Medium",
         level_large: "Large",
-        play_dice: "Roll Dice 🎲",
+        play_dice: "Start Company 🏢",
         next_turn: "Next Turn 📄",
 
         // Bank Modal

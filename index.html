@@ -10,14 +10,13 @@
 <body>
     <div class="hud">
         <div class="hud-group">
-            <div class="stat"><span data-t="money">Dinheiro</span>: R$ <span id="money">0</span></div>
+            <div class="stat"><span data-t="money">Caixa</span>: $ <span id="money">0</span></div>
             <div class="stat"><span data-t="level">Nível</span>: <span id="level" data-t-level="level_small">Pequena</span></div>
             <div class="stat"><span data-t="consultants">Consultores</span>: <span id="consultants">0</span>/2</div>
             <button id="btn-open-bank" class="bank-btn-hud" data-t="bank">💰 Banco</button>
             <button id="btn-open-invest" class="invest-btn-hud" data-t="investments">💼 Investimentos</button>
         </div>
         <div class="powerups">
-            <button id="btn-buy-consultant" data-t-title="hire_cost" data-t="hire_consultant" class="buy-btn">Contratar Consultor</button>
             <div class="lang-switcher">
                 <button id="btn-lang-pt" class="lang-btn active">PT</button>
                 <button id="btn-lang-en" class="lang-btn">EN</button>
@@ -33,8 +32,6 @@
 
         <!-- Central Company Animation -->
         <div class="company-hub">
-            <h2 id="company-name">Sua Empresa (Inicial)</h2>
-            <button id="btn-roll-dice" class="action-btn" data-t="play_dice">Jogar os Dados 🎲</button>
         </div>
     </main> 
 
@@ -231,6 +228,22 @@
                         <span class="benefit-tag">+ R$ 0 <span data-t="per_round"> / rodada</span></span>
                     </div>
                     <button class="upgrade-btn" onclick="upgradeArea('logistics')" data-t="btn_upgrade">Melhorar (R$ 700)</button>
+                </div>
+
+                <!-- Consultor -->
+                <div class="invest-card" id="consultant-card">
+                    <div class="invest-card-header">
+                        <span class="invest-icon">👔</span>
+                        <div class="invest-card-title">
+                            <h4 data-t="hire_consultant">Contratar Consultor</h4>
+                            <span class="invest-level"><span id="consultants-modal">0</span>/2</span>
+                        </div>
+                    </div>
+                    <p class="invest-benefit" data-t="hire_cost">Custará R$ 500</p>
+                    <div class="invest-stats">
+                        <span class="benefit-tag">🛡️ Blinda contra perdas financeiras</span>
+                    </div>
+                    <button id="btn-buy-consultant" class="upgrade-btn" data-t="hire_consultant" data-t-title="hire_cost">Contratar (R$ 500)</button>
                 </div>
             </div>
 
