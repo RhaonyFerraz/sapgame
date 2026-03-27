@@ -113,6 +113,7 @@ async function loadQuestions() {
             break;
         }
     }
+    console.log(`Perguntas carregadas com sucesso: ${questionsList.length}`);
 }
 
 // O top-level await pausa as importações do game.js até que todos os arquivos txt sejam processados!
