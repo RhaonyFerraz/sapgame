@@ -35,8 +35,8 @@ const UI = {
 
 function initGame() {
     UI.btnNext.innerHTML = "Próximo Turno 📄";
-    // Shuffle the questions array
-    state.questions = [...questionsList].sort(() => Math.random() - 0.5);
+    state.questions = [...questionsList];
+
     
     renderBoard();
     updateHUD();
@@ -101,7 +101,7 @@ function startTurn() {
     }
     
     if (state.questions.length === 0) {
-        state.questions = [...questionsList].sort(() => Math.random() - 0.5);
+        state.questions = [...questionsList];
     }
     
     // 20% imprevisto, otherwise normal question
@@ -141,7 +141,9 @@ function triggerEvent() {
 }
 
 function askQuestion() {
-    state.currentQuestion = state.questions.pop();
+    // Pick question by house position (1-indexed)
+    state.currentQuestion = state.questions.find(q => q.id === state.pos) || state.questions[0];
+
     updateHUD(); // Unlocks the card buttons
     
     // Reset Modal UI
