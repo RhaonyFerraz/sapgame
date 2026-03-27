@@ -1,15 +1,19 @@
 :root {
     --bg-color: #0d1117;
-    --panel-bg: rgba(22, 27, 34, 0.7);
-    --border-color: rgba(255, 255, 255, 0.1);
+    --panel-bg: rgba(13, 17, 23, 0.6);
+    --border-color: rgba(255, 255, 255, 0.08);
     --primary: #0081d5; /* SAP Blue */
-    --primary-hover: #005f9e;
-    --success: #2ea043;
-    --danger: #da3633;
-    --warning: #e3b341;
+    --primary-glow: rgba(0, 129, 213, 0.4);
+    --primary-hover: #00a3ff;
+    --success: #23d160;
+    --success-glow: rgba(35, 209, 96, 0.3);
+    --danger: #ff3860;
+    --warning: #ffdd57;
+    --accent: #9b51e0;
     --text-color: #f0f6fc;
     --text-muted: #8b949e;
-    --blur: blur(16px);
+    --blur: blur(20px);
+    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
 }
 
 .hidden { display: none !important; }
@@ -19,6 +23,22 @@
     margin: 0;
     padding: 0;
     font-family: 'Inter', sans-serif;
+    transition: background-color 0.5s ease;
+}
+
+body.flash-success {
+    background: radial-gradient(circle at 50% 0%, #23d16044 0%, #0d1117 100%);
+}
+
+body.flash-error {
+    background: radial-gradient(circle at 50% 0%, #ff386044 0%, #0d1117 100%);
+    animation: shake 0.5s ease;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
 }
 
 body {
@@ -29,7 +49,17 @@ body {
     height: 100vh;
     height: 100dvh;
     overflow: hidden;
-    background: radial-gradient(circle at 50% -20%, #1a2a44, var(--bg-color));
+    background: radial-gradient(circle at 50% 0%, #1a2a44 0%, #0d1117 100%);
+    position: relative;
+}
+
+body::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: url('https://www.transparenttextures.com/patterns/carbon-fibre.png');
+    opacity: 0.05;
+    pointer-events: none;
 }
 
 .hud {
@@ -49,12 +79,19 @@ body {
 }
 
 .stat {
-    font-size: 1.2rem;
-    font-weight: 600;
+    font-size: 1.1rem;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    background: rgba(255,255,255,0.03);
+    padding: 0.5rem 1rem;
+    border-radius: 100px;
+    border: 1px solid rgba(255,255,255,0.05);
 }
 
 .stat span {
     color: var(--warning);
+    font-weight: 800;
+    text-shadow: 0 0 10px rgba(255, 221, 87, 0.3);
 }
 
 .powerups {
@@ -148,14 +185,25 @@ button:disabled {
 
 .space.active {
     border-color: var(--primary);
-    background: rgba(0, 129, 213, 0.3);
-    box-shadow: 0 0 20px var(--primary);
+    background: rgba(0, 129, 213, 0.4);
+    box-shadow: 0 0 30px var(--primary-glow), inset 0 0 10px var(--primary-glow);
     color: white;
-    transform: scale(1.1);
+    transform: scale(1.15) translateY(-5px);
+    z-index: 10;
 }
 
-.space.start.active { background: var(--success); border-color: var(--success); box-shadow: 0 0 20px var(--success); }
-.space.finish { background: linear-gradient(45deg, var(--warning), #ff6b6b); color: #fff; border:none; }
+.space.start.active { 
+    background: var(--success); 
+    border-color: var(--success); 
+    box-shadow: 0 0 30px var(--success-glow); 
+}
+
+.space.finish { 
+    background: linear-gradient(135deg, #f1c40f, #e67e22); 
+    color: #fff; 
+    border: none;
+    box-shadow: 0 0 20px rgba(241, 196, 15, 0.4);
+}
 
 /* Company Anim */
 .company-hub {
@@ -219,16 +267,22 @@ button:disabled {
 .modal-content {
     background: var(--panel-bg);
     border: 1px solid var(--border-color);
-    padding: 2.5rem;
-    border-radius: 20px;
+    padding: 3rem;
+    border-radius: 24px;
     width: 95%;
-    max-width: 1000px;
+    max-width: 900px;
     text-align: center;
-    box-shadow: 0 15px 50px rgba(0,0,0,0.6);
-    transform: translateY(0);
-    transition: transform 0.3s;
+    box-shadow: var(--glass-shadow);
+    transform: scale(0.9) translateY(20px);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     max-height: 90vh;
     overflow-y: auto;
+    position: relative;
+    border-top: 4px solid var(--primary);
+}
+
+.modal-overlay:not(.hidden) .modal-content {
+    transform: scale(1) translateY(0);
 }
 
 .modal-content::-webkit-scrollbar {
@@ -273,21 +327,38 @@ button:disabled {
 }
 
 .option-btn {
-    background: rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.05);
     border: 1px solid var(--border-color);
     color: var(--text-color);
-    padding: 1rem 1.5rem;
-    border-radius: 10px;
+    padding: 1.2rem 1.8rem;
+    border-radius: 12px;
     font-size: 1.1rem;
     text-align: left;
-    transition: all 0.2s;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     align-items: center;
+    position: relative;
+    overflow: hidden;
 }
 
 .option-btn:hover:not(:disabled) {
-    background: rgba(255,255,255,0.15);
-    border-color: var(--text-color);
+    background: rgba(255,255,255,0.12);
+    border-color: var(--primary);
+    transform: translateX(10px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.option-btn::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0; width: 4px;
+    background: var(--primary);
+    transform: scaleY(0);
+    transition: transform 0.2s;
+}
+
+.option-btn:hover:not(:disabled)::before {
+    transform: scaleY(1);
 }
 
 .option-btn.correct { background: var(--success); border-color: var(--success); color: white; }

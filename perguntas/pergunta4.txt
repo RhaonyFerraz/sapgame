@@ -1,0 +1,55 @@
+📌 Pergunta:
+
+Ao realizar uma compra no SAP Business One, qual é a sequência lógica recomendada de documentos (Best Practice)?
+
+🔘 Alternativas:
+
+A) Nota Fiscal de Entrada → Pagamento → Pedido de Compra.
+
+B) Pedido de Compra → Recebimento de Mercadorias → Nota Fiscal de Entrada. ✅
+
+C) Pagamento → Nota Fiscal de Entrada → Pedido de Compra.
+
+D) Recebimento de Mercadorias → Pedido de Compra → Pagamento.
+
+E) Nota Fiscal de Entrada → Recebimento de Mercadorias → Pedido de Compra.
+
+F) Pedido de Compra → Pagamento → Recebimento de Mercadorias.
+
+⚙️ REGRAS DE RESPOSTA:
+A resposta correta é: B
+
+✅ SE O USUÁRIO ACERTAR (responder B):
+
+Justificativa:
+✔ Resposta correta!
+
+A alternativa B reflete o fluxo padrão de Compras (A/P):
+1. **Pedido de Compra**: Comprometimento com o fornecedor.
+2. **Recebimento de Mercadorias (GRPO)**: Entrada física no estoque.
+3. **Nota Fiscal de Entrada (A/P Invoice)**: Registro financeiro e contábil.
+
+❌ SE O USUÁRIO ERRAR:
+
+👉 Se responder A:
+❌ Incorreta
+Você está registrando a dívida antes de pedir o produto. No SAP B1, o fluxo ideal começa com a solicitação/pedido.
+
+👉 Se responder C:
+❌ Incorreta
+Pagar antes de registrar a nota fiscal não segue o fluxo padrão de conciliação do sistema.
+
+👉 Se responder D:
+❌ Incorreta
+O recebimento deve ser baseado em um pedido previamente aprovado para garantir a conferência.
+
+👉 Se responder E:
+❌ Incorreta
+A Nota Fiscal geralmente encerra o fluxo de entrada física, não o inicia.
+
+👉 Se responder F:
+❌ Incorreta
+Embora seja possível pagar antecipadamente, o "Best Practice" padrão para o fluxo de estoque é receber antes de faturar.
+
+🎁 BÔNUS:
+💡 No SAP B1, você pode usar o "Assistente de Criação de Documentos" para copiar as informações do Pedido para o Recebimento com um clique (botão Copiar Para). Isso evita erros de digitação e economiza muito tempo!

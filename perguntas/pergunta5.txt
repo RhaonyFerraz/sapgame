@@ -1,0 +1,52 @@
+📌 Pergunta:
+
+O que representa um "Parceiro de Negócios" no contexto do SAP Business One?
+
+🔘 Alternativas:
+
+A) Apenas os funcionários internos da empresa.
+
+B) Somente os bancos onde a empresa possui conta.
+
+C) Clientes, Fornecedores e Leads (Potenciais Clientes). ✅
+
+D) Apenas os softwares de terceiros instalados no servidor.
+
+E) Qualquer pessoa que visite o site da empresa, mesmo sem interagir.
+
+F) Exclusivamente os sócios diretores da organização.
+
+⚙️ REGRAS DE RESPOSTA:
+A resposta correta é: C
+
+✅ SE O USUÁRIO ACERTAR (responder C):
+
+Justificativa:
+✔ Resposta correta!
+
+O cadastro de Parceiros de Negócios (PN) é unificado. Um mesmo parceiro pode ser cliente e fornecedor (embora com cadastros distintos vinculados). O tipo "Lead" é usado no módulo de CRM para prospectos que ainda não fecharam uma venda.
+
+❌ SE O USUÁRIO ERRAR:
+
+👉 Se responder A:
+❌ Incorreta
+Funcionários têm um cadastro específico no módulo de RH.
+
+👉 Se responder B:
+❌ Incorreta
+Bancos são configurados em "Bancos da Empresa", embora possam existir como Parceiros de Negócios se você comprar serviços deles.
+
+👉 Se responder D:
+❌ Incorreta
+Isso seriam ativos ou extensões, não parceiros comerciais.
+
+👉 Se responder E:
+❌ Incorreta
+Visitantes anônimos não constam no ERP até haver um registro de interesse/lead.
+
+👉 Se responder F:
+❌ Incorreta
+Sócios são registrados em dados societários ou como usuários, conforme a necessidade.
+
+🎁 BÔNUS:
+💡 Dica Estratégica: Use o "Relatório de Transações por Parceiro de Negócio" para ver o histórico completo de dívidas e créditos de um cliente específico em segundos!

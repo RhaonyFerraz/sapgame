@@ -1,0 +1,52 @@
+📌 Pergunta:
+
+No SAP Business One, qual é o objetivo do "Plano de Contas"?
+
+🔘 Alternativas:
+
+A) Organizar as fotos dos produtos no catálogo.
+
+B) Listar todos os usuários que têm acesso ao sistema.
+
+C) Estruturar e organizar todas as contas contábeis da empresa (Ativos, Passivos, Receitas e Despesas). ✅
+
+D) Definir as rotas de entrega dos caminhões da logística.
+
+E) Armazenar os currículos dos candidatos a vagas de emprego.
+
+F) Controlar a validade dos extintores de incêndio da fábrica.
+
+⚙️ REGRAS DE RESPOSTA:
+A resposta correta é: C
+
+✅ SE O USUÁRIO ACERTAR (responder C):
+
+Justificativa:
+✔ Resposta correta!
+
+O Plano de Contas é a espinha dorsal financeira do SAP B1. Ele é dividido em gavetas (Ativos, Passivos, Patrimônio Líquido, Receitas, Custos de Vendas, Despesas, Outras Receitas e Despesas). No Brasil, ele segue as normas contábeis vigentes (IFRS).
+
+❌ SE O USUÁRIO ERRAR:
+
+👉 Se responder A:
+❌ Incorreta
+Fotos de produtos ficam no Cadastro de Itens.
+
+👉 Se responder B:
+❌ Incorreta
+A lista de usuários fica em Administração > Definir > Geral > Usuários.
+
+👉 Se responder D:
+❌ Incorreta
+Rotas são controladas em campos definidos pelo usuário ou add-ons de logística.
+
+👉 Se responder E:
+❌ Incorreta
+Currículos pertencem ao RH ou sistemas de recrutamento.
+
+👉 Se responder F:
+❌ Incorreta
+Isso seria manutenção de ativos ou gestão predial, não contabilidade.
+
+🎁 BÔNUS:
+🚀 Fato Curioso: O SAP B1 gera o Balanço Patrimonial e a DRE (Demonstração de Resultados) automaticamente com base nas movimentações do Plano de Contas em tempo real!

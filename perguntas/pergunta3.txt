@@ -1,0 +1,53 @@
+📌 Pergunta:
+
+No SAP Business One, qual é a principal função do Cadastro de Itens (Dados do Cadastro do Item)?
+
+🔘 Alternativas:
+
+A) Registrar apenas o nome dos funcionários da empresa.
+
+B) Centralizar todas as informações de produtos e serviços, como preços, estoque e dados de compras/vendas. ✅
+
+C) Servir exclusivamente como um histórico de e-mails enviados aos clientes.
+
+D) Configurar as cores das janelas do sistema para cada usuário.
+
+E) Gerar apenas boletos bancários, sem ligação com o estoque.
+
+F) Registrar o endereço físico de todos os fornecedores estrangeiros no mapa mundi.
+
+⚙️ REGRAS DE RESPOSTA:
+A resposta correta é: B
+
+✅ SE O USUÁRIO ACERTAR (responder B):
+
+Justificativa:
+✔ Resposta correta!
+
+A alternativa B está correta porque o Cadastro de Itens é o coração do módulo de Inventário. Nele, você define se o item é um produto físico ou serviço, seus custos, grupos de unidades de medida (UoM) e como o sistema deve tratar o estoque (FIFO, Custo Médio ou Serial/Lote).
+
+❌ SE O USUÁRIO ERRAR (responder A, C, D, E ou F):
+
+👉 Se responder A:
+❌ Incorreta
+O cadastro de funcionários fica no módulo de Recursos Humanos, não no Cadastro de Itens.
+
+👉 Se responder C:
+❌ Incorreta
+O histórico de contatos pode ser visto em Atividades ou no Cadastro de Parceiros de Negócios, mas não define a função do Item.
+
+👉 Se responder D:
+❌ Incorreta
+A personalização de cores é feita nas Configurações do Usuário, não no cadastro de mercadorias.
+
+👉 Se responder E:
+❌ Incorreta
+O cadastro de itens está diretamente ligado ao estoque e à contabilidade. Boletos são gerados a partir de documentos financeiros.
+
+👉 Se responder F:
+❌ Incorreta
+Endereços de fornecedores são registrados no Cadastro de Parceiros de Negócios.
+
+🎁 BÔNUS:
+O Cadastro de Item no SAP B1 permite gerenciar o ciclo de vida de tudo o que sua empresa compra ou vende.
+💡 Dica Pro: Marque a opção "Item de Inventário" apenas se você precisar controlar a quantidade física em estoque. Se for um serviço (como consultoria), desmarque essa opção para evitar erros contábeis!

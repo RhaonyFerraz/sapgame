@@ -1,0 +1,52 @@
+📌 Pergunta:
+
+No SAP Business One, o que é um "Documento de Rascunho"?
+
+🔘 Alternativas:
+
+A) Um documento que não pode ser editado após ser criado.
+
+B) Uma versão temporária de um documento que não afeta a contabilidade nem o estoque até ser finalizado. ✅
+
+C) Um papel que deve ser impresso e desenhado à mão livre.
+
+D) Uma lista de compras pessoal do usuário para o supermercado.
+
+E) Um erro de sistema que deve ser excluído imediatamente.
+
+F) Um certificado de garantia para produtos eletrônicos.
+
+⚙️ REGRAS DE RESPOSTA:
+A resposta correta é: B
+
+✅ SE O USUÁRIO ACERTAR (responder B):
+
+Justificativa:
+✔ Resposta correta!
+
+Rascunhos (Drafts) são ideais para preparar documentos complexos que precisam de revisão posterior ou que fazem parte de um processo de aprovação (Workflow). Eles permitem salvar o trabalho sem impactar os números reais da empresa.
+
+❌ SE O USUÁRIO ERRAR:
+
+👉 Se responder A:
+❌ Incorreta
+Pelo contrário, rascunhos são feitos para serem editados e revisados.
+
+👉 Se responder C:
+❌ Incorreta
+Rascunhos são registros eletrônicos dentro do banco de dados do SAP.
+
+👉 Se responder D:
+❌ Incorreta
+O SAP deve ser usado para fins profissionais e corporativos.
+
+👉 Se responder E:
+❌ Incorreta
+Rascunhos são recursos úteis, não erros.
+
+👉 Se responder F:
+❌ Incorreta
+A garantia pode ser gerada a partir de notas fiscais, mas rascunho é apenas um estado do documento.
+
+🎁 BÔNUS:
+🛡️ No SAP B1, se um documento exige aprovação de um gerente, ele entra automaticamente como Rascunho até que seja autorizado!

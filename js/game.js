@@ -200,6 +200,11 @@ function handleAnswer(selectedId, btnElement) {
         UI.mFeedback.innerHTML = `✅ Correto! Você avançou 1 casa e ganhou R$ ${reward}.<br><br>${selectedOpt.justification}`;
         UI.mFeedback.className = 'success';
         
+        // Visual Success Feedback
+        document.body.classList.add('flash-success');
+        setTimeout(() => document.body.classList.remove('flash-success'), 500);
+
+        
         if (state.currentQuestion.bonusText && UI.mBtnBonus) {
             const bText = state.currentQuestion.bonusText; // CAPTURE THE TEXT HERE!
             UI.mBtnBonus.classList.remove('hidden');
@@ -225,6 +230,10 @@ function handleAnswer(selectedId, btnElement) {
             state.money -= loss;
             UI.mFeedback.innerHTML = `${selectedOpt.justification}<br><br>❌ Você não avançou e perdeu R$ ${loss}.`;
             UI.mFeedback.className = 'error';
+            
+            // Visual Error Feedback
+            document.body.classList.add('flash-error');
+            setTimeout(() => document.body.classList.remove('flash-error'), 500);
         }
     }
     
@@ -234,6 +243,18 @@ function handleAnswer(selectedId, btnElement) {
     renderBoard();
     
     UI.mAction.classList.remove('hidden');
+    
+    // Auto-scroll to feedback/action area
+    setTimeout(() => {
+        const modalContent = document.querySelector('.modal-content');
+        if (modalContent) {
+            modalContent.scrollTo({
+                top: modalContent.scrollHeight,
+                behavior: 'smooth'
+            });
+        }
+    }, 100);
+
     UI.mAction.onclick = () => {
         closeModal();
         checkLevelUp();
@@ -333,6 +354,13 @@ function useJump() {
         renderBoard();
         
         UI.mAction.classList.remove('hidden');
+        
+        // Auto-scroll to feedback/action area
+        setTimeout(() => {
+            const modalContent = document.querySelector('.modal-content');
+            if (modalContent) modalContent.scrollTo({ top: modalContent.scrollHeight, behavior: 'smooth' });
+        }, 100);
+
         UI.mAction.onclick = () => {
             closeModal();
             checkLevelUp();
@@ -348,6 +376,13 @@ function useHint() {
         UI.mFeedback.innerHTML = `💡 Dica Consultiva: ${state.currentQuestion.hint}`;
         UI.mFeedback.className = 'info';
         UI.mFeedback.classList.remove('hidden');
+        
+        // Auto-scroll to hint
+        setTimeout(() => {
+            const modalContent = document.querySelector('.modal-content');
+            if (modalContent) modalContent.scrollTo({ top: modalContent.scrollHeight, behavior: 'smooth' });
+        }, 100);
+        
         updateHUD();
     }
 }

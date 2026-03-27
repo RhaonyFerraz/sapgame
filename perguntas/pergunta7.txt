@@ -1,0 +1,52 @@
+📌 Pergunta:
+
+Qual é a finalidade do "Painel de Mensagens e Alertas" no SAP Business One?
+
+🔘 Alternativas:
+
+A) Enviar mensagens de texto (SMS) para o celular pessoal de qualquer pessoa.
+
+B) Notificar usuários sobre eventos importantes, como estoque baixo ou aprovações pendentes. ✅
+
+C) Postar fotos e vídeos das festas da empresa.
+
+D) Bloquear o computador de funcionários que chegam atrasados.
+
+E) Medir a temperatura do servidor em tempo real.
+
+F) Tocar música ambiente nas dependências da empresa.
+
+⚙️ REGRAS DE RESPOSTA:
+A resposta correta é: B
+
+✅ SE O USUÁRIO ACERTAR (responder B):
+
+Justificativa:
+✔ Resposta correta!
+
+O sistema de alertas permite que o ERP seja proativo. Você pode configurar para receber alertas quando um cliente ultrapassa o limite de crédito ou quando um item atinge o nível mínimo de estoque, permitindo ações rápidas.
+
+❌ SE O USUÁRIO ERRAR:
+
+👉 Se responder A:
+❌ Incorreta
+Alertas por SMS exigem serviços de integração externa, não é a função primária padrão.
+
+👉 Se responder C:
+❌ Incorreta
+O SAP B1 é uma ferramenta de gestão, não uma rede social corporativa.
+
+👉 Se responder D:
+❌ Incorreta
+O acesso é controlado por login, mas não há "bloqueio por atraso" nativo.
+
+👉 Se responder E:
+❌ Incorreta
+Isso é função de softwares de monitoramento de infraestrutura (TI).
+
+👉 Se responder F:
+❌ Incorreta
+O SAP B1 não possui player de áudio integrado para música ambiente.
+
+🎁 BÔNUS:
+💡 Dica de Mestre: Você pode configurar Alertas de Usuário via "Consultas" (Queries) personalizadas, criando notificações inteligentes para qualquer situação do seu negócio!

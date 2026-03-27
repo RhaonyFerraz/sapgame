@@ -1,0 +1,52 @@
+📌 Pergunta:
+
+Como o SAP Business One ajuda na gestão de "Lotes e Números de Série"?
+
+🔘 Alternativas:
+
+A) Ele gera números aleatórios apenas para decoração das etiquetas.
+
+B) Ele permite rastrear cada unidade ou grupo de produtos desde a entrada até a venda ao cliente final. ✅
+
+C) Ele renomeia todos os produtos como "Lote 1" para simplificar.
+
+D) Ele apaga o histórico de compras a cada 30 dias para economizar espaço.
+
+E) Ele obriga o usuário a decorar todos os números de série de cabeça.
+
+F) Ele funciona apenas com produtos que não possuem código de barras.
+
+⚙️ REGRAS DE RESPOSTA:
+A resposta correta é: B
+
+✅ SE O USUÁRIO ACERTAR (responder B):
+
+Justificativa:
+✔ Resposta correta!
+
+A rastreabilidade é crucial para indústrias de alimentos, remédios e eletrônicos. Com o SAP B1, você sabe exatamente qual fornecedor entregou um lote específico e para qual cliente ele foi vendido, facilitando processos de Recall.
+
+❌ SE O USUÁRIO ERRAR:
+
+👉 Se responder A:
+❌ Incorreta
+Números de série e lotes têm valor legal e logístico fundamental.
+
+👉 Se responder C:
+❌ Incorreta
+Cada lote possui sua própria identificação única e original.
+
+👉 Se responder D:
+❌ Incorreta
+O histórico é permanente e auditável no ERP.
+
+👉 Se responder E:
+❌ Incorreta
+O sistema armazena e consulta os dados; o usuário só precisa ler/bipar as etiquetas.
+
+👉 Se responder F:
+❌ Incorreta
+O SAP B1 é totalmente integrado com scanners de código de barras.
+
+🎁 BÔNUS:
+🔬 Rastreabilidade reversa: Se um cliente reclama de um defeito, você pode descobrir em segundos qual matéria-prima foi usada naquele produto específico!

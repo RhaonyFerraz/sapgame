@@ -1,0 +1,52 @@
+📌 Pergunta:
+
+O que é a "Geração de Consultas" (Query Generator) no SAP Business One?
+
+🔘 Alternativas:
+
+A) Um motor de busca para encontrar receitas de culinária na internet.
+
+B) Uma ferramenta que permite criar relatórios personalizados extraindo dados diretamente do banco de dados (SQL/HANA). ✅
+
+C) Um assistente de voz que lê os saldos bancários em voz alta.
+
+D) Um jogo escondido dentro do menu de ajuda do sistema.
+
+E) Uma função para traduzir o sistema para latim.
+
+F) Um gerador de nomes de empresas aleatórios para novos parceiros de negócios.
+
+⚙️ REGRAS DE RESPOSTA:
+A resposta correta é: B
+
+✅ SE O USUÁRIO ACERTAR (responder B):
+
+Justificativa:
+✔ Resposta correta!
+
+O Gerador de Consultas é uma das ferramentas mais poderosas para usuários avançados e consultores. Ele permite cruzar tabelas (como OINV para notas e OITM para itens) e extrair informações que não estão em relatórios padrão, dando total flexibilidade na análise de dados.
+
+❌ SE O USUÁRIO ERRAR:
+
+👉 Se responder A:
+❌ Incorreta
+O Gerador de Consultas trabalha apenas com dados internos do seu ERP.
+
+👉 Se responder C:
+❌ Incorreta
+O SAP B1 possui integração com dashboards e relatórios visuais, mas não é focado em assistentes de voz nativos para saldos.
+
+👉 Se responder D:
+❌ Incorreta
+O ERP é um software de produtividade sério; o foco é gestão, não entretenimento oculto.
+
+👉 Se responder E:
+❌ Incorreta
+O sistema suporta dezenas de idiomas (localizações), mas isso é definido em Centros de Trabalho e Configurações Gerais.
+
+👉 Se responder F:
+❌ Incorreta
+Nomes de parceiros devem ser inseridos manualmente ou via integração, conforme os dados reais.
+
+🎁 BÔNUS:
+💡 Nível Expert: As consultas que você cria no Gerador de Consultas podem ser usadas para criar Alertas, Dashboards no Fiori e até mesmo campos calculados!
