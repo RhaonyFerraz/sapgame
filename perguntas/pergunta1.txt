@@ -1,0 +1,42 @@
+📌 Pergunta:
+
+No SAP Business One, qual é a principal diferença entre as opções “Selecionar Empresa” e “Criar Empresa” ao acessar o sistema?
+
+🔘 Alternativas:
+
+A) Selecionar empresa permite acessar uma base de dados já existente, enquanto criar empresa gera uma nova base com configurações iniciais. ✅
+
+B) Selecionar empresa serve para excluir uma base de dados, enquanto criar empresa apenas visualiza relatórios existentes.
+
+C) Selecionar empresa cria usuários no sistema, enquanto criar empresa altera o plano de contas.
+
+D) Selecionar empresa configura parâmetros fiscais, enquanto criar empresa acessa dados de clientes.
+
+E) Selecionar empresa é usado apenas por consultores, enquanto criar empresa é usado por usuários comuns.
+
+F) Selecionar empresa permite editar fornecedores, enquanto criar empresa serve apenas para alterar moedas.
+
+✅ Resposta correta: A
+
+✔ Justificativa:A
+A alternativa A está correta porque reflete exatamente o funcionamento do sistema:
+
+Selecionar empresa → acessar uma base já existente para uso normal.
+Criar empresa → criar uma nova base de dados com configurações iniciais (país, moeda, plano de contas, etc.).
+
+❌ Justificativas das alternativas incorretas:
+
+B) Justificativa: ❌ Incorreta
+Selecionar empresa não exclui dados e criar empresa não é apenas para visualização. Ambas têm funções completamente diferentes dessas descritas.
+
+C) Justificativa: ❌ Incorreta
+Criar usuários e alterar plano de contas são ações administrativas dentro de uma empresa já existente, não relacionadas diretamente à seleção ou criação de empresa.
+
+D) Justificativa: ❌ Incorreta
+A configuração fiscal ocorre na criação ou parametrização da empresa, não ao selecionar. E selecionar não é específico para acessar apenas clientes.
+
+E) Justificativa: ❌ Incorreta
+Selecionar empresa é usado por qualquer usuário. Criar empresa geralmente é feito por consultores ou TI, não por usuários comuns.
+
+F) Justificativa: ❌ Incorreta
+Editar fornecedores e alterar moedas são atividades internas da empresa, não definem a função de selecionar ou criar empresa.

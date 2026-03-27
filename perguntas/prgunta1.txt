@@ -1,0 +1,93 @@
+📌 Pergunta:
+
+No SAP Business One, qual é a principal diferença entre as opções “Selecionar Empresa” e “Criar Empresa” ao acessar o sistema?
+
+🔘 Alternativas:
+
+A) Selecionar empresa permite acessar uma base de dados já existente, enquanto criar empresa gera uma nova base com configurações iniciais.
+
+B) Selecionar empresa serve para excluir uma base de dados, enquanto criar empresa apenas visualiza relatórios existentes.
+
+C) Selecionar empresa cria usuários no sistema, enquanto criar empresa altera o plano de contas.
+
+D) Selecionar empresa configura parâmetros fiscais, enquanto criar empresa acessa dados de clientes.
+
+E) Selecionar empresa é usado apenas por consultores, enquanto criar empresa é usado por usuários comuns.
+
+F) Selecionar empresa permite editar fornecedores, enquanto criar empresa serve apenas para alterar moedas.
+
+⚙️ REGRAS DE RESPOSTA (MUITO IMPORTANTE):
+A resposta correta é: A
+✅ SE O USUÁRIO ACERTAR (responder A):
+
+Responda exatamente assim:
+
+✔ Resposta correta!
+
+Justificativa:
+A alternativa A está correta porque reflete exatamente o funcionamento do sistema:
+Selecionar empresa → acessar uma base já existente para uso normal.
+Criar empresa → criar uma nova base de dados com configurações iniciais, como país, moeda e plano de contas.
+
+❌ SE O USUÁRIO ERRAR (responder B, C, D, E ou F):
+NÃO revele a resposta correta.
+NÃO diga qual é a alternativa certa.
+Mostre APENAS a justificativa da alternativa escolhida pelo usuário, conforme abaixo:
+
+👉 Se responder B:
+❌ Incorreta
+Selecionar empresa não exclui dados e criar empresa não é apenas para visualização. Ambas têm funções completamente diferentes dessas descritas.
+
+👉 Se responder C:
+❌ Incorreta
+Criar usuários e alterar plano de contas são ações administrativas dentro de uma empresa já existente, não relacionadas diretamente à seleção ou criação de empresa.
+
+👉 Se responder D:
+❌ Incorreta
+A configuração fiscal ocorre na criação ou parametrização da empresa, não ao selecionar. E selecionar não é específico para acessar apenas clientes.
+
+👉 Se responder E:
+❌ Incorreta
+Selecionar empresa é usado por qualquer usuário. Criar empresa geralmente é feito por consultores ou TI, não por usuários comuns.
+
+👉 Se responder F:
+❌ Incorreta
+Editar fornecedores e alterar moedas são atividades internas da empresa, não definem a função de selecionar ou criar empresa.
+
+🎁 BÔNUS:
+SAP Business One, a opção “Selecionar / Criar Empresa” aparece quando você vai entrar no sistema e precisa escolher ou cadastrar uma base de dados (empresa).
+🏢 O que significa “Empresa” no SAP B1?
+No SAP B1, empresa = base de dados. Cada empresa tem suas próprias informações:
+ Clientes
+ Fornecedores
+ Produtos
+ Financeiro
+ Relatórios
+👉 Ou seja, cada empresa é um ambiente separado dentro do sistema.
+🔹 Selecionar Empresa
+É quando você:
+ Escolhe uma empresa já existente
+ Exemplo: “Empresa Teste”, “Loja Fortaleza”, “Matriz”
+📌 Você usa isso para entrar e trabalhar normalmente.
+🔹 Criar Empresa
+É quando você:
+ Cria uma nova base de dados
+ Define configurações iniciais, como:
+ País
+ Moeda
+ Plano de contas
+ Estrutura fiscal
+📌 Isso geralmente é feito por:
+ Consultores
+ TI
+ Implantação do sistema
+⚖️ Resumindo
+Selecionar = entrar em uma empresa que já existe
+Criar = montar uma nova empresa do zero no sistema  💡 Dica profissional (nível entrevista)
+Manda assim:
+“No SAP Business One, selecionar empresa permite acessar uma base existente, enquanto criar empresa envolve gerar uma nova base de dados com configurações iniciais como período contábil, moeda e plano de contas.”
+🚀 Dica extra (nível consultor)
+Sempre tenha:
+ 1 empresa de teste (sandbox)
+ 1 empresa de produção
+👉 Isso evita quebrar o sistema real.

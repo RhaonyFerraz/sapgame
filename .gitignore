@@ -1,0 +1,23 @@
+# Antigravity Metadata
+.agent/
+.gemini/
+brain/
+*.log
+
+# Workspace
+node_modules/
+dist/
+build/
+.vscode/
+.idea/
+
+# Performance and Temporary
+tmp/
+CVS/
+.svn/
+.hg/
+.DS_Store
+
+# Local settings
+.env
+.env.local

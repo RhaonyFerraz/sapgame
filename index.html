@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAP Business One - Board Game</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="hud">
+        <div class="hud-group">
+            <div class="stat">💰 Dinheiro: R$ <span id="money">0</span></div>
+            <div class="stat">🏭 Nível: <span id="level">Pequena</span></div>
+            <div class="stat">👨‍💼 Consultores: <span id="consultants">0</span>/2</div>
+        </div>
+        <div class="powerups">
+            <button id="btn-elimina" disabled title="Remove uma alternativa errada">Eliminar (1)</button>
+            <button id="btn-pula" disabled title="Pula a questão atual">Pular (1)</button>
+            <button id="btn-dica" disabled title="Mostra uma dica para a questão">Dica (1)</button>
+            <button id="btn-buy-consultant" title="Custará R$ 500" class="buy-btn">Contratar Consultor</button>
+        </div>
+    </div>
+
+    <main class="game-container">
+        <!-- Board Spaces around edge -->
+        <div class="board" id="board-container">
+            <!-- JavaScript will generate the path here -->
+        </div>
+
+        <!-- Central Company Animation -->
+        <div class="company-hub">
+            <div id="company-visual" class="level-1">
+                <video id="company-video" src="videopixel/Gen-4%20Turbo%20CRIE%20UM%20VIDEO%20EM%20PIXEL%20ART%20DE%20UMA%20PEQUENA%20INDUTRIA%201366922282.mp4" autoplay loop muted playsinline class="pixel-building"></video>
+            </div>
+            <h2 id="company-name">Sua Empresa (Inicial)</h2>
+            <button id="btn-roll-dice" class="action-btn">Jogar os Dados 🎲</button>
+        </div>
+    </main>
+
+    <!-- Modal for questions/events -->
+    <div id="modal" class="modal-overlay hidden">
+        <div class="modal-content glass">
+            <h3 id="modal-title">Evento do Turno</h3>
+            <p id="modal-text">Texto descritivo</p>
+            <img id="modal-image" class="hidden" src="" alt="">
+            <button id="btn-reveal" class="hidden reveal-btn">🔍 REVELAR TELA (SAP)</button>
+            <div id="modal-options" class="options-container">
+                <!-- Options injected by JS -->
+            </div>
+            <p id="modal-feedback" class="hidden"></p>
+            <div class="modal-actions">
+                <button id="modal-action-btn" class="hidden">Continuar</button>
+                <button id="mBtnBonus" class="hidden bonus-btn">🎁 BÔNUS</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/game.js"></script>
+</body>
+</html>
