@@ -1,0 +1,52 @@
+📌 Pergunta:
+
+No SAP Business One, qual é a principal diferença entre Taxas de Câmbio e Índices?
+
+🔘 Alternativas:
+
+A) Taxas de câmbio servem para converter valores entre moedas, enquanto índices corrigem ou atualizam valores ao longo do tempo. ✅
+
+B) Taxas de câmbio atualizam contratos de aluguel, enquanto índices convertem valores de dólar ou euro para reais.
+
+C) Taxas de câmbio são usadas apenas em relatórios, enquanto índices registram compras e vendas internacionais.
+
+D) Taxas de câmbio definem impostos sobre transações, enquanto índices controlam contas de clientes.
+
+E) Taxas de câmbio corrigem valores ao longo do tempo, enquanto índices convertem moedas estrangeiras para moeda local.
+
+F) Taxas de câmbio e índices têm a mesma função, servindo apenas para registrar lançamentos contábeis.
+
+⚙️ REGRAS DE RESPOSTA:
+A resposta correta é: A
+
+✅ SE O USUÁRIO ACERTAR (responder A):
+
+✔ Resposta correta!
+
+Justificativa:
+A alternativa A está correta porque reflete exatamente a função de cada recurso no SAP B1:
+
+Taxas de câmbio → converter valores de moedas estrangeiras para a moeda local.
+Índices → corrigir ou atualizar valores financeiros ao longo do tempo, como reajustes de contratos ou atualização por inflação.
+
+❌ SE O USUÁRIO ERRAR (responder B, C, D, E ou F):
+
+👉 Se responder B:
+❌ Incorreta
+Taxas de câmbio não atualizam contratos; índices não são usados para conversão de moedas. Ambas as funções estão invertidas.
+
+👉 Se responder C:
+❌ Incorreta
+Taxas de câmbio não são apenas para relatórios, e índices não registram compras e vendas internacionais diretamente.
+
+👉 Se responder D:
+❌ Incorreta
+Taxas de câmbio não definem impostos e índices não controlam contas de clientes diretamente.
+
+👉 Se responder E:
+❌ Incorreta
+Taxas de câmbio não corrigem valores ao longo do tempo; isso é função dos índices. E índices não convertem moedas.
+
+👉 Se responder F:
+❌ Incorreta
+Taxas de câmbio e índices não têm a mesma função; cada um tem um propósito específico no sistema.
