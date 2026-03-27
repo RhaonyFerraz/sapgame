@@ -218,12 +218,12 @@ function handleAnswer(selectedId, btnElement) {
         // Prevent loss using consultant
         if (state.consultants > 0) {
             state.consultants--;
-            UI.mFeedback.innerHTML = `❌ Errado. Um Consultor blindou o fluxo e evitou perdas financeiras!`;
+            UI.mFeedback.innerHTML = `${selectedOpt.justification}<br><br>🛡️ Um Consultor blindou o fluxo e evitou perdas financeiras!`;
             UI.mFeedback.className = 'info';
         } else {
             const loss = 200;
             state.money -= loss;
-            UI.mFeedback.innerHTML = `❌ Errado. Você não avançou e perdeu R$ ${loss}.`;
+            UI.mFeedback.innerHTML = `${selectedOpt.justification}<br><br>❌ Você não avançou e perdeu R$ ${loss}.`;
             UI.mFeedback.className = 'error';
         }
     }

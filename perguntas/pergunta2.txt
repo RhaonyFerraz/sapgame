@@ -21,9 +21,9 @@ A resposta correta é: A
 
 ✅ SE O USUÁRIO ACERTAR (responder A):
 
+Justificativa:
 ✔ Resposta correta!
 
-Justificativa:
 A alternativa A está correta porque reflete exatamente a função de cada recurso no SAP B1:
 
 Taxas de câmbio → converter valores de moedas estrangeiras para a moeda local.

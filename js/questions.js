@@ -91,11 +91,6 @@ async function loadQuestions() {
                         
                         let combinedJustification = explanationText ? explanationText.replace(/\n/g, '<br>') : "";
                         
-                        if (correctJustification) {
-                            if (combinedJustification) combinedJustification += "<br><br>";
-                            combinedJustification += correctJustification.replace(/\n/g, '<br>');
-                        }
-                        
                         opt.justification = combinedJustification;
                     }
                 }
