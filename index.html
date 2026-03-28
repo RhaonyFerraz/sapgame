@@ -9,6 +9,20 @@
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 </head>
 <body>
+    <!-- Start Screen -->
+    <div id="splash-screen" class="modal-overlay" style="z-index: 9999; background: rgba(0,0,0,0.9); transition: opacity 0.5s;">
+        <div class="modal-content glass" style="max-width: 700px; text-align: center; padding: 3rem;">
+            <h2 style="font-size: 2.2rem; color: var(--primary); margin-bottom: 20px; text-transform: uppercase; letter-spacing: 2px;">Jornada do Conhecimento</h2>
+            <div style="font-size: 1.15rem; line-height: 1.7; text-align: left; margin-bottom: 30px; color: #e6edf3;">
+                <p style="margin-bottom: 15px;">Você começa com uma pequena fábrica de calçados, iniciando com produção terceirizada. Aos poucos, com conhecimento e boas decisões, poderá expandir seu negócio e construir sua própria indústria.</p>
+                <p style="margin-bottom: 15px;">Enfrente desafios reais do dia a dia, aproveite oportunidades e evolua sua gestão.</p>
+                <p style="margin-bottom: 15px;">Durante a jornada, aprenda conceitos de administração, ERP (como SAP) e inglês.</p>
+                <p style="font-size: 1.25rem; font-weight: 800; color: var(--success); text-align: center; margin-top: 25px;">Seu objetivo: transformar sua fábrica em uma grande indústria. Boa sorte!</p>
+            </div>
+            <button id="btn-start-game" class="action-btn" style="font-size: 1.3rem; padding: 15px 50px; border-radius: 50px; box-shadow: 0 0 30px rgba(155, 81, 224, 0.4);">🚀 INICIAR JORNADA</button>
+        </div>
+    </div>
+
     <div class="hud">
         <div class="hud-group">
             <div class="stat"><span data-t="money">Caixa</span>: $ <span id="money">0</span></div>
@@ -45,7 +59,10 @@
             <h3 id="modal-title" data-t="event_title">Evento do Turno</h3>
             <p id="modal-text">Texto descritivo</p>
             <img id="modal-image" class="hidden" src="" alt="">
-            <button id="btn-reveal" class="hidden reveal-btn">🔍 REVELAR TELA (SAP)</button>
+            <div style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
+                <button id="btn-reveal" class="hidden reveal-btn">🔍 REVELAR TELA (SAP)</button>
+                <button id="btn-reveal-en" class="hidden reveal-btn" style="background: linear-gradient(135deg, #e74c3c, #c0392b) !important;">REVELAR QUESTÃO EM INGLÊS</button>
+            </div>
             <div id="modal-options" class="options-container">
                 <!-- Options injected by JS -->
             </div>

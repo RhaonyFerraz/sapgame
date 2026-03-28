@@ -311,6 +311,60 @@ function askQuestion(skipRePick = false) {
         };
     }
     
+    // Logic for English Reveal
+    const UI_btnRevealEn = document.getElementById('btn-reveal-en');
+    if (UI_btnRevealEn) {
+        // Reset button state
+        UI_btnRevealEn.classList.remove('hidden');
+        UI_btnRevealEn.dataset.showing = 'pt';
+        UI_btnRevealEn.innerHTML = 'REVELAR QUESTÃO EM INGLÊS';
+        
+        // Hide if we are already playing the game in English
+        const langEnBtn = document.getElementById('btn-lang-en');
+        if (langEnBtn && langEnBtn.classList.contains('active')) {
+            UI_btnRevealEn.classList.add('hidden');
+        }
+
+        UI_btnRevealEn.onclick = async () => {
+            if (UI_btnRevealEn.dataset.showing === 'en') {
+                UI.modalText.innerHTML = state.currentQuestion.text;
+                UI_btnRevealEn.dataset.showing = 'pt';
+                UI_btnRevealEn.innerHTML = 'REVELAR QUESTÃO EM INGLÊS';
+            } else {
+                UI_btnRevealEn.innerHTML = '⏳ CARREGANDO...';
+                const id = state.currentQuestion.id;
+                let urls = [
+                    `perguntas/en/pergunta${id}.txt`,
+                    `perguntas/en/prgunta${id}.txt`,
+                    `perguntas/en/pergunta0${id}.txt`,
+                    `perguntas/en/prgunta0${id}.txt`
+                ];
+                let response = null;
+                let cb = '?t=' + new Date().getTime();
+                for (let url of urls) {
+                    let res = await fetch(url + cb).catch(()=>null);
+                    if (res && res.ok) { response = res; break; }
+                }
+                
+                if (response) {
+                    const text = await response.text();
+                    const qMatch = text.match(/📌 Pergunta:\s*([\s\S]*?)🔘 Alternativas:/i);
+                    if (qMatch) {
+                        UI.modalText.innerHTML = `<div style="text-align: left; font-size: 1.1em; line-height: 1.5; color: #f1c40f;"><b>[ENGLISH VERSION]</b><br><br>${qMatch[1].trim().replace(/\n/g, '<br>')}</div>`;
+                        UI_btnRevealEn.dataset.showing = 'en';
+                        UI_btnRevealEn.innerHTML = 'VOLTAR PARA PORTUGUÊS';
+                    } else {
+                        UI_btnRevealEn.innerHTML = '❌ ERRO DE FORMATO';
+                        setTimeout(() => UI_btnRevealEn.innerHTML = 'REVELAR QUESTÃO EM INGLÊS', 2000);
+                    }
+                } else {
+                    UI_btnRevealEn.innerHTML = '❌ ARQUIVO NÃO ENCONTRADO';
+                    setTimeout(() => UI_btnRevealEn.innerHTML = 'REVELAR QUESTÃO EM INGLÊS', 2000);
+                }
+            }
+        };
+    }
+    
     state.currentQuestion.options.forEach(opt => {
         const btn = document.createElement('button');
         btn.className = 'option-btn';
@@ -345,6 +399,7 @@ function handleAnswer(selectedId, btnElement) {
         // Visual Success Feedback
         document.body.classList.add('flash-success');
         setTimeout(() => document.body.classList.remove('flash-success'), 500);
+        playSuccessSound();
 
         
         if (state.currentQuestion.bonusText && UI.mBtnBonus) {
@@ -738,6 +793,53 @@ function initTicker() {
     });
 }
 
-// Ensure the game builds up visually
-initGame();
-initTicker();
+// Audio System (Synthesizer to avoid external file dependencies)
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playSuccessSound() {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    
+    // Arpeggio Happy Chime: C5, E5, G5, C6
+    const frequencies = [523.25, 659.25, 783.99, 1046.50]; 
+    const now = audioCtx.currentTime;
+    
+    frequencies.forEach((freq, idx) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        const filter = audioCtx.createBiquadFilter();
+        
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now);
+        
+        // Add a little sparkle
+        filter.type = 'highpass';
+        filter.frequency.setValueAtTime(800, now);
+        
+        // Magic envelope
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.15, now + 0.03 + (idx * 0.08));
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5 + (idx * 0.08));
+        
+        osc.start(now + (idx * 0.08));
+        osc.stop(now + 1.2 + (idx * 0.08));
+    });
+}
+
+// Start Menu Logic
+document.getElementById('btn-start-game').addEventListener('click', () => {
+    // Unlock Web Audio API on first user interaction
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    
+    const splash = document.getElementById('splash-screen');
+    splash.style.opacity = '0';
+    setTimeout(() => {
+        splash.style.display = 'none';
+        // Now fully reveal the board interface setup!
+        initGame();
+        initTicker();
+    }, 500);
+});
