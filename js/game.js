@@ -813,9 +813,8 @@ function initAudio() {
 function playSuccessSound() {
     initAudio();
     audioCtx.resume().then(() => {
-        const now = audioCtx.currentTime;
-        // Arpeggio Happy Chime: C5, E5, G5, C6
         const frequencies = [523.25, 659.25, 783.99, 1046.50]; 
+        const now = audioCtx.currentTime;
         
         frequencies.forEach((freq, idx) => {
             const osc = audioCtx.createOscillator();
@@ -826,25 +825,19 @@ function playSuccessSound() {
             filter.connect(gain);
             gain.connect(audioCtx.destination);
             
-            // Triangle wave for a nice 'ding' tone
-            osc.type = 'triangle';
+            osc.type = 'sine';
             osc.frequency.setValueAtTime(freq, now);
             
             filter.type = 'highpass';
-            filter.frequency.setValueAtTime(500, now);
+            filter.frequency.setValueAtTime(800, now);
             
-            // Magic envelope using setTargetAtTime instead of strict ramps
-            const startTime = now + (idx * 0.15);
+            const startTime = now + (idx * 0.08);
             gain.gain.setValueAtTime(0, now);
-            
-            // Volume up quickly to 0.4
-            gain.gain.setTargetAtTime(0.4, startTime, 0.02);
-            
-            // Decay to 0 smoothly
-            gain.gain.setTargetAtTime(0, startTime + 0.1, 0.3);
+            gain.gain.linearRampToValueAtTime(0.15, startTime + 0.03);
+            gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.5);
             
             osc.start(startTime);
-            osc.stop(startTime + 1.5);
+            osc.stop(startTime + 1.2);
         });
     });
 }
