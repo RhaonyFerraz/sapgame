@@ -289,6 +289,12 @@ function askQuestion(skipRePick = false) {
     // Reset Modal UI
     UI.mFeedback.classList.add('hidden');
     UI.mImage.classList.add('hidden');
+    UI.mImage.src = '';
+    
+    // Configura tratamentos à prova de falhas para a imagem
+    UI.mImage.onload = () => { UI.mImage.classList.remove('hidden'); };
+    UI.mImage.onerror = () => { UI.mImage.classList.add('hidden'); };
+    
     if (UI.mBtnBonus) UI.mBtnBonus.classList.add('hidden');
     if (UI.mBtnReveal) {
         UI.mBtnReveal.classList.add('hidden');
@@ -299,14 +305,14 @@ function askQuestion(skipRePick = false) {
     
     if (state.currentQuestion.image && UI.mImage) {
         UI.mImage.src = state.currentQuestion.image;
-        UI.mImage.classList.remove('hidden');
     }
 
     if (state.currentQuestion.revealImage && UI.mBtnReveal) {
         UI.mBtnReveal.classList.remove('hidden');
         UI.mBtnReveal.onclick = () => {
+            // Força a exibição imediata em vez de depender apenas do onload (bugs de cache)
             UI.mImage.src = state.currentQuestion.revealImage;
-            UI.mImage.classList.remove('hidden');
+            UI.mImage.classList.remove('hidden'); 
             UI.mBtnReveal.classList.add('hidden');
         };
     }
@@ -443,13 +449,7 @@ function handleAnswer(selectedId, btnElement) {
     
     // Auto-scroll to feedback/action area
     setTimeout(() => {
-        const modalContent = document.querySelector('.modal-content');
-        if (modalContent) {
-            modalContent.scrollTo({
-                top: modalContent.scrollHeight,
-                behavior: 'smooth'
-            });
-        }
+        UI.mAction.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }, 100);
 
     UI.mAction.onclick = () => {
@@ -794,45 +794,68 @@ function initTicker() {
 }
 
 // Audio System (Synthesizer to avoid external file dependencies)
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+let audioCtx;
+function initAudio() {
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+}
 
 function playSuccessSound() {
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-    
-    // Arpeggio Happy Chime: C5, E5, G5, C6
-    const frequencies = [523.25, 659.25, 783.99, 1046.50]; 
-    const now = audioCtx.currentTime;
-    
-    frequencies.forEach((freq, idx) => {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        const filter = audioCtx.createBiquadFilter();
+    initAudio();
+    audioCtx.resume().then(() => {
+        const now = audioCtx.currentTime;
+        // Arpeggio Happy Chime: C5, E5, G5, C6
+        const frequencies = [523.25, 659.25, 783.99, 1046.50]; 
         
-        osc.connect(filter);
-        filter.connect(gain);
-        gain.connect(audioCtx.destination);
-        
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(freq, now);
-        
-        // Add a little sparkle
-        filter.type = 'highpass';
-        filter.frequency.setValueAtTime(800, now);
-        
-        // Magic envelope
-        gain.gain.setValueAtTime(0, now);
-        gain.gain.linearRampToValueAtTime(0.15, now + 0.03 + (idx * 0.08));
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5 + (idx * 0.08));
-        
-        osc.start(now + (idx * 0.08));
-        osc.stop(now + 1.2 + (idx * 0.08));
+        frequencies.forEach((freq, idx) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            const filter = audioCtx.createBiquadFilter();
+            
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            // Triangle wave for a nice 'ding' tone
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, now);
+            
+            filter.type = 'highpass';
+            filter.frequency.setValueAtTime(500, now);
+            
+            // Magic envelope using setTargetAtTime instead of strict ramps
+            const startTime = now + (idx * 0.15);
+            gain.gain.setValueAtTime(0, now);
+            
+            // Volume up quickly to 0.4
+            gain.gain.setTargetAtTime(0.4, startTime, 0.02);
+            
+            // Decay to 0 smoothly
+            gain.gain.setTargetAtTime(0, startTime + 0.1, 0.3);
+            
+            osc.start(startTime);
+            osc.stop(startTime + 1.5);
+        });
     });
 }
 
 // Start Menu Logic
-document.getElementById('btn-start-game').addEventListener('click', () => {
-    // Unlock Web Audio API on first user interaction
-    if (audioCtx.state === 'suspended') audioCtx.resume();
+let hasStarted = false;
+const startJourney = (e) => {
+    if (hasStarted) return;
+    hasStarted = true;
+    if (e && e.type === 'touchstart') e.preventDefault(); // Prevents double firing
+    
+    // Unlock Web Audio API safely
+    try {
+        initAudio();
+    } catch(err) {
+        console.warn('Audio unlock blocked on this device', err);
+    }
     
     const splash = document.getElementById('splash-screen');
     splash.style.opacity = '0';
@@ -842,4 +865,8 @@ document.getElementById('btn-start-game').addEventListener('click', () => {
         initGame();
         initTicker();
     }, 500);
+};
+
+['click', 'touchstart'].forEach(evt => {
+    document.getElementById('btn-start-game').addEventListener(evt, startJourney, { passive: false });
 });
