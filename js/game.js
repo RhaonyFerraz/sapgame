@@ -497,6 +497,12 @@ function openModal(title, text) {
     }
     
     UI.modal.classList.remove('hidden');
+
+    // Força o scroll para o topo toda vez que abrir qualquer modal
+    setTimeout(() => {
+        const modalContent = document.querySelector('.modal-content');
+        if (modalContent) modalContent.scrollTop = 0;
+    }, 10);
 }
 
 function closeModal() {
