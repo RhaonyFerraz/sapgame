@@ -164,23 +164,16 @@ button:disabled {
 .board {
     position: absolute;
     bottom: 5%;
-    width: 90%;
+    width: 100%;
+    padding-left: 5%;
     pointer-events: auto;
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
 }
 
 .board::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 20px;
-    right: 20px;
-    height: 4px;
-    background: rgba(255,255,255,0.1);
-    transform: translateY(-50%);
-    z-index: 0;
+    display: none;
 }
 
 .space {
@@ -230,10 +223,12 @@ button:disabled {
 
 .space.start { 
     background: var(--success); 
+    color: #000;
     border-color: var(--success); 
     box-shadow: 0 0 30px var(--success-glow); 
-    width: 160px; /* Wider for the button */
-    padding: 0;
+    width: auto;
+    min-width: 200px;
+    padding: 0 1.5rem;
     overflow: hidden;
 }
 
@@ -487,6 +482,10 @@ button:disabled {
         border-width: 2px;
         padding: 0;
     }
+    .board {
+        padding-left: 0;
+        justify-content: center;
+    }
 }
 @media (max-width: 550px) {
     .hud {
@@ -534,6 +533,28 @@ button:disabled {
     .option-btn {
         padding: 0.8rem 1rem;
         font-size: 0.9rem;
+    }
+    .modal-actions {
+        flex-direction: column;
+        width: 100%;
+        gap: 0.6rem;
+    }
+    .modal-actions button {
+        width: 100%;
+        margin: 0;
+    }
+    .space.start {
+        min-width: 150px;
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+    }
+    .bank-tabs {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    .bank-tab {
+        width: 100%;
+        text-align: center;
     }
 }
 @media (max-height: 700px) {

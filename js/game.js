@@ -2,12 +2,13 @@ import { questionsList, loadQuestions } from './questions.js';
 import { translations } from './translations.js';
 
 const GRAVITY_IMAGES = [
-    "gravityvr/2026-03-27_2026-03-27_Untitled_18-33-28r__18-40-36 (1).png",
-    "gravityvr/2026-03-27_2026-03-27_Untitled_18-33-28r__18-40-36.png",
-    "gravityvr/2026-03-27_2026-03-27_Untitled_18-33-28r__18-41-05 (1).png",
-    "gravityvr/2026-03-27_2026-03-27_Untitled_18-33-28r__18-41-05.png",
-    "gravityvr/2026-03-27_2026-03-27_Untitled_18-33-28r__18-41-42.png",
-    "gravityvr/Captura de Tela (15).png"
+    "cenario1/01.png",
+    "cenario1/02.png",
+    "cenario1/03.png",
+    "cenario1/04.png",
+    "cenario1/05.png",
+    "cenario1/06.png",
+    "cenario1/07.png"
 ];
 
 const state = {
@@ -180,28 +181,20 @@ async function initGame() {
 
 function renderBoard() {
     UI.board.innerHTML = '';
-    for (let idx = 1; idx <= 10; idx++) {
-        const div = document.createElement('div');
-        div.className = 'space';
-        if (idx === 1 && state.pos === 1) {
-            div.classList.add('start');
-            div.classList.add('clickable');
-            div.innerHTML = `<span>Iniciar</span>`;
-            div.onclick = startTurn;
-        } else if (idx === state.pos) {
-            div.classList.add('active');
-            div.classList.add('clickable');
-            div.innerHTML = `<span>Click</span>`; // Prompt to click
-            div.onclick = startTurn;
-        } else if (idx === 10) {
-            div.classList.add('finish');
-            div.innerHTML = '🏁';
-        } else {
-            div.innerHTML = idx;
-        }
-        
-        UI.board.appendChild(div);
+    
+    const div = document.createElement('div');
+    div.className = 'space start clickable';
+    
+    if (state.pos === 1) {
+        div.innerHTML = `<span>Questão 1</span>`;
+    } else if (state.pos < 10) {
+        div.innerHTML = `<span>Questão ${state.pos}</span>`;
+    } else {
+        div.innerHTML = `<span>🏁 Questão Final (10)</span>`;
     }
+    
+    div.onclick = startTurn;
+    UI.board.appendChild(div);
 }
 
 function updateHUD() {
