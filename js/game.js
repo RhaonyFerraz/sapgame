@@ -813,32 +813,23 @@ function initAudio() {
 function playSuccessSound() {
     initAudio();
     audioCtx.resume().then(() => {
-        const frequencies = [523.25, 659.25, 783.99, 1046.50]; 
         const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
         
-        frequencies.forEach((freq, idx) => {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            const filter = audioCtx.createBiquadFilter();
-            
-            osc.connect(filter);
-            filter.connect(gain);
-            gain.connect(audioCtx.destination);
-            
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(freq, now);
-            
-            filter.type = 'highpass';
-            filter.frequency.setValueAtTime(800, now);
-            
-            const startTime = now + (idx * 0.08);
-            gain.gain.setValueAtTime(0, now);
-            gain.gain.linearRampToValueAtTime(0.15, startTime + 0.03);
-            gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.5);
-            
-            osc.start(startTime);
-            osc.stop(startTime + 1.2);
-        });
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        osc.type = 'sine'; // Som suave e limpo
+        osc.frequency.setValueAtTime(880, now); // Nota Lá (A5) - Tom de acerto agradável
+        
+        gain.gain.setValueAtTime(0, now);
+        // Ataque e decaimento suaves para um "bip" amigável
+        gain.gain.linearRampToValueAtTime(0.2, now + 0.02); 
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3); 
+        
+        osc.start(now);
+        osc.stop(now + 0.4);
     });
 }
 
