@@ -220,7 +220,7 @@ function updateHUD() {
 
 function updateBackgroundImage() {
     const imgUrl = GRAVITY_IMAGES[state.bgIndex];
-    document.body.style.backgroundImage = `linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('${imgUrl}')`;
+    document.body.style.backgroundImage = `linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url('${imgUrl}')`;
 }
 
 function startTurn() {
