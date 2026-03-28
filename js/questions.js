@@ -14,11 +14,12 @@ export async function loadQuestions(lang = 'pt') {
                 `${folder}/pergunta0${i}.txt`,
                 `${folder}/prgunta0${i}.txt`
             ];
-            
             let response = null;
             for (let url of urls) {
                 try {
-                    let res = await fetch(url);
+                    // Adiciona timestamp para furar o cache do navegador
+                    let cacheBuster = '?t=' + new Date().getTime();
+                    let res = await fetch(url + cacheBuster);
                     if (res.ok) {
                         console.log(`Successfully loaded: ${url}`);
                         response = res;

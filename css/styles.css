@@ -56,16 +56,7 @@ body {
     background-position: center;
     background-repeat: no-repeat;
     background-attachment: fixed;
-    transition: background-image 0.8s ease-in-out;
-}
-
-body::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: url('https://www.transparenttextures.com/patterns/carbon-fibre.png');
-    opacity: 0.05;
-    pointer-events: none;
+    /* transition removido para evitar perda de qualidade na renderização do Chrome */
 }
 
 .hud {
