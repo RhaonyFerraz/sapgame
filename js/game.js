@@ -712,5 +712,32 @@ function processStrategicTurn() {
     }
 }
 
+/* --- Ticker Tips System --- */
+const TICKER_TIPS = [
+    "DICA SAP: Sempre verifique seu saldo no Banco antes de comprar consultar extras.",
+    "DICA SAP: O Módulo de Compras (Purchasing) gerencia toda a entrada de fornecedores.",
+    "BÔNUS: Responder corretamente aos quizzes no primeiro turno te dá recompensas altas!",
+    "DICA SAP: Você pode pegar empréstimos caso fique sem caixa, mas cuidado com os juros!",
+    "ESTRATÉGIA: Infraestrutura avançada aumenta massivamente seu lucro por rodada.",
+    "DICA SAP: O SAP HANA processa dados em memória para gerar relatórios em segundos.",
+    "ESTRATÉGIA: A aba de Investimentos ajuda a escalar seus negócios passivamente.",
+    "DICA SAP: Contratar Consultores blinda sua empresa de Eventos Críticos."
+];
+let currentTipIndex = 0;
+
+function initTicker() {
+    const tickerEl = document.getElementById('ticker-text');
+    if (!tickerEl) return;
+    
+    tickerEl.textContent = TICKER_TIPS[0];
+    
+    // Mudar a dica a cada vez que a animação (16s) terminar e recomeçar
+    tickerEl.addEventListener('animationiteration', () => {
+        currentTipIndex = (currentTipIndex + 1) % TICKER_TIPS.length;
+        tickerEl.textContent = TICKER_TIPS[currentTipIndex];
+    });
+}
+
 // Ensure the game builds up visually
 initGame();
+initTicker();
