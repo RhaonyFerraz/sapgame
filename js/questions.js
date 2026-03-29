@@ -1,6 +1,6 @@
-export let questionsList = [];
+window.questionsList = [];
 
-export async function loadQuestions(lang = 'pt') {
+window.loadQuestions = async (lang = 'pt') => {
     questionsList.length = 0; // Clear existing
     const folder = lang === 'pt' ? 'perguntas' : `perguntas/${lang}`;
     

@@ -1,5 +1,4 @@
-import { questionsList, loadQuestions } from './questions.js';
-import { translations } from './translations.js';
+// SAP Game - Logic Core
 
 const GRAVITY_IMAGES = [
     "cenario1/01.png",
@@ -15,8 +14,13 @@ const GRAVITY_IMAGES = [
     "cenario1/11.png"
 ];
 
+let currentLang = 'pt';
+try {
+    currentLang = localStorage.getItem('sap-game-lang') || 'pt';
+} catch(e) { console.warn("localStorage inacessível"); }
+
 const state = {
-    language: localStorage.getItem('sap-game-lang') || 'pt',
+    language: currentLang,
     pos: 1,
     money: 500, // Capital inicial
     level: 1, // 1: Pequena, 2: Média, 3: Grande
@@ -35,8 +39,66 @@ const state = {
         marketing: 0,
         logistics: 0
     },
+    inventory: {
+        warehouse: 10000,
+        machinery: 0,
+        packaging: 800,
+        rawMaterials: 0,
+        finishedGoods: 780
+    },
+    expensePenalty: 0,
+    expensePaid: false,
+    expenses: {
+        employees: 200,
+        accounting: 80,
+        electricity: 150,
+        water: 60,
+        internet: 50
+    },
     bgIndex: 0
 };
+
+// --- Start Screen Logic (Promoted for priority) ---
+let hasStarted = false;
+const startJourney = (e) => {
+    console.log("startJourney acionado!", e ? e.type : 'manual');
+    if (hasStarted) return;
+    hasStarted = true;
+    if (e && e.type === 'touchstart') e.preventDefault();
+    
+    try {
+        initAudio();
+    } catch(err) {
+        console.warn('Audio unlock blocked', err);
+    }
+    
+    const splash = document.getElementById('splash-screen');
+    if (splash) {
+        splash.style.opacity = '0';
+        setTimeout(() => {
+            splash.style.display = 'none';
+            console.log("Splash removido, chamando initGame...");
+            initGame();
+            initTicker();
+        }, 500);
+    } else {
+        console.warn("Splash screen not found, starting game anyway...");
+        initGame();
+        initTicker();
+    }
+};
+// Bind to window for onclick fallback
+window.startJourney = startJourney;
+
+// Attach listeners immediately
+document.addEventListener('DOMContentLoaded', () => {
+    const startBtn = document.getElementById('btn-start-game');
+    if (startBtn) {
+        ['click', 'touchstart'].forEach(evt => {
+            startBtn.addEventListener(evt, startJourney, { passive: false });
+        });
+    }
+});
 
 const STRATEGIC_DATA = {
     infra: { name: "Infraestrutura", baseCost: 500, costMult: 1.5, revenue: 100 },
@@ -46,45 +108,80 @@ const STRATEGIC_DATA = {
     logistics: { name: "Logística", baseCost: 700, costMult: 1.5, revenue: 140 }
 };
 
-const UI = {
-    money: document.getElementById('money'),
-    level: document.getElementById('level'),
-    consultants: document.getElementById('consultants'),
-    consultantsModal: document.getElementById('consultants-modal'),
-    btnBuy: document.getElementById('btn-buy-consultant'),
-    board: document.getElementById('board-container'),
-    modal: document.getElementById('modal'),
-    mTitle: document.getElementById('modal-title'),
-    mText: document.getElementById('modal-text'),
-    mOptions: document.getElementById('modal-options'),
-    mFeedback: document.getElementById('modal-feedback'),
-    mAction: document.getElementById('modal-action-btn'),
-    mBtnBonus: document.getElementById('mBtnBonus'),
-    mBtnReveal: document.getElementById('btn-reveal'),
-    mImage: document.getElementById('modal-image'),
-    
-    // Bank UI
-    bankModal: document.getElementById('bank-modal'),
-    btnOpenBank: document.getElementById('btn-open-bank'),
-    btnCloseBank: document.getElementById('btn-close-bank'),
-    bankTabs: document.querySelectorAll('.bank-tab'),
-    bankPanels: document.querySelectorAll('.bank-panel'),
-    loanAmount: document.getElementById('loan-amount'),
-    investAmount: document.getElementById('invest-amount'),
-    investDuration: document.getElementById('invest-duration'),
-    btnConfirmLoan: document.getElementById('btn-confirm-loan'),
-    btnConfirmInvest: document.getElementById('btn-confirm-invest'),
-    
-    // Strategic Investments UI
-    investModal: document.getElementById('invest-modal'),
-    btnOpenInvest: document.getElementById('btn-open-invest'),
-    btnCloseInvest: document.getElementById('btn-close-invest'),
-    totalRevenue: document.getElementById('total-revenue-val'),
+let UI = {};
 
-    // Lang Switcher
-    btnLangPt: document.getElementById('btn-lang-pt'),
-    btnLangEn: document.getElementById('btn-lang-en')
-};
+function updateUIReferences() {
+    UI = {
+        money: document.getElementById('money'),
+        level: document.getElementById('level'),
+        consultants: document.getElementById('consultants'),
+        consultantsModal: document.getElementById('consultants-modal'),
+        btnBuy: document.getElementById('btn-buy-consultant'),
+        board: document.getElementById('board-container'),
+        modal: document.getElementById('modal'),
+        mTitle: document.getElementById('modal-title'),
+        mText: document.getElementById('modal-text'),
+        mOptions: document.getElementById('modal-options'),
+        mFeedback: document.getElementById('modal-feedback'),
+        mAction: document.getElementById('modal-action-btn'),
+        mBtnBonus: document.getElementById('mBtnBonus'),
+        mBtnReveal: document.getElementById('btn-reveal'),
+        mImage: document.getElementById('modal-image'),
+        mBtnNo: document.getElementById('modal-no-btn'),
+        
+        // Bank UI
+        bankModal: document.getElementById('bank-modal'),
+        btnOpenBank: document.getElementById('btn-open-bank'),
+        btnCloseBank: document.getElementById('btn-close-bank'),
+        bankTabs: document.querySelectorAll('.bank-tab'),
+        bankPanels: document.querySelectorAll('.bank-panel'),
+        loanAmount: document.getElementById('loan-amount'),
+        investAmount: document.getElementById('invest-amount'),
+        investDuration: document.getElementById('invest-duration'),
+        btnConfirmLoan: document.getElementById('btn-confirm-loan'),
+        btnConfirmInvest: document.getElementById('btn-confirm-invest'),
+        
+        // Strategic Investments UI
+        investModal: document.getElementById('invest-modal'),
+        btnOpenInvest: document.getElementById('btn-open-invest'),
+        btnCloseInvest: document.getElementById('btn-close-invest'),
+        
+        // Inventory UI
+        inventoryModal: document.getElementById('inventory-modal'),
+        btnOpenInventory: document.getElementById('btn-open-inventory'),
+        btnCloseInventory: document.getElementById('btn-close-inventory'),
+        
+        // Expenses UI
+        expensesModal: document.getElementById('expenses-modal'),
+        btnOpenExpenses: document.getElementById('btn-open-expenses'),
+        btnCloseExpenses: document.getElementById('btn-close-expenses'),
+        
+        // Stats elements
+        invWarehouse: document.getElementById('inv-warehouse'),
+        invMachinery: document.getElementById('inv-machinery'),
+        invPackaging: document.getElementById('inv-packaging'),
+        invRawMaterials: document.getElementById('inv-raw-materials'),
+        invFinishedGoods: document.getElementById('inv-finished-goods'),
+
+        expEmployees: document.getElementById('exp-employees'),
+        expAccounting: document.getElementById('exp-accounting'),
+        expElectricity: document.getElementById('exp-electricity'),
+        expWater: document.getElementById('exp-water'),
+        expInternet: document.getElementById('exp-internet'),
+        expLoans: document.getElementById('exp-loans'),
+        expPenalty: document.getElementById('exp-penalty'),
+        expTotal: document.getElementById('exp-total'),
+        expenseDecisionBox: document.getElementById('expense-decision-box'),
+        btnPayNow: document.getElementById('btn-pay-now'),
+        btnPayLater: document.getElementById('btn-pay-later'),
+        
+        totalRevenue: document.getElementById('total-revenue-val'),
+
+        // Lang Switcher
+        btnLangPt: document.getElementById('btn-lang-pt'),
+        btnLangEn: document.getElementById('btn-lang-en')
+    };
+}
 
 // --- Localization Core ---
 
@@ -141,37 +238,61 @@ async function changeLanguage(lang) {
 }
 
 async function initGame() {
-    await loadQuestions(state.language);
-    state.questions = [...questionsList];
+    updateUIReferences();
+    console.log("Iniciando Jogo... Verificando referências UI:");
+    Object.keys(UI).forEach(k => {
+        if (!UI[k] && !['bankTabs','bankPanels'].includes(k)) console.warn(`Elemento não encontrado: ${k}`);
+    });
 
+    try {
+        await loadQuestions(state.language);
+        state.questions = [...questionsList];
+    } catch(e) {
+        console.error("Erro ao carregar perguntas:", e);
+    }
+
+    try {
+        renderBoard();
+        updateHUD();
+    } catch(e) {
+        console.error("Erro ao renderizar tabuleiro/HUD:", e);
+    }
     
-    renderBoard();
-    updateHUD();
-    
-    // Binding events
-    UI.mAction.addEventListener('click', closeModal);
-    UI.btnBuy.addEventListener('click', buyConsultant);
+    // Binding events safely
+    if (UI.mAction) UI.mAction.addEventListener('click', closeModal);
+    if (UI.btnBuy) UI.btnBuy.addEventListener('click', buyConsultant);
     
     // Bank events
-    UI.btnOpenBank.addEventListener('click', openBank);
-    UI.btnCloseBank.addEventListener('click', closeBank);
+    if (UI.btnOpenBank) UI.btnOpenBank.addEventListener('click', openBank);
+    if (UI.btnCloseBank) UI.btnCloseBank.addEventListener('click', closeBank);
     UI.bankTabs.forEach(tab => tab.addEventListener('click', () => switchBankTab(tab.dataset.tab)));
     
-    UI.loanAmount.addEventListener('input', updateLoanPreview);
+    if (UI.loanAmount) UI.loanAmount.addEventListener('input', updateLoanPreview);
     document.querySelectorAll('input[name="loan-installments"]').forEach(i => i.addEventListener('change', updateLoanPreview));
     
-    UI.investAmount.addEventListener('input', updateInvestPreview);
-    UI.investDuration.addEventListener('input', updateInvestPreview);
+    if (UI.investAmount) UI.investAmount.addEventListener('input', updateInvestPreview);
+    if (UI.investDuration) UI.investDuration.addEventListener('input', updateInvestPreview);
     
-    UI.btnConfirmLoan.addEventListener('click', confirmLoan);
-    UI.btnConfirmInvest.addEventListener('click', confirmInvest);
+    if (UI.btnConfirmLoan) UI.btnConfirmLoan.addEventListener('click', confirmLoan);
+    if (UI.btnConfirmInvest) UI.btnConfirmInvest.addEventListener('click', confirmInvest);
     
     // Strategic Invest events
-    UI.btnOpenInvest.addEventListener('click', openInvestments);
-    UI.btnCloseInvest.addEventListener('click', closeInvestments);
+    if (UI.btnOpenInvest) UI.btnOpenInvest.addEventListener('click', openInvestments);
+    if (UI.btnCloseInvest) UI.btnCloseInvest.addEventListener('click', closeInvest);
+    
+    // Inventory events
+    if (UI.btnOpenInventory) UI.btnOpenInventory.addEventListener('click', openInventory);
+    if (UI.btnCloseInventory) UI.btnCloseInventory.addEventListener('click', closeInventory);
+    
+    // Expenses events
+    if (UI.btnOpenExpenses) UI.btnOpenExpenses.addEventListener('click', openExpenses);
+    if (UI.btnCloseExpenses) UI.btnCloseExpenses.addEventListener('click', closeExpenses);
+    
+    if (UI.btnPayNow) UI.btnPayNow.addEventListener('click', payExpensesNow);
+    if (UI.btnPayLater) UI.btnPayLater.addEventListener('click', postponeExpenses);
 
-    UI.btnLangPt.addEventListener('click', () => changeLanguage('pt'));
-    UI.btnLangEn.addEventListener('click', () => changeLanguage('en'));
+    if (UI.btnLangPt) UI.btnLangPt.addEventListener('click', () => changeLanguage('pt'));
+    if (UI.btnLangEn) UI.btnLangEn.addEventListener('click', () => changeLanguage('en'));
 
     // Apply translation on load
     updateLanguageUI();
@@ -202,17 +323,79 @@ function renderBoard() {
 }
 
 function updateHUD() {
-    UI.money.innerText = state.money;
+    if (UI.money) UI.money.innerText = state.money;
     const levelKeys = ["level_small", "level_medium", "level_large"];
-    UI.level.innerText = t(levelKeys[state.level - 1]);
-    UI.consultants.innerText = state.consultants;
+    if (UI.level) UI.level.innerText = t(levelKeys[state.level - 1]);
+    
+    if (UI.consultants) UI.consultants.innerText = state.consultants;
     if (UI.consultantsModal) UI.consultantsModal.innerText = state.consultants;
     
-    // Background Image (Consistent with slideshow)
+    // Pulse effect for expenses if due
+    if (UI.btnOpenExpenses) {
+        if (state.pos >= 5 && !state.expensePaid) {
+            UI.btnOpenExpenses.classList.add('pulse-warning');
+        } else {
+            UI.btnOpenExpenses.classList.remove('pulse-warning');
+        }
+    }
+    
+    // Background Image
     updateBackgroundImage();
     
     // Limits
-    UI.btnBuy.disabled = state.money < 500 || state.consultants >= 2;
+    if (UI.btnBuy) UI.btnBuy.disabled = state.money < 500 || state.consultants >= 2;
+    updateInventoryUI();
+    updateExpensesUI();
+}
+
+function updateInventoryUI() {
+    if (!UI.inventoryModal) return;
+    UI.invWarehouse.innerText = state.inventory.warehouse.toLocaleString();
+    UI.invMachinery.innerText = state.inventory.machinery.toLocaleString();
+    UI.invPackaging.innerText = state.inventory.packaging.toLocaleString();
+    UI.invRawMaterials.innerText = state.inventory.rawMaterials.toLocaleString();
+    UI.invFinishedGoods.innerText = state.inventory.finishedGoods.toLocaleString();
+}
+
+function calculateTotalExpenses() {
+    let loanCosts = 0;
+    state.bank.loans.forEach(loan => {
+        loanCosts += (loan.amount * (1 + loan.interest / 100)) / loan.installments;
+    });
+    
+    return state.expenses.employees + state.expenses.accounting + 
+           state.expenses.electricity + state.expenses.water + 
+           state.expenses.internet + loanCosts + state.expensePenalty;
+}
+
+function updateExpensesUI() {
+    if (!UI.expensesModal) return;
+    
+    UI.expEmployees.innerText = state.expenses.employees.toLocaleString();
+    UI.expAccounting.innerText = state.expenses.accounting.toLocaleString();
+    UI.expElectricity.innerText = state.expenses.electricity.toLocaleString();
+    UI.expWater.innerText = state.expenses.water.toLocaleString();
+    UI.expInternet.innerText = state.expenses.internet.toLocaleString();
+    
+    // Calculate loan costs for display
+    let loanCosts = 0;
+    state.bank.loans.forEach(loan => {
+        loanCosts += (loan.amount * (1 + loan.interest / 100)) / loan.installments;
+    });
+    UI.expLoans.innerText = loanCosts.toLocaleString();
+    
+    const total = calculateTotalExpenses();
+    UI.expTotal.innerText = total.toLocaleString();
+    if (UI.expPenalty) UI.expPenalty.innerText = state.expensePenalty.toLocaleString();
+
+    // Show decision box if due
+    if (UI.expenseDecisionBox) {
+        if (state.pos >= 5 && !state.expensePaid) {
+            UI.expenseDecisionBox.classList.remove('hidden');
+        } else {
+            UI.expenseDecisionBox.classList.add('hidden');
+        }
+    }
 }
 
 function updateBackgroundImage() {
@@ -220,8 +403,14 @@ function updateBackgroundImage() {
     document.body.style.backgroundImage = `url('${imgUrl}')`;
 }
 
-function startTurn() {
-    // Disable clicks during the animation/modal to prevent triple-clicks
+function startTurn(skipExpenseCheck = false) {
+    // If debt is due and NOT paid, apply penalty for the current round
+    if (state.pos >= 5 && !state.expensePaid) {
+        state.expensePenalty += 10;
+        console.log(`Empresa operando com dívida (+10): R$ ${state.expensePenalty}`);
+    }
+
+    // Disable clicks
     document.querySelectorAll('.space').forEach(s => s.onclick = null);
     
     // Process Bank logic BEFORE the turn starts
@@ -433,7 +622,7 @@ function handleAnswer(selectedId, btnElement) {
             UI.mFeedback.innerHTML = `${selectedOpt.justification}<br><br>${t("ans_consultant")}`;
             UI.mFeedback.className = 'info';
         } else {
-            const loss = 200;
+            const loss = 100;
             state.money -= loss;
             UI.mFeedback.innerHTML = `${selectedOpt.justification}<br><br>${t("ans_wrong", { loss })}`;
             UI.mFeedback.className = 'error';
@@ -512,6 +701,30 @@ function openModal(title, text) {
 function closeModal() {
     UI.modal.classList.add('hidden');
     UI.mFeedback.classList.add('hidden');
+    UI.mBtnNo.classList.add('hidden');
+    UI.mAction.innerText = t("btn_continue");
+}
+
+/* --- Expense Decision Logic (Moved to Modal) --- */
+function payExpensesNow() {
+    const total = calculateTotalExpenses();
+    if (state.money >= total) {
+        state.money -= total;
+        state.expensePaid = true;
+        alert(t("alert_expenses_paid", { amount: total.toLocaleString() }));
+        updateHUD();
+        // Feedback visual no botão
+        if (UI.btnOpenExpenses) UI.btnOpenExpenses.classList.remove('pulse-warning');
+    } else {
+        alert(t("alert_no_funds"));
+    }
+}
+
+function postponeExpenses() {
+    state.expensePenalty += 10;
+    alert("Pagamento adiado! Multa de R$ 10 aplicada.");
+    updateHUD();
+    closeExpenses();
 }
 
 // Powerups Actions
@@ -531,6 +744,7 @@ function openBank() {
 }
 
 function closeBank() {
+    UI.bankModal.classList.remove('hidden');
     UI.bankModal.classList.add('hidden');
 }
 
@@ -718,7 +932,47 @@ function openInvestments() {
     UI.investModal.classList.remove('hidden');
 }
 
-function closeInvestments() {
+function closeInvest() {
+    UI.investModal.classList.add('hidden');
+}
+
+/* --- Inventory Logic --- */
+function openInventory() {
+    updateInventoryUI();
+    UI.inventoryModal.classList.remove('hidden');
+}
+
+function closeInventory() {
+    UI.inventoryModal.classList.add('hidden');
+}
+
+/* --- Expenses Logic --- */
+function openExpenses() {
+    updateExpensesUI();
+    UI.expensesModal.classList.remove('hidden');
+}
+
+function closeExpenses() {
+    UI.expensesModal.classList.add('hidden');
+}
+
+/* --- Inventory Logic --- */
+function openInventory() {
+    updateInventoryUI();
+    UI.inventoryModal.classList.remove('hidden');
+}
+
+function closeInventory() {
+    UI.inventoryModal.classList.add('hidden');
+}
+
+/* --- Strategic Investments Logic --- */
+function openInvestments() {
+    updateInvestUI();
+    UI.investModal.classList.remove('hidden');
+}
+
+function closeInvest() {
     UI.investModal.classList.add('hidden');
 }
 
@@ -779,14 +1033,14 @@ function processStrategicTurn() {
 
 /* --- Ticker Tips System --- */
 const TICKER_TIPS = [
-    "DICA SAP: Sempre verifique seu saldo no Banco antes de comprar consultar extras.",
+    "DICA SAP: Sempre verifique seu saldo no Banco antes de fazer novos investimentos.",
     "DICA SAP: O Módulo de Compras (Purchasing) gerencia toda a entrada de fornecedores.",
     "BÔNUS: Responder corretamente aos quizzes no primeiro turno te dá recompensas altas!",
     "DICA SAP: Você pode pegar empréstimos caso fique sem caixa, mas cuidado com os juros!",
     "ESTRATÉGIA: Infraestrutura avançada aumenta massivamente seu lucro por rodada.",
     "DICA SAP: O SAP HANA processa dados em memória para gerar relatórios em segundos.",
     "ESTRATÉGIA: A aba de Investimentos ajuda a escalar seus negócios passivamente.",
-    "DICA SAP: Contratar Consultores blinda sua empresa de Eventos Críticos."
+    "DICA SAP: O SAP B1 integra todos os departamentos da sua empresa em tempo real."
 ];
 let currentTipIndex = 0;
 
@@ -837,30 +1091,4 @@ function playSuccessSound() {
     });
 }
 
-// Start Menu Logic
-let hasStarted = false;
-const startJourney = (e) => {
-    if (hasStarted) return;
-    hasStarted = true;
-    if (e && e.type === 'touchstart') e.preventDefault(); // Prevents double firing
-    
-    // Unlock Web Audio API safely
-    try {
-        initAudio();
-    } catch(err) {
-        console.warn('Audio unlock blocked on this device', err);
-    }
-    
-    const splash = document.getElementById('splash-screen');
-    splash.style.opacity = '0';
-    setTimeout(() => {
-        splash.style.display = 'none';
-        // Now fully reveal the board interface setup!
-        initGame();
-        initTicker();
-    }, 500);
-};
-
-['click', 'touchstart'].forEach(evt => {
-    document.getElementById('btn-start-game').addEventListener(evt, startJourney, { passive: false });
-});
+// End of file

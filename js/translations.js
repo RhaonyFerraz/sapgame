@@ -1,4 +1,4 @@
-export const translations = {
+window.translations = {
     pt: {
         // HUD
         money: "Caixa",
@@ -13,6 +13,33 @@ export const translations = {
         level_large: "Grande",
         play_dice: "Iniciar Empresa 🏢",
         next_turn: "Próximo Turno 📄",
+
+        // Inventory Modal
+        inventory_title: "Gestão de Inventário",
+        inventory_subtitle: "Acompanhe seus ativos e estoques em tempo real.",
+        inventory: "Inventário",
+        warehouse: "Galpão",
+        machinery: "Maquinário",
+        packaging: "Embalagens",
+        raw_material: "Estoque Matéria-Prima",
+        finished_goods: "Estoque Acabado",
+
+        // Expenses Modal
+        expenses_title: "Controle de Despesas",
+        expenses_subtitle: "Gestão de custos fixos e variáveis da operação.",
+        expenses: "Despesas",
+        employees: "Colaboradores",
+        accounting: "Contabilidade",
+        electricity: "Energia",
+        water: "Água",
+        internet: "Internet",
+        total_expenses: "Total das Despesas",
+
+        // Decision Modal
+        pay_expenses_msg: "Você alcançou a Questão 5! Deseja pagar as despesas pendentes agora? Valor Total: R$ {total}",
+        btn_yes: "Sim, Pagar Agora",
+        btn_no: "Não, Pagar Depois (+$10 de multa/rodada)",
+        alert_expenses_paid: "Despesas pagas com sucesso! R$ {amount} debitados.",
 
         // Bank Modal
         bank_title: "Banco Corporativo SAP",
@@ -119,6 +146,33 @@ export const translations = {
         level_large: "Large",
         play_dice: "Start Company 🏢",
         next_turn: "Next Turn 📄",
+
+        // Inventory Modal
+        inventory_title: "Inventory Management",
+        inventory_subtitle: "Track your assets and stocks in real time.",
+        inventory: "Inventory",
+        warehouse: "Warehouse",
+        machinery: "Machinery",
+        packaging: "Packaging",
+        raw_material: "Raw Material Stock",
+        finished_goods: "Finished Goods Stock",
+
+        // Expenses Modal
+        expenses_title: "Expense Control",
+        expenses_subtitle: "Management of fixed and variable operational costs.",
+        expenses: "Expenses",
+        employees: "Employees",
+        accounting: "Accounting",
+        electricity: "Electricity",
+        water: "Water",
+        internet: "Internet",
+        total_expenses: "Total Expenses",
+
+        // Decision Modal
+        pay_expenses_msg: "You reached Question 5! Would you like to pay your pending expenses now? Total: R$ {total}",
+        btn_yes: "Yes, Pay Now",
+        btn_no: "No, Pay Later (+$10 penalty/round)",
+        alert_expenses_paid: "Expenses paid successfully! R$ {amount} deducted.",
 
         // Bank Modal
         bank_title: "SAP Corporate Bank",

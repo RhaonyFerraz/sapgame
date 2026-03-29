@@ -483,10 +483,53 @@ button:disabled {
     box-shadow: 0 0 10px rgba(52, 152, 219, 0.3);
 }
 
-@keyframes pulse-bonus {
-    0% { transform: scale(1); box-shadow: 0 0 10px rgba(241, 196, 15, 0.4); }
-    50% { transform: scale(1.05); box-shadow: 0 0 20px rgba(241, 196, 15, 0.6); }
-    100% { transform: scale(1); box-shadow: 0 0 10px rgba(241, 196, 15, 0.4); }
+.bank-btn-hud, .invest-btn-hud, .inventory-btn-hud {
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    font-weight: 700;
+    color: white;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    transition: all 0.3s;
+    font-family: inherit;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+}
+
+.bank-btn-hud { background: linear-gradient(135deg, #f39c12, #d35400); }
+.bank-btn-hud:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(243, 156, 18, 0.4); }
+
+.invest-btn-hud { background: linear-gradient(135deg, #9b51e0, #8e44ad); }
+.invest-btn-hud:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(155, 81, 224, 0.4); }
+
+.inventory-btn-hud { background: linear-gradient(135deg, #1abc9c, #16a085); }
+.inventory-btn-hud:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(26, 188, 156, 0.4); }
+
+.expenses-btn-hud { background: linear-gradient(135deg, #e67e22, #d35400); }
+.expenses-btn-hud:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(230, 126, 34, 0.4); }
+
+.bank-stat-card.highlight {
+    background: rgba(230, 126, 34, 0.1);
+    border: 1px solid rgba(230, 126, 34, 0.3);
+}
+
+.bank-stat-card.highlight span.value {
+    color: #e67e22;
+    font-size: 1.5rem;
+}
+
+@keyframes pulse-attention {
+    0% { transform: scale(1); box-shadow: 0 0 10px rgba(231, 76, 60, 0.4); }
+    50% { transform: scale(1.1); box-shadow: 0 0 25px rgba(231, 76, 60, 0.8), 0 0 40px rgba(231, 76, 60, 0.4); }
+    100% { transform: scale(1); box-shadow: 0 0 10px rgba(231, 76, 60, 0.4); }
+}
+
+.pulse-warning {
+    animation: pulse-attention 1s infinite alternate;
+    background: linear-gradient(135deg, #e74c3c, #c0392b) !important;
+    border: 2px solid #fff !important;
 }
 
 @media (max-width: 850px) {

@@ -19,7 +19,7 @@
                 <p style="margin-bottom: 15px;">Durante a jornada, aprenda conceitos de administração, ERP (como SAP) e inglês.</p>
                 <p style="font-size: 1.25rem; font-weight: 800; color: var(--success); text-align: center; margin-top: 25px;">Seu objetivo: transformar sua fábrica em uma grande indústria. Boa sorte!</p>
             </div>
-            <button id="btn-start-game" class="action-btn" style="font-size: 1.3rem; padding: 15px 50px; border-radius: 50px; box-shadow: 0 0 30px rgba(155, 81, 224, 0.4);">🚀 INICIAR JORNADA</button>
+            <button id="btn-start-game" class="action-btn" onclick="startJourney()" style="font-size: 1.3rem; padding: 15px 50px; border-radius: 50px; box-shadow: 0 0 30px rgba(155, 81, 224, 0.4);">🚀 INICIAR JORNADA</button>
         </div>
     </div>
 
@@ -27,8 +27,9 @@
         <div class="hud-group">
             <div class="stat"><span data-t="money">Caixa</span>: $ <span id="money">0</span></div>
             <div class="stat"><span data-t="level">Nível</span>: <span id="level" data-t-level="level_small">Pequena</span></div>
-            <div class="stat"><span data-t="consultants">Consultores</span>: <span id="consultants">0</span>/2</div>
             <button id="btn-open-bank" class="bank-btn-hud" data-t="bank">💰 Banco</button>
+            <button id="btn-open-inventory" class="inventory-btn-hud" data-t="inventory">🛍️ Inventário</button>
+            <button id="btn-open-expenses" class="expenses-btn-hud" data-t="expenses">💸 Despesas</button>
             <button id="btn-open-invest" class="invest-btn-hud" data-t="investments">💼 Investimentos</button>
         </div>
         <div class="pixel-ticker">
@@ -68,6 +69,7 @@
             </div>
             <p id="modal-feedback" class="hidden"></p>
             <div class="modal-actions">
+                <button id="modal-no-btn" class="hidden secondary-btn">NÃO</button>
                 <button id="modal-action-btn" class="hidden" data-t="btn_continue">Continuar</button>
                 <button id="mBtnBonus" class="hidden bonus-btn" data-t="btn_bonus">🎁 BÔNUS</button>
             </div>
@@ -274,6 +276,98 @@
         </div>
     </div> 
 
-    <script type="module" src="js/game.js"></script>
+    <!-- Inventory Modal -->
+    <div id="inventory-modal" class="modal-overlay hidden">
+        <div class="modal-content glass">
+            <h3 data-t="inventory_title">Gestão de Inventário</h3>
+            <p data-t="inventory_subtitle">Acompanhe seus ativos e estoques em tempo real.</p>
+            
+            <div class="bank-stats-grid">
+                <div class="bank-stat-card">
+                    <label data-t="warehouse">Galpão</label>
+                    <span class="value">$ <span id="inv-warehouse">0</span></span>
+                </div>
+                <div class="bank-stat-card">
+                    <label data-t="machinery">Maquinário</label>
+                    <span class="value">$ <span id="inv-machinery">0</span></span>
+                </div>
+                <div class="bank-stat-card">
+                    <label data-t="packaging">Embalagens</label>
+                    <span class="value" id="inv-packaging">0</span>
+                </div>
+                <div class="bank-stat-card">
+                    <label data-t="raw_material">Estoque Matéria-Prima</label>
+                    <span class="value">$ <span id="inv-raw-materials">0</span></span>
+                </div>
+                <div class="bank-stat-card">
+                    <label data-t="finished_goods">Estoque Acabado</label>
+                    <span class="value">$ <span id="inv-finished-goods">0</span></span>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button id="btn-close-inventory" class="action-btn" data-t="btn_close">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Expenses Modal -->
+    <div id="expenses-modal" class="modal-overlay hidden">
+        <div class="modal-content glass">
+            <h3 data-t="expenses_title">Controle de Despesas</h3>
+            <p data-t="expenses_subtitle">Gestão de custos fixos e variáveis da operação.</p>
+            
+            <div class="bank-stats-grid">
+                <div class="bank-stat-card">
+                    <label data-t="employees">Colaboradores</label>
+                    <span class="value">$ <span id="exp-employees">0</span></span>
+                </div>
+                <div class="bank-stat-card">
+                    <label data-t="accounting">Contabilidade</label>
+                    <span class="value">$ <span id="exp-accounting">0</span></span>
+                </div>
+                <div class="bank-stat-card">
+                    <label data-t="electricity">Energia</label>
+                    <span class="value">$ <span id="exp-electricity">0</span></span>
+                </div>
+                <div class="bank-stat-card">
+                    <label data-t="water">Água</label>
+                    <span class="value">$ <span id="exp-water">0</span></span>
+                </div>
+                <div class="bank-stat-card">
+                    <label data-t="internet">Internet</label>
+                    <span class="value">$ <span id="exp-internet">0</span></span>
+                </div>
+                <div class="bank-stat-card">
+                    <label data-t="bank_loans">Empréstimos</label>
+                    <span class="value">$ <span id="exp-loans">0</span></span>
+                </div>
+                <div class="bank-stat-card highlight">
+                    <label>Multa Acumulada (+$10/rodada)</label>
+                    <span class="value">$ <span id="exp-penalty">0</span></span>
+                </div>
+                <div class="bank-stat-card" style="grid-column: span 2; background: rgba(231, 76, 60, 0.1);">
+                    <label data-t="total_expenses">Total das Despesas</label>
+                    <span class="value" style="color: #e74c3c;">$ <span id="exp-total">0</span></span>
+                </div>
+            </div>
+
+            <div id="expense-decision-box" class="hidden" style="margin-top: 20px; padding: 15px; border-radius: 12px; border: 2px dashed #f1c40f; background: rgba(241, 196, 15, 0.05); text-align: center;">
+                <p style="margin-bottom: 10px; font-weight: 600; color: #f1c40f;">🚨 PAGAMENTO PENDENTE (QUESTÃO 5+)</p>
+                <div style="display: flex; gap: 10px; justify-content: center;">
+                    <button id="btn-pay-now" class="action-btn" data-t="btn_yes" style="background: var(--success); padding: 0.6rem 1.2rem;">Pagar Agora</button>
+                    <button id="btn-pay-later" class="secondary-btn" data-t="btn_no" style="padding: 0.6rem 1.2rem;">Pagar Depois (+$10)</button>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button id="btn-close-expenses" class="action-btn" data-t="btn_close">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/translations.js"></script>
+    <script src="js/questions.js"></script>
+    <script src="js/game.js"></script>
 </body>
 </html>
