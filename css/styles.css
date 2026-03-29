@@ -105,23 +105,24 @@ body {
 }
 
 .val-money {
-    color: #f39c12; /* Golden Orange */
+    color: #38D31A; /* Neon Green */
     font-weight: 900;
     font-size: 1.15rem;
-    text-shadow: 0 0 15px rgba(243, 156, 18, 0.2);
+    text-shadow: 0 0 15px rgba(56, 211, 26, 0.4);
 }
 
 .val-level {
-    color: #2ecc71; /* Emerald Green */
+    color: #38D31A; /* Neon Green */
     font-weight: 900;
     font-size: 1.15rem;
-    text-shadow: 0 0 15px rgba(46, 204, 113, 0.2);
+    text-shadow: 0 0 15px rgba(56, 211, 26, 0.4);
 }
 
 .icon-btn {
     background: transparent;
     color: #8b949e;
-    border: none;
+    border: 1px solid transparent;
+    border-radius: 8px;
     font-size: 0.85rem;
     font-weight: 600;
     display: flex;
@@ -132,46 +133,75 @@ body {
     transition: all 0.2s ease;
 }
 
-.icon-btn:hover {
+button.icon-btn:hover:not(:disabled) {
     color: #fff;
-    background: rgba(255, 255, 255, 0.05);
+    background: transparent;
+    border: 1px solid #38D31A;
+    box-shadow: 0 0 10px rgba(56, 211, 26, 0.3);
     border-radius: 8px;
+    transform: translateY(-2px);
 }
 
 .lang-btn {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    color: #8b949e;
-    padding: 0.5rem 0.8rem;
-    border-radius: 6px;
-    font-weight: 600;
-    font-size: 0.85rem;
-    display: flex;
-    align-items: center;
-    gap: 6px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    padding: 0.5rem;
     cursor: pointer;
     transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .lang-btn:hover {
-    background: rgba(255, 255, 255, 0.08);
-    color: #fff;
+    background: transparent !important;
+    border: 1px solid #38D31A;
+    box-shadow: 0 0 10px rgba(56, 211, 26, 0.3);
+    transform: translateY(-2px);
+}
+
+.lang-btn:hover svg {
+    stroke: #38D31A !important;
+}
+
+.lang-btn.active-toggle svg {
+    stroke: #38D31A !important;
 }
 
 .btn-iniciar {
-    background: linear-gradient(135deg, #f39c12, #e67e22) !important;
-    color: #000 !important;
+    background: transparent !important;
+    color: #38D31A !important;
     font-weight: 900;
     padding: 0.6rem 1.5rem !important;
     border-radius: 8px !important;
-    border: none !important;
+    border: 1px solid rgba(56, 211, 26, 0.2) !important;
     font-size: 0.95rem !important;
-    box-shadow: 0 4px 15px rgba(230, 126, 34, 0.3);
     cursor: pointer;
-    transition: transform 0.2s;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    animation: pulse-red-shadow 2s infinite ease-in-out; /* Sombra pulsante */
 }
 
-.btn-iniciar:hover { transform: scale(1.03); }
+@keyframes pulse-red-shadow {
+    0% { box-shadow: 0 0 10px rgba(231, 76, 60, 0.4); }
+    50% { box-shadow: 0 0 25px rgba(231, 76, 60, 0.7); }
+    100% { box-shadow: 0 0 10px rgba(231, 76, 60, 0.4); }
+}
+
+.btn-iniciar:hover { 
+    transform: translateY(-2px);
+    border: 1px solid #38D31A !important;
+    animation: none; /* Para a pulsação no hover para um brilho fixo e forte */
+    box-shadow: 0 0 25px rgba(231, 76, 60, 0.9);
+    background: rgba(56, 211, 26, 0.05) !important;
+}
+
+.btn-iniciar svg {
+    stroke: #38D31A;
+}
 
 /* Pixel Art Ticker Below HUD */
 .pixel-ticker-bar {
@@ -207,12 +237,12 @@ body {
 
 .ticker-content {
     font-family: 'Press Start 2P', monospace;
-    color: #f1c40f; /* Ticker Gold */
+    color: #38D31A; /* Neon Green */
     font-size: 0.8rem;
     display: inline-block;
     padding-left: 100%;
     animation: scroll-ticker 20s linear infinite;
-    text-shadow: 0 0 10px rgba(243, 156, 18, 0.3);
+    text-shadow: 0 0 10px rgba(56, 211, 26, 0.4);
 }
 
 @keyframes scroll-ticker {
@@ -235,21 +265,19 @@ button.buy-btn:hover:not(:disabled) {
 
 /* All HUD buttons - yellow theme */
 button.bank-btn-hud,
-button.invest-btn-hud,
-button.lang-btn {
+button.invest-btn-hud {
     background: var(--warning);
     color: #000;
     font-weight: 700;
 }
 
 button.bank-btn-hud:hover:not(:disabled),
-button.invest-btn-hud:hover:not(:disabled),
-button.lang-btn:hover:not(:disabled) {
+button.invest-btn-hud:hover:not(:disabled) {
     background: #cba038;
     transform: translateY(-2px);
 }
 
-button.lang-btn.active {
+button.invest-btn-hud.active {
     background: #cba038;
     box-shadow: 0 0 10px rgba(255, 221, 87, 0.5);
     outline: 2px solid rgba(255, 221, 87, 0.6);

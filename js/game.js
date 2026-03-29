@@ -50,7 +50,8 @@ const state = {
     bank: {
         loans: [],
         investments: [],
-        creditLimit: 2000
+        creditLimit: 2000,
+        isDefaulting: false // Bloqueio de novos créditos
     },
     upgrades: {
         infra: 0,
@@ -249,9 +250,12 @@ function updateLanguageUI() {
         el.title = t(el.getAttribute('data-t-title'));
     });
 
-    // Language toggle button
+    // Language toggle button (ícone único agora)
     if (UI.btnLangToggle) {
-        UI.btnLangToggle.innerHTML = `<span class="icon">🌐</span> ${state.language.toUpperCase()}`;
+        const flagImg = UI.btnLangToggle.querySelector('img');
+        if (flagImg) {
+            flagImg.src = state.language === 'en' ? "faviconsmenu/portuguese.png" : "faviconsmenu/english-language.png";
+        }
     }
 
     // Update level display which is dynamic
@@ -354,30 +358,20 @@ async function initGame() {
 }
 
 function renderBoard() {
-    UI.board.innerHTML = '';
-    
-    const div = document.createElement('div');
-    div.className = 'space start clickable';
-    
-    const totalQuestions = 300; // 30 levels of 10 questions
-    
-    if (state.pos === 1) {
-        div.innerHTML = `<span>Questão 1</span>`;
-    } else if (state.pos <= totalQuestions) {
-        div.innerHTML = `<span>Questão ${state.pos}</span>`;
-    } else {
-        div.innerHTML = `<span>🏁 Questão Final (${totalQuestions})</span>`;
-    }
-    
-    div.onclick = startTurn;
-    UI.board.appendChild(div);
+    // A interação agora é centralizada exclusivamente no botão START do HUD.
+    // O tabuleiro circular/linear foi removido conforme solicitado.
+    if (UI.board) UI.board.innerHTML = '';
 }
 
 function updateHUD() {
     if (UI.money) UI.money.innerText = `$ ${state.money.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
-    if (UI.level) {
-        UI.level.innerText = `${state.level.toString().padStart(2, '0')}/30`;
+    
+    // Atualizar o texto do botão START com a QUESTÃO atual (state.pos)
+    const startBtnText = UI.btnStartTurn ? UI.btnStartTurn.querySelector('[data-t="hud_start"]') : null;
+    if (startBtnText) {
+        startBtnText.innerText = t("hud_start", { level: state.pos.toString().padStart(2, '0') });
     }
+    
     
     // Pulse effect for expenses if due (Every 4 rounds)
     if (UI.btnOpenExpenses) {
@@ -407,17 +401,33 @@ function updateInventoryUI() {
 }
 
 function calculateDynamicExpenses() {
-    const config = GAME_CONFIG[state.difficulty] || GAME_CONFIG.NORMAL;
-    
-    let baseLevel = state.level <= 10 ? 1 : (state.level <= 20 ? 2 : 3);
-    const baseExpenses = { 1: 540, 2: 800, 3: 1200 }[baseLevel];
-    
-    const trainingReduction = state.upgrades.training * 20;
-    const logisticsReduction = state.upgrades.logistics * 15;
+    const baseLevel = state.level <= 10 ? 1 : (state.level <= 20 ? 2 : 3);
+    const multiplier = baseLevel;
+
+    const costs = {
+        employees: 300 * multiplier,
+        accounting: 100 * multiplier,
+        electricity: 80 * multiplier,
+        water: 30 * multiplier,
+        internet: 30 * multiplier
+    };
+
+    const reductions = {
+        accounting: state.upgrades.training * 20,
+        electricity: state.upgrades.logistics * 15
+    };
+
     const loanPenalty = state.bank.loans.length > 0 ? 100 : 0;
-    
-    const calculated = baseExpenses - trainingReduction - logisticsReduction + loanPenalty;
-    return Math.max(300, calculated);
+
+    const total = 
+        costs.employees + 
+        Math.max(10, costs.accounting - reductions.accounting) + 
+        Math.max(10, costs.electricity - reductions.electricity) + 
+        costs.water + 
+        costs.internet + 
+        loanPenalty;
+
+    return { total, costs, reductions, loanPenalty };
 }
 
 function calculateTotalExpenses() {
@@ -426,29 +436,39 @@ function calculateTotalExpenses() {
         loanCosts += loan.installmentVal;
     });
     
-    return calculateDynamicExpenses() + loanCosts + state.expensePenalty;
+    return calculateDynamicExpenses().total + loanCosts + state.expensePenalty;
 }
 
 function updateExpensesUI() {
     if (!UI.expensesModal) return;
     
-    const baseExpense = calculateDynamicExpenses();
-    UI.expEmployees.innerText = baseExpense.toLocaleString();
-    UI.expAccounting.innerText = `(-${state.upgrades.training * 20} Treinamento)`;
-    UI.expElectricity.innerText = `(-${state.upgrades.logistics * 15} Logística)`;
-    UI.expWater.innerText = state.bank.loans.length > 0 ? '(+100 Multa Banco)' : '0';
-    UI.expInternet.innerText = '0';
+    const dynamic = calculateDynamicExpenses();
     
-    // Calculate loan costs for display
+    UI.expEmployees.innerText = dynamic.costs.employees.toLocaleString();
+    
+    const accFinal = Math.max(10, dynamic.costs.accounting - dynamic.reductions.accounting);
+    UI.expAccounting.innerHTML = `${accFinal.toLocaleString()} <span style="font-size: 0.7rem; color: #2ecc71;">(-${dynamic.reductions.accounting} Tr.)</span>`;
+    
+    const elecFinal = Math.max(10, dynamic.costs.electricity - dynamic.reductions.electricity);
+    UI.expElectricity.innerHTML = `${elecFinal.toLocaleString()} <span style="font-size: 0.7rem; color: #2ecc71;">(-${dynamic.reductions.electricity} Log.)</span>`;
+    
+    UI.expWater.innerText = dynamic.costs.water.toLocaleString();
+    UI.expInternet.innerText = dynamic.costs.internet.toLocaleString();
+    
     let loanCosts = 0;
     state.bank.loans.forEach(loan => {
         loanCosts += loan.installmentVal;
     });
-    UI.expLoans.innerText = loanCosts.toLocaleString();
+    
+    const loanDisplay = loanCosts + dynamic.loanPenalty;
+    UI.expLoans.innerHTML = dynamic.loanPenalty > 0 
+        ? `${loanDisplay.toLocaleString()} <span style="font-size: 0.7rem; color: #e74c3c;">(+${dynamic.loanPenalty} Mora)</span>`
+        : loanDisplay.toLocaleString();
+    
+    if (UI.expPenalty) UI.expPenalty.innerText = state.expensePenalty.toLocaleString();
     
     const total = calculateTotalExpenses();
     UI.expTotal.innerText = total.toLocaleString();
-    if (UI.expPenalty) UI.expPenalty.innerText = state.expensePenalty.toLocaleString();
 
     // Show decision box if due (Every 4 rounds)
     if (UI.expenseDecisionBox) {
@@ -468,8 +488,10 @@ function updateBackgroundImage() {
 function startTurn(skipExpenseCheck = false) {
     // If debt is due and NOT paid, apply penalty for the current round (Every 4 rounds)
     if (state.pos >= 4 && !state.expensePaid) {
-        state.expensePenalty += 10;
-        console.log(`Empresa operando com dívida (+10): R$ ${state.expensePenalty}`);
+        // NOVO: Juros Compostos de 15% em vez de +10 fixo
+        const penaltyGrowth = state.expensePenalty === 0 ? 50 : Math.round(state.expensePenalty * 0.15);
+        state.expensePenalty += penaltyGrowth;
+        console.log(`Empresa operando com dívida (+${penaltyGrowth}): R$ ${state.expensePenalty}`);
     }
 
     // Disable clicks
@@ -836,8 +858,9 @@ function payExpensesNow() {
 }
 
 function postponeExpenses() {
-    state.expensePenalty += 10;
-    alert("Pagamento adiado! Multa de R$ 10 aplicada.");
+    const penaltyGrowth = state.expensePenalty === 0 ? 50 : Math.round(state.expensePenalty * 0.15);
+    state.expensePenalty += penaltyGrowth;
+    alert(`Pagamento adiado! Multa de R$ ${penaltyGrowth} (Juros sobre dívida) aplicada.`);
     updateHUD();
     closeExpenses();
 }
@@ -879,12 +902,17 @@ function switchBankTab(tabId) {
 function updateLoanPreview() {
     const amount = parseFloat(UI.loanAmount.value) || 0;
     const installments = parseInt(document.querySelector('input[name="loan-installments"]:checked').value);
-    const rate = 0.05 + (installments / 100); // Dynamic rate based on time
+    
+    // NOVO: Escudo de Confiança (Redução de 50% na taxa se tiver investimentos)
+    let rate = 0.05 + (installments / 100);
+    const hasConfidenceShield = state.bank.investments.length > 0;
+    if (hasConfidenceShield) rate *= 0.5;
     
     const total = amount * (1 + rate);
     const perMonth = total / installments;
     
-    document.getElementById('loan-rate').innerText = `${(rate * 100).toFixed(1)}%`;
+    const shieldText = hasConfidenceShield ? ' <span style="color: #2ecc71; font-size: 0.7rem;">(Escudo de Confiança Ativo -50%)</span>' : '';
+    document.getElementById('loan-rate').innerHTML = `${(rate * 100).toFixed(1)}%${shieldText}`;
     document.getElementById('loan-total').innerText = `R$ ${total.toFixed(2)}`;
     document.getElementById('loan-installment-val').innerText = `R$ ${perMonth.toFixed(2)}`;
 }
@@ -904,6 +932,11 @@ function confirmLoan() {
     const amount = parseFloat(UI.loanAmount.value);
     const installments = parseInt(document.querySelector('input[name="loan-installments"]:checked').value);
     
+    if (state.bank.isDefaulting) {
+        alert("❌ CRÉDITO BLOQUEADO! O banco não libera novos valores para empresas com parcelas em atraso.");
+        return;
+    }
+    
     if (isNaN(amount) || amount < 100) {
         alert(t("loan_min_amount"));
         return;
@@ -914,7 +947,10 @@ function confirmLoan() {
         return;
     }
     
-    const rate = 0.05 + (installments / 100);
+    // Aplicar Escudo de Confiança no cálculo final também
+    let rate = 0.05 + (installments / 100);
+    if (state.bank.investments.length > 0) rate *= 0.5;
+    
     const total = amount * (1 + rate);
     
     state.money += amount;
@@ -1020,6 +1056,7 @@ function updateBankUI() {
 function processBankTurn() {
     // Process Loans
     let debtToPay = 0;
+    state.bank.isDefaulting = false; // Reset temporary para checagem
     state.bank.loans = state.bank.loans.filter(loan => {
         if (state.money >= loan.installmentVal) {
             state.money -= loan.installmentVal;
@@ -1027,8 +1064,11 @@ function processBankTurn() {
             console.log(`Paga parcela de R$ ${loan.installmentVal}`);
             return loan.remainingInstallments > 0;
         } else {
-            alert(`⚠️ ${t("alert_no_funds")} (${t("loan_label")})`);
-            // Note: In a real game we might add penalties here
+            // CALOTE: Aplica penalidade de 20% no montante total daquele empréstimo
+            const penalty = loan.installmentVal * 1.2;
+            loan.installmentVal = penalty; // Aumenta valor da parcela pela mora
+            state.bank.isDefaulting = true; // Bloqueia novos créditos
+            alert(`⚠️ INADIMPLÊNCIA NO BANCO! Saldo insuficiente para pagar a parcela. Multa de 20% aplicada e crédito bloqueado.`);
             return true; 
         }
     });

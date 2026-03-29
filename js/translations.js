@@ -13,6 +13,7 @@ window.translations = {
         level_large: "Grande",
         play_dice: "Iniciar Empresa 🏢",
         next_turn: "Próximo Turno 📄",
+        hud_start: "START/{level}",
 
         // Inventory Modal
         inventory_title: "Gestão de Inventário",
@@ -146,6 +147,7 @@ window.translations = {
         level_large: "Large",
         play_dice: "Start Company 🏢",
         next_turn: "Next Turn 📄",
+        hud_start: "START/{level}",
 
         // Inventory Modal
         inventory_title: "Inventory Management",
