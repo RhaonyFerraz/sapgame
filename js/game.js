@@ -22,7 +22,7 @@ try {
 const DIFFICULTY = {
     NORMAL: {
         initialMoney: 800,
-        rewards: { correct: 300, wrong: -100 },
+        rewards: { correct: 150, wrong: -100 },
         expensesCycle: 4,
         expensesAmount: 540,
     }
@@ -124,7 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 const GAME_CONFIG = {
     NORMAL: {
-        correctBaseReward: 300,
+        correctBaseReward: 150,
         wrongBasePenalty: 100,
         expensesBase: 540,
         passiveRevenue: {
@@ -487,6 +487,13 @@ function updateBackgroundImage() {
 }
 
 function startTurn(skipExpenseCheck = false) {
+    // Hide ticker when turn starts
+    const tickerBar = document.getElementById('ticker-bar');
+    const tickerBtn = document.getElementById('btn-toggle-ticker');
+    if (tickerBar && !tickerBar.classList.contains('collapsed')) {
+        tickerBar.classList.add('collapsed');
+        if (tickerBtn) tickerBtn.classList.remove('active-toggle');
+    }
     // If debt is due and NOT paid, apply penalty for the current round (Every 4 rounds)
     if (state.pos >= 4 && !state.expensePaid) {
         // NOVO: Juros Compostos de 15% em vez de +10 fixo
@@ -498,9 +505,8 @@ function startTurn(skipExpenseCheck = false) {
     // Disable clicks
     document.querySelectorAll('.space').forEach(s => s.onclick = null);
     
-    // Process Bank logic BEFORE the turn starts
+    // Process Bank logic BEFORE the turn starts (Loans and Investments maturing)
     processBankTurn();
-    processStrategicTurn();
     
     if (state.pos > 300) {
         showGameOver();
@@ -574,6 +580,8 @@ function triggerEvent() {
 
         openModal(ctxEvent.title, ctxEvent.text);
         UI.mOptions.innerHTML = '';
+        if (UI.mBtnBonus) UI.mBtnBonus.classList.add('hidden');
+        if (UI.mBtnReveal) UI.mBtnReveal.classList.add('hidden');
         UI.mFeedback.innerHTML = ctxEvent.change > 0 ? `+ R$ ${ctxEvent.change} 💰` : `- R$ ${Math.abs(ctxEvent.change)} 💸`;
         UI.mFeedback.className = ctxEvent.change > 0 ? 'success' : 'error';
         UI.mFeedback.classList.remove('hidden');
@@ -594,10 +602,15 @@ function triggerEvent() {
         
         openModal(t("event_title") + " 📊", t(ev.key));
         UI.mOptions.innerHTML = '';
+        if (UI.mBtnBonus) UI.mBtnBonus.classList.add('hidden');
+        if (UI.mBtnReveal) UI.mBtnReveal.classList.add('hidden');
         UI.mFeedback.innerHTML = ev.change > 0 ? t("event_gain", { amount: ev.change }) : t("event_loss", { amount: Math.abs(ev.change) });
         UI.mFeedback.className = ev.change > 0 ? 'success' : 'error';
         UI.mFeedback.classList.remove('hidden');
     }
+
+    // Processar ganhos estratégicos (Upgrades) no evento surpresa também
+    processStrategicTurn();
     
     UI.mAction.classList.remove('hidden');
     UI.mAction.onclick = () => {
@@ -708,8 +721,10 @@ function askQuestion(skipRePick = false) {
         btn.onclick = () => handleAnswer(opt.id, btn);
         UI.mOptions.appendChild(btn);
     });
-    
     UI.mAction.classList.add('hidden'); // Ensure action button is hidden at start of question
+    
+    // Força o scroll para o topo após as alternativas serem inseridas
+    forceScrollToTop();
 }
 
 function handleAnswer(selectedId, btnElement) {
@@ -725,7 +740,7 @@ function handleAnswer(selectedId, btnElement) {
     
     if (isCorrect) {
         btnElement.classList.add('correct');
-        const reward = 300;
+        const reward = 150;
         state.money += reward;
         state.pos++;
         // Reset expense payment for the new cycle (Every 4 rounds)
@@ -782,15 +797,24 @@ function handleAnswer(selectedId, btnElement) {
     
     UI.mAction.classList.remove('hidden');
     
-    // Auto-scroll to feedback/action area
+    // Auto-scroll to feedback area
     setTimeout(() => {
-        UI.mAction.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        UI.mFeedback.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 100);
+
+    // Processar ganhos estratégicos (Upgrades) APÓS a ação para evitar "ganho no start"
+    processStrategicTurn();
 
     UI.mAction.onclick = () => {
         // GATILHO: Questão Surpresa após acertar a primeira questão
         if (isCorrect && state.pos === 2 && !state.surpriseShown1) {
             loadSurpriseQuestion(1);
+            return;
+        }
+        
+        // GATILHO: Questão Surpresa 2 após acertar a sexta questão
+        if (isCorrect && state.pos === 7 && !state.surpriseShown2) {
+            loadSurpriseQuestion(2);
             return;
         }
 
@@ -878,6 +902,9 @@ async function loadSurpriseQuestion(num) {
         // Iniciar Contagem Regressiva de 60 segundos
         startSurpriseTimer(60, num, correctAnswer);
 
+        // Força o scroll para o topo após as alternativas serem inseridas
+        forceScrollToTop();
+
     } catch (err) {
         console.error("Erro ao carregar surpresa:", err);
         closeModal();
@@ -928,18 +955,17 @@ function selectSurpriseOption(num, choice, correctLetter) {
     });
 
     // SEMPRE marcar como mostrada, independente de acerto ou erro
-    state.surpriseShown1 = true;
+    if (num === 1) state.surpriseShown1 = true;
+    if (num === 2) state.surpriseShown2 = true;
 
     if (isCorrect) {
         const bonus = 50;
         state.money = Number(state.money) + bonus;
         updateHUD();
-        UI.mFeedback.innerHTML = `
-            <div style="text-align:left; font-family: 'Courier New', monospace; font-size: 11px; color: #000; line-height: 1.8;">
-                <div style="background:#000080; color:#fff; padding:6px 10px; font-family:'Press Start 2P',cursive; font-size:9px; margin-bottom:12px;">
-                    ✅ PARABÉNS! +R$ ${bonus} creditado!
-                </div>
-
+        
+        let bonusLessonHTML = '';
+        if (num === 1) {
+            bonusLessonHTML = `
                 <b style="font-size:12px;">🎓 BÔNUS: Aula de Inglês no Mundo dos Negócios</b><br><br>
 
                 <b>📌 Frase principal do cliente:</b><br>
@@ -982,6 +1008,43 @@ function selectSurpriseOption(num, choice, correctLetter) {
                     ❌ "Check our website" &nbsp;&nbsp; ❌ "We are busy"<br>
                     ✔️ Sempre seja educado, claro e prestativo!
                 </div>
+            `;
+        } else if (num === 2) {
+            bonusLessonHTML = `
+                <b style="font-size:12px;">🎓 BÔNUS: Aula de Inglês no Mundo dos Negócios</b><br><br>
+
+                <b>📌 Frase importante:</b><br>
+                <span style="background:#fff; border:1px inset #808080; display:block; padding:6px; margin:6px 0;">
+                    "We can study this possibility and check viable options for your needs."
+                </span>
+                👉 <b>Significado:</b> "Podemos analisar essa possibilidade e verificar opções viáveis para sua necessidade."<br><br>
+
+                <b>🧠 Expressões importantes</b><br><br>
+
+                <b>1. "At the moment…"</b><br>
+                ➡️ Indica situação atual sem fechar portas<br><br>
+
+                <b>2. "Study this possibility"</b><br>
+                ➡️ Forma profissional de não dizer “não” diretamente<br><br>
+
+                <b>3. "Please share more details…"</b><br>
+                ➡️ Mantém a conversa ativa<br><br>
+
+                <div style="background:#808080; color:#fff; padding:6px 10px; font-size:10px;">
+                    🚀 <b>Dica de Ouro do Jogo:</b> Nunca feche portas para o cliente!<br>
+                    ✔️ Mesmo sem solução imediata, ofereça alternativas<br>
+                    ✔️ Isso mostra profissionalismo e interesse<br><br>
+                    ➡️ Empresas assim vendem mais 💰🔥
+                </div>
+            `;
+        }
+
+        UI.mFeedback.innerHTML = `
+            <div style="text-align:left; font-family: 'Courier New', monospace; font-size: 11px; color: #000; line-height: 1.8;">
+                <div style="background:#000080; border:2px solid #f1c40f; border-radius:4px; color:#f1c40f; padding:12px 10px; text-align:center; font-family:'Press Start 2P',cursive; font-size:12px; margin-bottom:12px; text-shadow: 1px 1px 0px #000; box-shadow: 0 4px 0px rgba(0,0,0,0.3);">
+                    ✅ PARABÉNS! +$ ${bonus} creditado!
+                </div>
+                ${bonusLessonHTML}
             </div>
         `;
         UI.mFeedback.className = 'success';
@@ -1003,9 +1066,9 @@ function selectSurpriseOption(num, choice, correctLetter) {
     UI.mAction.innerText = t("btn_continue");
     UI.mAction.classList.remove('hidden');
     
-    // Garantir que o botão de continuar apareça na tela (auto-scroll)
+    // Garantir que a mensagem de Parabéns/Erro apareça na tela (auto-scroll pro topo do feedback)
     setTimeout(() => {
-        UI.mAction.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        UI.mFeedback.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 100);
 
     UI.mAction.onclick = () => {
@@ -1035,6 +1098,21 @@ function showGameOver() {
     UI.mAction.onclick = () => location.reload();
 }
 
+// Função global e hiper-robusta para garantir o scroll
+function forceScrollToTop() {
+    try {
+        const mc = document.querySelector('#modal .modal-content');
+        if (mc) {
+            mc.scrollTop = 0;
+            // Tenta forçar de novo no próximo frame do navegador
+            requestAnimationFrame(() => {
+                mc.scrollTop = 0;
+                setTimeout(() => { mc.scrollTop = 0; }, 50);
+            });
+        }
+    } catch(e) {}
+}
+
 function openModal(title, text) {
     UI.mTitle.innerText = title;
     UI.mText.innerHTML = text;
@@ -1046,24 +1124,20 @@ function openModal(title, text) {
     }
     
     UI.modal.classList.remove('hidden');
-
-    // Força o scroll para o topo toda vez que abrir qualquer modal
-    setTimeout(() => {
-        const modalContent = document.querySelector('.modal-content');
-        if (modalContent) modalContent.scrollTop = 0;
-    }, 10);
+    forceScrollToTop();
 }
 
 function closeModal() {
-    stopSurpriseTimer(); // Garante que o timer não continue rodando em background
+    stopSurpriseTimer(); 
     UI.modal.classList.add('hidden');
     UI.mFeedback.classList.add('hidden');
     UI.mBtnNo.classList.add('hidden');
     
-    // Reseta a pele do modal para o padrão SAP (moderno)
     UI.modal.classList.remove('retro-skin');
-    
     UI.mAction.innerText = t("btn_continue");
+
+    // Limpa a rolagem (scroll) de forma oculta após a animação (400ms)
+    setTimeout(forceScrollToTop, 400);
 }
 
 /* --- Expense Decision Logic (Moved to Modal) --- */
