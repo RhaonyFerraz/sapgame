@@ -36,7 +36,7 @@ window.translations = {
         total_expenses: "Total das Despesas",
 
         // Decision Modal
-        pay_expenses_msg: "Você alcançou a Questão 5! Deseja pagar as despesas pendentes agora? Valor Total: R$ {total}",
+        pay_expenses_msg: "Nova rodada de faturamento alcançada! Deseja pagar as despesas agora? Valor Total: R$ {total}",
         btn_yes: "Sim, Pagar Agora",
         btn_no: "Não, Pagar Depois (+$10 de multa/rodada)",
         alert_expenses_paid: "Despesas pagas com sucesso! R$ {amount} debitados.",
@@ -169,7 +169,7 @@ window.translations = {
         total_expenses: "Total Expenses",
 
         // Decision Modal
-        pay_expenses_msg: "You reached Question 5! Would you like to pay your pending expenses now? Total: R$ {total}",
+        pay_expenses_msg: "New billing round reached! Would you like to pay your expenses now? Total: R$ {total}",
         btn_yes: "Yes, Pay Now",
         btn_no: "No, Pay Later (+$10 penalty/round)",
         alert_expenses_paid: "Expenses paid successfully! R$ {amount} deducted.",

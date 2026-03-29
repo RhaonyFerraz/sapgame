@@ -330,9 +330,9 @@ function updateHUD() {
     if (UI.consultants) UI.consultants.innerText = state.consultants;
     if (UI.consultantsModal) UI.consultantsModal.innerText = state.consultants;
     
-    // Pulse effect for expenses if due
+    // Pulse effect for expenses if due (Every 4 rounds)
     if (UI.btnOpenExpenses) {
-        if (state.pos >= 5 && !state.expensePaid) {
+        if (state.pos >= 4 && !state.expensePaid) {
             UI.btnOpenExpenses.classList.add('pulse-warning');
         } else {
             UI.btnOpenExpenses.classList.remove('pulse-warning');
@@ -388,9 +388,9 @@ function updateExpensesUI() {
     UI.expTotal.innerText = total.toLocaleString();
     if (UI.expPenalty) UI.expPenalty.innerText = state.expensePenalty.toLocaleString();
 
-    // Show decision box if due
+    // Show decision box if due (Every 4 rounds)
     if (UI.expenseDecisionBox) {
-        if (state.pos >= 5 && !state.expensePaid) {
+        if (state.pos >= 4 && !state.expensePaid) {
             UI.expenseDecisionBox.classList.remove('hidden');
         } else {
             UI.expenseDecisionBox.classList.add('hidden');
@@ -404,8 +404,8 @@ function updateBackgroundImage() {
 }
 
 function startTurn(skipExpenseCheck = false) {
-    // If debt is due and NOT paid, apply penalty for the current round
-    if (state.pos >= 5 && !state.expensePaid) {
+    // If debt is due and NOT paid, apply penalty for the current round (Every 4 rounds)
+    if (state.pos >= 4 && !state.expensePaid) {
         state.expensePenalty += 10;
         console.log(`Empresa operando com dívida (+10): R$ ${state.expensePenalty}`);
     }
@@ -591,6 +591,11 @@ function handleAnswer(selectedId, btnElement) {
         const reward = 300;
         state.money += reward;
         state.pos++;
+        // Reset expense payment for the new cycle (Every 4 rounds)
+        if (state.pos % 4 === 0) {
+            state.expensePaid = false;
+            console.log(`Nova rodada de faturamento! Iniciando ciclo: ${state.pos}`);
+        }
         
         UI.mFeedback.innerHTML = `${t("ans_correct", { reward })}<br><br>${selectedOpt.justification}`;
         UI.mFeedback.className = 'success';
