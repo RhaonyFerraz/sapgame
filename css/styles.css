@@ -1277,11 +1277,17 @@ button:disabled {
     background: rgba(0, 0, 0, 0.4);
     backdrop-filter: none;
     animation: retroOverlayIn 0.4s ease forwards;
+    
+    /* Empurra a janela para baixo, longe do letreiro */
+    align-items: flex-start;
+    padding: 80px 10px 10px 10px; /* Espaço em todos os lados */
+    overflow-y: auto; /* Scroll no overlay se necessário */
+    box-sizing: border-box;
 }
 
 /* Modal Content Retro */
 .modal-overlay.retro-skin .modal-content {
-    background: #c0c0c0 !important; /* Cinza Clássico Windows */
+    background: #c0c0c0 !important;
     border: 3px outset #ffffff !important;
     box-shadow: 2px 2px 0px #000, -2px -2px 0px #ffffff, 5px 5px 15px rgba(0,0,0,0.5) !important;
     border-radius: 0 !important;
@@ -1289,10 +1295,25 @@ button:disabled {
     color: #000 !important;
     font-family: 'Press Start 2P', cursive !important;
     max-width: 650px !important;
+    width: 100% !important;
+
+    /* Altura máxima relativa à tela — garante que nada some */
+    max-height: calc(100vh - 100px);
+    overflow-y: auto !important;
 
     /* Parallax Slide-in */
     animation: retroSlideIn 0.55s cubic-bezier(0.23, 1, 0.32, 1) forwards;
     transform-origin: left center;
+}
+
+/* Responsividade Mobile para o modal retro */
+@media (max-width: 600px) {
+    .modal-overlay.retro-skin {
+        padding: 60px 8px 8px 8px;
+    }
+    .modal-overlay.retro-skin .modal-content {
+        max-height: calc(100vh - 75px);
+    }
 }
 
 /* Titulo Retro */
@@ -1422,4 +1443,10 @@ button:disabled {
 
 .modal-overlay.retro-skin #modal-feedback.success { border-left: 8px solid #000080 !important; }
 .modal-overlay.retro-skin #modal-feedback.error { border-left: 8px solid #800000 !important; }
+
+/* Esconder botões não relevantes na questão surpresa */
+.modal-overlay.retro-skin #mBtnBonus,
+.modal-overlay.retro-skin #btn-reveal {
+    display: none !important;
+}
 

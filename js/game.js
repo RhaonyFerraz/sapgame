@@ -830,6 +830,9 @@ async function loadSurpriseQuestion(num) {
         UI.mAction.classList.add('hidden');
         UI.mOptions.innerHTML = '';
         
+        // Esconde o botão de Bônus — não aplicável à questão surpresa
+        if (UI.mBtnBonus) UI.mBtnBonus.classList.add('hidden');
+        
         // Ativa a pele Retro (Windows 95/98)
         UI.modal.classList.add('retro-skin');
         
@@ -931,7 +934,56 @@ function selectSurpriseOption(num, choice, correctLetter) {
         const bonus = 50;
         state.money = Number(state.money) + bonus;
         updateHUD();
-        UI.mFeedback.innerHTML = `✅ <b>PARABÉNS!</b><br><br>Sua resposta foi extremamente profissional e o cliente John Miller fechou o primeiro pedido!<br><br>💰 <b>BÔNUS RECEBIDO: R$ ${bonus}</b>`;
+        UI.mFeedback.innerHTML = `
+            <div style="text-align:left; font-family: 'Courier New', monospace; font-size: 11px; color: #000; line-height: 1.8;">
+                <div style="background:#000080; color:#fff; padding:6px 10px; font-family:'Press Start 2P',cursive; font-size:9px; margin-bottom:12px;">
+                    ✅ PARABÉNS! +R$ ${bonus} creditado!
+                </div>
+
+                <b style="font-size:12px;">🎓 BÔNUS: Aula de Inglês no Mundo dos Negócios</b><br><br>
+
+                <b>📌 Frase principal do cliente:</b><br>
+                <span style="background:#fff; border:1px inset #808080; display:block; padding:6px; margin:6px 0;">
+                    "I'm interested in learning more about your products."
+                </span>
+                👉 <b>Significado:</b> "Estou interessado em conhecer mais sobre seus produtos."<br><br>
+
+                <b>🧠 Expressões importantes</b><br><br>
+
+                <b>1. "I'm interested in…"</b><br>
+                ➡️ Usado para demonstrar interesse<br>
+                <span style="background:#fff; border:1px inset #808080; display:block; padding:5px; margin:4px 0;">
+                    I'm interested in your services.<br>
+                    <i>(Estou interessado nos seus serviços)</i>
+                </span><br>
+
+                <b>2. "Could you please…"</b><br>
+                ➡️ Forma educada de fazer pedidos<br>
+                <span style="background:#fff; border:1px inset #808080; display:block; padding:5px; margin:4px 0;">
+                    Could you please send me more details?<br>
+                    <i>(Você poderia me enviar mais detalhes?)</i>
+                </span>
+                💡 <b>Isso é MUITO usado no mundo corporativo!</b><br><br>
+
+                <b>3. "Looking forward to your response"</b><br>
+                ➡️ Forma profissional de encerrar um e-mail<br>
+                Significa: <i>"Aguardo sua resposta"</i><br><br>
+
+                <b>✍️ Estrutura básica de resposta profissional:</b><br>
+                <span style="background:#fff; border:1px inset #808080; display:block; padding:8px; margin:6px 0;">
+                    📌 Greeting → <i>Hello John,</i><br>
+                    📌 Agradecimento → <i>Thank you for your interest.</i><br>
+                    📌 Ação → <i>I will send you the details.</i><br>
+                    📌 Fechamento → <i>Best regards</i>
+                </span><br>
+
+                <div style="background:#808080; color:#fff; padding:6px 10px; font-size:10px;">
+                    🚀 <b>Dica de Ouro:</b> Evite respostas curtas ou frias:<br>
+                    ❌ "Check our website" &nbsp;&nbsp; ❌ "We are busy"<br>
+                    ✔️ Sempre seja educado, claro e prestativo!
+                </div>
+            </div>
+        `;
         UI.mFeedback.className = 'success';
         playSuccessSound();
     } else {
