@@ -23,25 +23,48 @@
         </div>
     </div>
 
-    <div class="hud">
-        <div class="hud-group">
-            <div class="stat"><span data-t="money">Caixa</span>: $ <span id="money">0</span></div>
-            <div class="stat"><span data-t="level">Nível</span>: <span id="level" data-t-level="level_small">Pequena</span></div>
-            <button id="btn-open-bank" class="bank-btn-hud" data-t="bank">💰 Banco</button>
-            <button id="btn-open-inventory" class="inventory-btn-hud" data-t="inventory">🛍️ Inventário</button>
-            <button id="btn-open-expenses" class="expenses-btn-hud" data-t="expenses">💸 Despesas</button>
-            <button id="btn-open-invest" class="invest-btn-hud" data-t="investments">💼 Investimentos</button>
-        </div>
-        <div class="pixel-ticker">
-            <div class="ticker-content" id="ticker-text">CARREGANDO DICAS SAP B1...</div>
-        </div>
-        <div class="powerups">
-            <div class="lang-switcher">
-                <button id="btn-lang-pt" class="lang-btn active">PT</button>
-                <button id="btn-lang-en" class="lang-btn">EN</button>
+    <header class="hud-header">
+        <div class="hud">
+            <!-- Stats Group -->
+            <div style="display: flex; gap: 10px;">
+                <div class="hud-pill stat">
+                    <span id="money" class="val-money" style="font-family: 'Press Start 2P', monospace; font-size: 0.8rem; margin-top:2px;">$0,00</span>
+                </div>
+                <div class="hud-pill stat">
+                    <span class="label" data-t="level" style="text-transform: uppercase;">NÍVEL</span> <span id="level" class="val-level">1</span>
+                </div>
+            </div>
+
+            <div class="hud-sep"></div>
+
+            <!-- Main Actions Group -->
+            <div style="display: flex; gap: 15px; align-items: center;">
+                <button id="btn-open-bank" class="icon-btn"><img src="faviconsmenu/bank3.png" class="menu-icon" alt="Banco" style="width: 20px; height: 20px; filter: drop-shadow(0 0 5px rgba(255,255,255,0.2));"> <span data-t="bank">BANCO</span></button>
+                <button id="btn-open-inventory" class="icon-btn"><img src="faviconsmenu/inventario.png" class="menu-icon" alt="Inventário" style="width: 20px; height: 20px; filter: drop-shadow(0 0 5px rgba(255,255,255,0.2));"> <span data-t="inventory">INVENTÁRIO</span></button>
+                <button id="btn-open-invest" class="icon-btn"><img src="faviconsmenu/investment.png" class="menu-icon" alt="Investimento" style="width: 20px; height: 20px; filter: drop-shadow(0 0 5px rgba(255,255,255,0.2));"> <span data-t="investments">INVESTIMENTO</span></button>
+                <button id="btn-open-expenses" class="icon-btn"><img src="faviconsmenu/asset-allocation.png" class="menu-icon" alt="Despesas" style="width: 20px; height: 20px; filter: drop-shadow(0 0 5px rgba(255,255,255,0.2));"> <span data-t="expenses">DESPESAS</span></button>
+            </div>
+
+            <div class="hud-sep"></div>
+
+            <!-- System Group -->
+            <div style="display: flex; gap: 15px; align-items: center;">
+                <button id="btn-lang-toggle" class="lang-btn"><span class="icon">🌐</span> EN</button>
+                <button id="btn-start-turn" class="btn-iniciar" style="display: flex; align-items: center; gap: 8px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="fill: transparent;"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> 
+                    <span data-t="hud_start">INICIAR</span>
+                    <div style="width: 6px; height: 6px; background: rgba(0,0,0,0.5); border-radius: 50%; margin-left: 2px;"></div>
+                </button>
             </div>
         </div>
-    </div>  
+        <!-- Pixel Alert Bar -->
+        <div class="pixel-ticker-bar" id="ticker-bar">
+            <button id="btn-toggle-ticker" onclick="const bar = document.getElementById('ticker-bar'); bar.classList.toggle('collapsed'); this.innerText = bar.classList.contains('collapsed') ? '+' : '−';" style="position: absolute; right: 20px; top: 50%; transform: translateY(-50%); background: transparent; border: 1px solid rgba(255,255,255,0.3); color: #fff; font-size: 1.2rem; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 4px; cursor: pointer; z-index: 10; opacity: 0.6; transition: 0.3s;" title="Mostrar/Ocultar Letreiro">−</button>
+            <div class="pixel-ticker">
+                <div class="ticker-content" id="ticker-text">DICA SAP: Monitore seu caixa para evitar multas de despesas!</div>
+            </div>
+        </div>
+    </header>
 
     <main class="game-container">
         <!-- Board Spaces around edge -->

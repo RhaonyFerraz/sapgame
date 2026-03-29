@@ -19,14 +19,34 @@ try {
     currentLang = localStorage.getItem('sap-game-lang') || 'pt';
 } catch(e) { console.warn("localStorage inacessível"); }
 
+const DIFFICULTY = {
+    NORMAL: {
+        initialMoney: 800,
+        rewards: { correct: 300, wrong: -100 },
+        expensesCycle: 4,
+        expensesAmount: 540,
+    }
+};
+
 const state = {
     language: currentLang,
     pos: 1,
-    money: 500, // Capital inicial
+    money: DIFFICULTY.NORMAL.initialMoney, // Capital inicial rebalanceado
+    difficulty: 'NORMAL',
     level: 1, // 1: Pequena, 2: Média, 3: Grande
     consultants: 0,
     questions: [],
     currentQuestion: null,
+    
+    // NOVO: Rastreamento de métricas
+    stats: {
+        correctAnswers: 0,
+        wrongAnswers: 0,
+        totalEventsDamage: 0,
+        totalEventsGains: 0,
+        investmentsMade: 0
+    },
+
     bank: {
         loans: [],
         investments: [],
@@ -99,6 +119,29 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+const GAME_CONFIG = {
+    NORMAL: {
+        correctBaseReward: 300,
+        wrongBasePenalty: 100,
+        expensesBase: 540,
+        passiveRevenue: {
+            infra: 150,
+            machines: 220,
+            training: 100,
+            marketing: 160,
+            logistics: 180
+        },
+        upgradeCosts: {
+            infra: [500, 625, 781, 976, 1220, 1525],
+            machines: [800, 1000, 1280, 1638, 2097, 2684],
+            training: [400, 500, 640, 819, 1048, 1342],
+            marketing: [600, 750, 960, 1229, 1573, 2016],
+            logistics: [700, 875, 1120, 1434, 1835, 2348]
+        },
+        eventProbabilityBase: 0.15
+    }
+};
 
 const STRATEGIC_DATA = {
     infra: { name: "Infraestrutura", baseCost: 500, costMult: 1.5, revenue: 100 },
@@ -177,9 +220,9 @@ function updateUIReferences() {
         
         totalRevenue: document.getElementById('total-revenue-val'),
 
-        // Lang Switcher
-        btnLangPt: document.getElementById('btn-lang-pt'),
-        btnLangEn: document.getElementById('btn-lang-en')
+        // New Pill HUD elements
+        btnLangToggle: document.getElementById('btn-lang-toggle'),
+        btnStartTurn: document.getElementById('btn-start-turn')
     };
 }
 
@@ -206,9 +249,10 @@ function updateLanguageUI() {
         el.title = t(el.getAttribute('data-t-title'));
     });
 
-    // Language buttons
-    UI.btnLangPt.classList.toggle('active', state.language === 'pt');
-    UI.btnLangEn.classList.toggle('active', state.language === 'en');
+    // Language toggle button
+    if (UI.btnLangToggle) {
+        UI.btnLangToggle.innerHTML = `<span class="icon">🌐</span> ${state.language.toUpperCase()}`;
+    }
 
     // Update level display which is dynamic
     updateHUD();
@@ -235,6 +279,11 @@ async function changeLanguage(lang) {
             askQuestion(true); // pass true to skip re-picking
         }
     }
+}
+
+function toggleLanguage() {
+    const nextLang = state.language === 'pt' ? 'en' : 'pt';
+    changeLanguage(nextLang);
 }
 
 async function initGame() {
@@ -291,8 +340,8 @@ async function initGame() {
     if (UI.btnPayNow) UI.btnPayNow.addEventListener('click', payExpensesNow);
     if (UI.btnPayLater) UI.btnPayLater.addEventListener('click', postponeExpenses);
 
-    if (UI.btnLangPt) UI.btnLangPt.addEventListener('click', () => changeLanguage('pt'));
-    if (UI.btnLangEn) UI.btnLangEn.addEventListener('click', () => changeLanguage('en'));
+    if (UI.btnLangToggle) UI.btnLangToggle.addEventListener('click', toggleLanguage);
+    if (UI.btnStartTurn) UI.btnStartTurn.addEventListener('click', () => startTurn());
 
     // Apply translation on load
     updateLanguageUI();
@@ -310,12 +359,14 @@ function renderBoard() {
     const div = document.createElement('div');
     div.className = 'space start clickable';
     
+    const totalQuestions = 300; // 30 levels of 10 questions
+    
     if (state.pos === 1) {
         div.innerHTML = `<span>Questão 1</span>`;
-    } else if (state.pos < 10) {
+    } else if (state.pos <= totalQuestions) {
         div.innerHTML = `<span>Questão ${state.pos}</span>`;
     } else {
-        div.innerHTML = `<span>🏁 Questão Final (10)</span>`;
+        div.innerHTML = `<span>🏁 Questão Final (${totalQuestions})</span>`;
     }
     
     div.onclick = startTurn;
@@ -323,12 +374,10 @@ function renderBoard() {
 }
 
 function updateHUD() {
-    if (UI.money) UI.money.innerText = state.money;
-    const levelKeys = ["level_small", "level_medium", "level_large"];
-    if (UI.level) UI.level.innerText = t(levelKeys[state.level - 1]);
-    
-    if (UI.consultants) UI.consultants.innerText = state.consultants;
-    if (UI.consultantsModal) UI.consultantsModal.innerText = state.consultants;
+    if (UI.money) UI.money.innerText = `$ ${state.money.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+    if (UI.level) {
+        UI.level.innerText = `${state.level.toString().padStart(2, '0')}/30`;
+    }
     
     // Pulse effect for expenses if due (Every 4 rounds)
     if (UI.btnOpenExpenses) {
@@ -357,30 +406,43 @@ function updateInventoryUI() {
     UI.invFinishedGoods.innerText = state.inventory.finishedGoods.toLocaleString();
 }
 
+function calculateDynamicExpenses() {
+    const config = GAME_CONFIG[state.difficulty] || GAME_CONFIG.NORMAL;
+    
+    let baseLevel = state.level <= 10 ? 1 : (state.level <= 20 ? 2 : 3);
+    const baseExpenses = { 1: 540, 2: 800, 3: 1200 }[baseLevel];
+    
+    const trainingReduction = state.upgrades.training * 20;
+    const logisticsReduction = state.upgrades.logistics * 15;
+    const loanPenalty = state.bank.loans.length > 0 ? 100 : 0;
+    
+    const calculated = baseExpenses - trainingReduction - logisticsReduction + loanPenalty;
+    return Math.max(300, calculated);
+}
+
 function calculateTotalExpenses() {
     let loanCosts = 0;
     state.bank.loans.forEach(loan => {
-        loanCosts += (loan.amount * (1 + loan.interest / 100)) / loan.installments;
+        loanCosts += loan.installmentVal;
     });
     
-    return state.expenses.employees + state.expenses.accounting + 
-           state.expenses.electricity + state.expenses.water + 
-           state.expenses.internet + loanCosts + state.expensePenalty;
+    return calculateDynamicExpenses() + loanCosts + state.expensePenalty;
 }
 
 function updateExpensesUI() {
     if (!UI.expensesModal) return;
     
-    UI.expEmployees.innerText = state.expenses.employees.toLocaleString();
-    UI.expAccounting.innerText = state.expenses.accounting.toLocaleString();
-    UI.expElectricity.innerText = state.expenses.electricity.toLocaleString();
-    UI.expWater.innerText = state.expenses.water.toLocaleString();
-    UI.expInternet.innerText = state.expenses.internet.toLocaleString();
+    const baseExpense = calculateDynamicExpenses();
+    UI.expEmployees.innerText = baseExpense.toLocaleString();
+    UI.expAccounting.innerText = `(-${state.upgrades.training * 20} Treinamento)`;
+    UI.expElectricity.innerText = `(-${state.upgrades.logistics * 15} Logística)`;
+    UI.expWater.innerText = state.bank.loans.length > 0 ? '(+100 Multa Banco)' : '0';
+    UI.expInternet.innerText = '0';
     
     // Calculate loan costs for display
     let loanCosts = 0;
     state.bank.loans.forEach(loan => {
-        loanCosts += (loan.amount * (1 + loan.interest / 100)) / loan.installments;
+        loanCosts += loan.installmentVal;
     });
     UI.expLoans.innerText = loanCosts.toLocaleString();
     
@@ -417,7 +479,7 @@ function startTurn(skipExpenseCheck = false) {
     processBankTurn();
     processStrategicTurn();
     
-    if (state.pos >= 10) {
+    if (state.pos > 300) {
         showGameOver();
         return;
     }
@@ -434,40 +496,92 @@ function startTurn(skipExpenseCheck = false) {
     }
 }
 
-function triggerEvent() {
-    const events = [
-        { change: -200 },
-        { change: -100 },
-        { change: -300 },
-        { change: 500 },
-        { change: 400 }
-    ];
-    const ev = events[Math.floor(Math.random() * events.length)];
+function evaluateContextualEvents() {
+    // 1. CASH CRISIS: Payday coming up and not enough money
+    if (state.pos % 4 === 0 && state.money < calculateDynamicExpenses()) {
+        return {
+            title: "🚨 CRISE DE CAIXA",
+            text: "O financeiro avisou que não temos saldo para as despesas! O banco providenciou um empréstimo de emergência com taxas altíssimas e peças foram liquidadas.",
+            change: -400,
+            tag: "CASH_CRISIS"
+        };
+    }
     
-    state.money += ev.change;
+    // 2. SUPPLY CHAIN FAILURE: Advanced game but no logistics
+    if (state.pos > 15 && state.upgrades.logistics === 0 && Math.random() < 0.5) {
+        return {
+            title: "🚛 COLAPSO LOGÍSTICO",
+            text: "A demanda para nossos produtos aumentou exponencialmente, mas não investimos em Logística. As mercadorias não chegaram aos clientes!",
+            change: -400,
+            tag: "SUPPLY_CHAIN_FAILURE"
+        };
+    }
     
-    const eventKeys = [
-        "event_stock_fail",
-        "event_supplier_delay",
-        "event_market_crisis",
-        "event_sap_bonus",
-        "event_logistics_win"
-    ];
-    const eventText = t(eventKeys[events.indexOf(ev)]);
+    // 3. TECH DEBT: Imbalanced tech stack (Machines >> Infra)
+    if (state.upgrades.machines >= 3 && state.upgrades.infra < 2 && Math.random() < 0.6) {
+        return {
+            title: "💻 QUEDA NO SERVIDOR",
+            text: "Compramos máquinas avançadas, mas a Infraestrutura de TI não suportou o processamento do SAP HANA e os sistemas caíram. Produção parada!",
+            change: -500,
+            tag: "TECH_DEBT"
+        };
+    }
+    
+    // 4. VIRAL BOOST: Good marketing paying off
+    if (state.upgrades.marketing >= 2 && Math.random() < 0.3) {
+        return {
+            title: "📈 VIRALIZOU!",
+            text: "Sua campanha de Propaganda e o engajamento online bateram recordes! Influxo massivo de novos clientes nesta rodada.",
+            change: 800,
+            tag: "VIRAL_BOOST"
+        };
+    }
 
-    openModal(t("event_title") + " 📊", eventText);
-    UI.mOptions.innerHTML = ''; // no options
+    return null;
+}
+
+function triggerEvent() {
+    // Try contextual event first
+    let ctxEvent = evaluateContextualEvents();
     
-    UI.mFeedback.innerHTML = ev.change > 0 ? t("event_gain", { amount: ev.change }) : t("event_loss", { amount: Math.abs(ev.change) });
-    UI.mFeedback.className = ev.change > 0 ? 'success' : 'error';
-    UI.mFeedback.classList.remove('hidden');
+    if (ctxEvent) {
+        state.money += ctxEvent.change;
+        if (ctxEvent.change < 0) state.stats.totalEventsDamage += Math.abs(ctxEvent.change);
+        else state.stats.totalEventsGains += ctxEvent.change;
+
+        openModal(ctxEvent.title, ctxEvent.text);
+        UI.mOptions.innerHTML = '';
+        UI.mFeedback.innerHTML = ctxEvent.change > 0 ? `+ R$ ${ctxEvent.change} 💰` : `- R$ ${Math.abs(ctxEvent.change)} 💸`;
+        UI.mFeedback.className = ctxEvent.change > 0 ? 'success' : 'error';
+        UI.mFeedback.classList.remove('hidden');
+    } else {
+        // Fallback to purely random generic events
+        const events = [
+            { change: -200, key: "event_stock_fail" },
+            { change: -100, key: "event_supplier_delay" },
+            { change: -300, key: "event_market_crisis" },
+            { change: 500, key: "event_sap_bonus" },
+            { change: 400, key: "event_logistics_win" }
+        ];
+        const ev = events[Math.floor(Math.random() * events.length)];
+        
+        state.money += ev.change;
+        if (ev.change < 0) state.stats.totalEventsDamage += Math.abs(ev.change);
+        else state.stats.totalEventsGains += ev.change;
+        
+        openModal(t("event_title") + " 📊", t(ev.key));
+        UI.mOptions.innerHTML = '';
+        UI.mFeedback.innerHTML = ev.change > 0 ? t("event_gain", { amount: ev.change }) : t("event_loss", { amount: Math.abs(ev.change) });
+        UI.mFeedback.className = ev.change > 0 ? 'success' : 'error';
+        UI.mFeedback.classList.remove('hidden');
+    }
     
     UI.mAction.classList.remove('hidden');
     UI.mAction.onclick = () => {
         closeModal();
         updateHUD();
-        checkLevelUp();
-        renderBoard(); // Refresh board so next house is clickable
+        // checkLevelUp(); -> O usuário pediu para não fazer nada no nível da empresa
+        renderBoard();
     };
 }
 
@@ -653,29 +767,25 @@ function handleAnswer(selectedId, btnElement) {
     UI.mAction.onclick = () => {
         closeModal();
         checkLevelUp();
-        if (state.pos >= 10) showGameOver();
-        else UI.btnNext.classList.remove('hidden');
+        if (state.pos > 300) showGameOver();
+        else {
+            if (UI.btnNext) UI.btnNext.classList.remove('hidden');
+        }
     };
 }
 
 function checkLevelUp() {
-    if (state.pos >= 4 && state.level === 1) {
-        state.level = 2;
-        alert(t("level_up_medium"));
-        UI.companyName.innerText = `${t("company_name_base")} ${t("company_suffix_medium")}`;
-        updateHUD();
-    }
-    if (state.pos >= 8 && state.level === 2) {
-        state.level = 3;
-        alert(t("level_up_large"));
-        UI.companyName.innerText = `${t("company_name_base")} ${t("company_suffix_large")}`;
+    const newLevel = Math.floor((state.pos - 1) / 10) + 1;
+    
+    if (newLevel > state.level && newLevel <= 30) {
+        state.level = newLevel;
+        alert(`🎉 Crescimento! Você alcançou o Nível ${state.level}/30!`);
         updateHUD();
     }
 }
 
 function showGameOver() {
-    const levelText = state.level === 3 ? t("level_large") : t("level_medium");
-    openModal(t("game_over_title"), t("game_over_text", { money: state.money, level: levelText }));
+    openModal(t("game_over_title"), t("game_over_text", { money: state.money, level: `${state.level}/30` }));
     
     UI.mOptions.innerHTML = '';
     UI.mFeedback.className = 'hidden';
@@ -741,9 +851,17 @@ function buyConsultant() {
     }
 }
 
+function closeAllModals() {
+    if (UI.bankModal) UI.bankModal.classList.add('hidden');
+    if (UI.investModal) UI.investModal.classList.add('hidden');
+    if (UI.inventoryModal) UI.inventoryModal.classList.add('hidden');
+    if (UI.expensesModal) UI.expensesModal.classList.add('hidden');
+}
+
 // --- Bank Logic ---
 
 function openBank() {
+    closeAllModals();
     updateBankUI();
     UI.bankModal.classList.remove('hidden');
 }
@@ -933,6 +1051,7 @@ function processBankTurn() {
 // --- Strategic Investments Logic ---
 
 function openInvestments() {
+    closeAllModals();
     updateInvestUI();
     UI.investModal.classList.remove('hidden');
 }
@@ -943,6 +1062,7 @@ function closeInvest() {
 
 /* --- Inventory Logic --- */
 function openInventory() {
+    closeAllModals();
     updateInventoryUI();
     UI.inventoryModal.classList.remove('hidden');
 }
@@ -953,6 +1073,7 @@ function closeInventory() {
 
 /* --- Expenses Logic --- */
 function openExpenses() {
+    closeAllModals();
     updateExpensesUI();
     UI.expensesModal.classList.remove('hidden');
 }
@@ -967,32 +1088,53 @@ function openInventory() {
     UI.inventoryModal.classList.remove('hidden');
 }
 
-function closeInventory() {
-    UI.inventoryModal.classList.add('hidden');
+function getUpgradeCost(area, level) {
+    const config = GAME_CONFIG[state.difficulty] || GAME_CONFIG.NORMAL;
+    const costs = config.upgradeCosts[area];
+    const actualLevel = Math.min(level, costs.length - 1);
+    return costs[actualLevel];
 }
 
-/* --- Strategic Investments Logic --- */
-function openInvestments() {
-    updateInvestUI();
-    UI.investModal.classList.remove('hidden');
-}
-
-function closeInvest() {
-    UI.investModal.classList.add('hidden');
+function calculatePassiveRevenue(upgrades) {
+    const config = GAME_CONFIG[state.difficulty] || GAME_CONFIG.NORMAL;
+    
+    const baseRevenues = {
+        infra: upgrades.infra * config.passiveRevenue.infra,
+        machines: upgrades.machines * config.passiveRevenue.machines,
+        training: upgrades.training * config.passiveRevenue.training,
+        marketing: upgrades.marketing * config.passiveRevenue.marketing,
+        logistics: upgrades.logistics * config.passiveRevenue.logistics
+    };
+    
+    let totalRevenue = Object.values(baseRevenues).reduce((a, b) => a + b, 0);
+    
+    // SINERGIA 1: Infra + Machines = 15% bonus
+    if (upgrades.infra > 0 && upgrades.machines > 0) {
+        totalRevenue += (baseRevenues.infra + baseRevenues.machines) * 0.15;
+    }
+    // SINERGIA 2: Marketing + Training = 12% bonus
+    if (upgrades.marketing > 0 && upgrades.training > 0) {
+        totalRevenue += (baseRevenues.marketing + baseRevenues.training) * 0.12;
+    }
+    // SINERGIA 3: Logistics aplica 8% a TUDO
+    if (upgrades.logistics > 0) {
+        totalRevenue += totalRevenue * 0.08;
+    }
+    
+    return Math.round(totalRevenue);
 }
 
 function updateInvestUI() {
     document.getElementById('invest-balance-val').innerText = `R$ ${state.money}`;
-    let totalRevenue = 0;
+    let totalRevenue = calculatePassiveRevenue(state.upgrades);
+    const config = GAME_CONFIG[state.difficulty] || GAME_CONFIG.NORMAL;
 
     Object.keys(STRATEGIC_DATA).forEach(area => {
         const level = state.upgrades[area];
-        const data = STRATEGIC_DATA[area];
         const card = document.querySelector(`.invest-card[data-area="${area}"]`);
         
-        const nextCost = Math.floor(data.baseCost * Math.pow(data.costMult, level));
-        const currentRevenue = level * data.revenue;
-        totalRevenue += currentRevenue;
+        const nextCost = getUpgradeCost(area, level);
+        const currentRevenue = level * config.passiveRevenue[area];
 
         card.querySelector('.invest-level').innerText = `${t('level')} ${level}`;
         card.querySelector('.benefit-tag').innerHTML = `+ R$ ${currentRevenue} <span data-t="per_round">${t('per_round')}</span>`;
@@ -1007,12 +1149,13 @@ function updateInvestUI() {
 
 window.upgradeArea = function(area) {
     const level = state.upgrades[area];
-    const data = STRATEGIC_DATA[area];
-    const cost = Math.floor(data.baseCost * Math.pow(data.costMult, level));
+    const cost = getUpgradeCost(area, level);
 
     if (state.money >= cost) {
         state.money -= cost;
         state.upgrades[area]++;
+        state.stats.investmentsMade++;
+        
         alert(t('alert_upgrade_success', { name: t(area + '_name'), level: state.upgrades[area] }));
         updateHUD();
         updateInvestUI();
@@ -1022,16 +1165,11 @@ window.upgradeArea = function(area) {
 };
 
 function processStrategicTurn() {
-    let turnGain = 0;
-    Object.keys(STRATEGIC_DATA).forEach(area => {
-        const level = state.upgrades[area];
-        const data = STRATEGIC_DATA[area];
-        turnGain += level * data.revenue;
-    });
+    const turnGain = calculatePassiveRevenue(state.upgrades);
 
     if (turnGain > 0) {
         state.money += turnGain;
-        console.log(`Bônus estratégico: +R$ ${turnGain}`);
+        console.log(`💹 Ganho estratégico: +R$ ${turnGain}`);
         updateHUD();
     }
 }

@@ -59,84 +59,165 @@ body {
     /* transition removido para evitar perda de qualidade na renderização do Chrome */
 }
 
-.hud {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.5rem 0.8rem;
-    background: var(--panel-bg);
-    backdrop-filter: var(--blur);
-    border-bottom: 1px solid var(--border-color);
-    z-index: 10;
+.hud-header {
+    background: #0d1117;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    z-index: 100;
 }
 
-.hud-group {
+.hud {
     display: flex;
-    gap: 0.7rem;
+    justify-content: center;
+    align-items: center;
+    padding: 0.7rem 1.5rem;
+    gap: 1.5rem;
+}
+
+.hud-pill {
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 6px;
+    padding: 0.5rem 0.8rem;
+    gap: 0.8rem;
+}
+
+.hud-sep {
+    width: 1px;
+    height: 32px;
+    background: rgba(255, 255, 255, 0.08);
 }
 
 .stat {
-    font-size: 0.95rem;
-    font-weight: 500;
-    letter-spacing: 0.5px;
-    background: rgba(255,255,255,0.03);
-    padding: 0.4rem 0.7rem;
-    border-radius: 100px;
-    border: 1px solid rgba(255,255,255,0.05);
-}
-
-.stat span {
-    color: var(--warning);
-    font-weight: 800;
-    text-shadow: 0 0 10px rgba(255, 221, 87, 0.3);
-}
-
-.powerups {
     display: flex;
-    gap: 0.5rem;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
 }
 
-/* Pixel Art Ticker */
+.stat .label {
+    font-size: 0.75rem;
+    color: #8b949e;
+    font-weight: 600;
+    margin-bottom: 0;
+    letter-spacing: 0.5px;
+}
+
+.val-money {
+    color: #f39c12; /* Golden Orange */
+    font-weight: 900;
+    font-size: 1.15rem;
+    text-shadow: 0 0 15px rgba(243, 156, 18, 0.2);
+}
+
+.val-level {
+    color: #2ecc71; /* Emerald Green */
+    font-weight: 900;
+    font-size: 1.15rem;
+    text-shadow: 0 0 15px rgba(46, 204, 113, 0.2);
+}
+
+.icon-btn {
+    background: transparent;
+    color: #8b949e;
+    border: none;
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.icon-btn:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+}
+
+.lang-btn {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    color: #8b949e;
+    padding: 0.5rem 0.8rem;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.lang-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+}
+
+.btn-iniciar {
+    background: linear-gradient(135deg, #f39c12, #e67e22) !important;
+    color: #000 !important;
+    font-weight: 900;
+    padding: 0.6rem 1.5rem !important;
+    border-radius: 8px !important;
+    border: none !important;
+    font-size: 0.95rem !important;
+    box-shadow: 0 4px 15px rgba(230, 126, 34, 0.3);
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.btn-iniciar:hover { transform: scale(1.03); }
+
+/* Pixel Art Ticker Below HUD */
+.pixel-ticker-bar {
+    background: #090b0f;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 8px 0;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.pixel-ticker-bar.collapsed {
+    padding: 4px 0;
+}
+
+.pixel-ticker-bar.collapsed .pixel-ticker {
+    height: 0px;
+    opacity: 0;
+}
+
+#btn-toggle-ticker:hover {
+    opacity: 1 !important;
+}
+
 .pixel-ticker {
     flex: 1;
-    margin: 0 0.8rem;
-    background: #0d1117;
-    border: 2px solid #30363d;
-    border-radius: 4px;
-    height: 38px;
+    height: 30px;
     display: flex;
     align-items: center;
     overflow: hidden;
     position: relative;
-    box-shadow: inset 0 0 10px rgba(255, 0, 0, 0.15), 0 0 10px rgba(0, 0, 0, 0.3);
     white-space: nowrap;
 }
 
 .ticker-content {
     font-family: 'Press Start 2P', monospace;
-    color: #ff3333; /* Neon Red */
-    font-size: 0.75rem;
+    color: #f1c40f; /* Ticker Gold */
+    font-size: 0.8rem;
     display: inline-block;
     padding-left: 100%;
-    animation: scroll-ticker 16s linear infinite;
-    text-shadow: 0 0 5px rgba(255, 0, 0, 0.6);
+    animation: scroll-ticker 20s linear infinite;
+    text-shadow: 0 0 10px rgba(243, 156, 18, 0.3);
 }
 
 @keyframes scroll-ticker {
     0% { transform: translateX(0); }
     100% { transform: translateX(-100%); }
-}
-
-button {
-    background: var(--primary);
-    color: white;
-    border: none;
-    padding: 0.4rem 0.7rem;
-    border-radius: 6px;
-    font-weight: 600;
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
 }
 
 button:hover:not(:disabled) {
