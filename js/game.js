@@ -37,6 +37,7 @@ const state = {
     consultants: 0,
     questions: [],
     currentQuestion: null,
+    surpriseShown1: false, // Flag para a questão surpresa 1
     
     // NOVO: Rastreamento de métricas
     stats: {
@@ -787,6 +788,12 @@ function handleAnswer(selectedId, btnElement) {
     }, 100);
 
     UI.mAction.onclick = () => {
+        // GATILHO: Questão Surpresa após acertar a primeira questão
+        if (isCorrect && state.pos === 2 && !state.surpriseShown1) {
+            loadSurpriseQuestion(1);
+            return;
+        }
+
         closeModal();
         checkLevelUp();
         if (state.pos > 300) showGameOver();
@@ -795,6 +802,166 @@ function handleAnswer(selectedId, btnElement) {
         }
     };
 }
+
+// Timer da Questão Surpresa
+let surpriseTimerInterval = null;
+
+// NOVO: Sistema de Questão Surpresa
+async function loadSurpriseQuestion(num) {
+    try {
+        const response = await fetch(`questoessurpresa/surpresa${num}.txt?t=${new Date().getTime()}`);
+        if (!response.ok) throw new Error("Arquivo surpresa não encontrado.");
+        
+        const rawText = await response.text();
+        
+        // Parsing robusto para o formato surpresa (Intro + Questão + Opções multi-linha)
+        const questionPart = rawText.split('❓ Pergunta')[1];
+        const intro = rawText.split('❓ Pergunta')[0].trim();
+        
+        const optionsPart = questionPart.split('✅ Opções')[1];
+        const questionText = questionPart.split('✅ Opções')[0].trim();
+        
+        const finalSplit = optionsPart.split('🏆 Resposta correta:');
+        const optionsRaw = finalSplit[0].trim();
+        const correctAnswer = finalSplit[1].trim();
+
+        // Limpa o modal e prepara para a surpresa
+        UI.mFeedback.classList.add('hidden');
+        UI.mAction.classList.add('hidden');
+        UI.mOptions.innerHTML = '';
+        
+        // Ativa a pele Retro (Windows 95/98)
+        UI.modal.classList.add('retro-skin');
+        
+        // Formatação Retro para o corpo do e-mail
+        const retroContent = `
+            <div style="background: #fff; border: 2px inset #808080; padding: 15px; margin-bottom: 15px; text-align: left; font-family: 'Courier New', monospace; font-size: 11px; color: #000; overflow-y: auto; max-height: 210px;">
+                ${intro.replace(/\n/g, '<br>')}
+            </div>
+            <p class="retro-question">
+                ❓ ${questionText}
+            </p>
+            <!-- Timer Retro -->
+            <div id="surprise-timer-bar" style="margin: 12px 0 8px; background: #808080; border: 2px inset #fff; height: 20px; position: relative; overflow: hidden;">
+                <div id="surprise-timer-fill" style="height: 100%; width: 100%; background: #00cc00; transition: width 1s linear;"></div>
+                <span id="surprise-timer-text" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-family: 'Press Start 2P', cursive; font-size: 8px; color: #000; white-space: nowrap;">⏱ 60s</span>
+            </div>
+        `;
+
+        openModal("📥 MENSAGEM SURPRESA", retroContent);
+
+        // Extrai as opções A, B, C (lidando com múltiplas linhas)
+        const optA = optionsRaw.split('B)')[0].replace('A)', '').trim();
+        const optB = optionsRaw.split('B)')[1]?.split('C)')[0].trim() || "";
+        const optC = optionsRaw.split('C)')[1]?.trim() || "";
+        
+        const parsedOptions = [
+            { id: 'A', text: optA },
+            { id: 'B', text: optB },
+            { id: 'C', text: optC }
+        ];
+
+        parsedOptions.forEach(opt => {
+            if (!opt.text) return;
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.style.flexDirection = 'column';
+            btn.style.alignItems = 'flex-start';
+            btn.innerHTML = `<b style="color: #f1c40f; margin-bottom: 5px;">Opção ${opt.id}:</b><span style="font-size: 0.9em; line-height: 1.4;">${opt.text.replace(/\n/g, '<br>')}</span>`;
+            btn.onclick = () => selectSurpriseOption(num, opt.id, correctAnswer);
+            UI.mOptions.appendChild(btn);
+        });
+
+        // Iniciar Contagem Regressiva de 60 segundos
+        startSurpriseTimer(60, num, correctAnswer);
+
+    } catch (err) {
+        console.error("Erro ao carregar surpresa:", err);
+        closeModal();
+    }
+}
+
+function startSurpriseTimer(seconds, num, correctAnswer) {
+    clearInterval(surpriseTimerInterval);
+    let timeLeft = seconds;
+    const fill = document.getElementById('surprise-timer-fill');
+    const text = document.getElementById('surprise-timer-text');
+
+    surpriseTimerInterval = setInterval(() => {
+        timeLeft--;
+        const pct = (timeLeft / seconds) * 100;
+
+        if (fill) {
+            fill.style.width = pct + '%';
+            // Muda cor conforme urgência
+            if (timeLeft <= 10) fill.style.background = '#cc0000';
+            else if (timeLeft <= 20) fill.style.background = '#cc8800';
+        }
+        if (text) text.textContent = `⏱ ${timeLeft}s`;
+
+        if (timeLeft <= 0) {
+            clearInterval(surpriseTimerInterval);
+            // Tempo esgotado: resultado de resposta errada
+            selectSurpriseOption(num, 'TIMEOUT', correctAnswer);
+        }
+    }, 1000);
+}
+
+function stopSurpriseTimer() {
+    clearInterval(surpriseTimerInterval);
+    surpriseTimerInterval = null;
+}
+
+function selectSurpriseOption(num, choice, correctLetter) {
+    stopSurpriseTimer(); // Para o timer imediatamente
+    const isCorrect = choice.toUpperCase() === correctLetter.toUpperCase();
+    
+    // Desativar botões
+    document.querySelectorAll('.option-btn').forEach(b => {
+        b.onclick = null;
+        if (b.innerText.includes(`Opção ${choice}:`)) {
+            b.classList.add(isCorrect ? 'correct' : 'wrong');
+        }
+    });
+
+    // SEMPRE marcar como mostrada, independente de acerto ou erro
+    state.surpriseShown1 = true;
+
+    if (isCorrect) {
+        const bonus = 50;
+        state.money = Number(state.money) + bonus;
+        updateHUD();
+        UI.mFeedback.innerHTML = `✅ <b>PARABÉNS!</b><br><br>Sua resposta foi extremamente profissional e o cliente John Miller fechou o primeiro pedido!<br><br>💰 <b>BÔNUS RECEBIDO: R$ ${bonus}</b>`;
+        UI.mFeedback.className = 'success';
+        playSuccessSound();
+    } else {
+        const penalty = 300;
+        state.money = Number(state.money) - penalty;
+        updateHUD();
+        const timeoutMsg = choice === 'TIMEOUT'
+            ? '⏰ <b>TEMPO ESGOTADO!</b><br><br>Você não respondeu a tempo. O cliente John Miller ficou esperando e desistiu do contato.<br><br>'
+            : '❌ <b>RESPOSTA INADEQUADA</b><br><br>John Miller sentiu falta de profissionalismo e decidiu não seguir com a cotação. Fique atento às etiquetas de negócios internacionais!<br><br>';
+        UI.mFeedback.innerHTML = `${timeoutMsg}💸 <b>PREJUÍZO: R$ ${penalty}</b>`;
+        UI.mFeedback.className = 'error';
+        document.body.classList.add('flash-error');
+        setTimeout(() => document.body.classList.remove('flash-error'), 500);
+    }
+
+    UI.mFeedback.classList.remove('hidden');
+    UI.mAction.innerText = t("btn_continue");
+    UI.mAction.classList.remove('hidden');
+    
+    // Garantir que o botão de continuar apareça na tela (auto-scroll)
+    setTimeout(() => {
+        UI.mAction.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }, 100);
+
+    UI.mAction.onclick = () => {
+        closeModal();
+        checkLevelUp();
+    };
+}
+
 
 function checkLevelUp() {
     const newLevel = Math.floor((state.pos - 1) / 10) + 1;
@@ -836,9 +1003,14 @@ function openModal(title, text) {
 }
 
 function closeModal() {
+    stopSurpriseTimer(); // Garante que o timer não continue rodando em background
     UI.modal.classList.add('hidden');
     UI.mFeedback.classList.add('hidden');
     UI.mBtnNo.classList.add('hidden');
+    
+    // Reseta a pele do modal para o padrão SAP (moderno)
+    UI.modal.classList.remove('retro-skin');
+    
     UI.mAction.innerText = t("btn_continue");
 }
 

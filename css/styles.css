@@ -1123,49 +1123,303 @@ button:disabled {
     transform: scale(1.02);
 }
 
+/* --- RESPONSIVIDADE EXTREMA --- */
+
+/* Ajustes para Tablets e Telas Médias */
+@media (max-width: 900px) {
+    .hud {
+        gap: 10px;
+        padding: 0.5rem 1rem;
+    }
+    
+    .icon-btn span {
+        font-size: 0.75rem;
+    }
+    
+    .val-money {
+        font-size: 0.7rem !important;
+    }
+}
+
+/* Ajustes para Celulares (Mobile) */
 @media (max-width: 600px) {
-    .invest-summary-bar {
+    .hud-header {
+        padding: 5px 0;
+    }
+
+    .hud {
         flex-direction: column;
-        gap: 1rem;
+        gap: 8px;
+        height: auto;
+        padding: 10px;
     }
-    .invest-grid {
-        grid-template-columns: 1fr;
+
+    /* Esconder textos dos botões no HUD para economizar espaço */
+    .icon-btn span {
+        display: none;
+    }
+
+    .icon-btn {
+        padding: 8px !important;
+        gap: 0;
+    }
+
+    /* Ajustar grupos do HUD */
+    .hud > div {
+        width: 100%;
+        justify-content: center !important;
+        gap: 10px !important;
+    }
+
+    .hud-sep {
+        display: none; /* Remove separadores no mobile */
+    }
+
+    /* Modais Responsivos */
+    .modal-content {
+        width: 95% !important;
+        margin: 5% auto;
+        padding: 1.5rem !important;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .bank-content, .invest-content {
+        width: 98% !important;
+    }
+
+    /* Ajuste de grids nos modais */
+    .bank-stats-grid, .invest-grid {
+        grid-template-columns: 1fr !important;
+        gap: 10px;
+    }
+
+    /* Ajustar botões de opção dentro do modal de pergunta */
+    .option-btn {
+        padding: 1rem !important;
+        font-size: 0.95rem !important;
+    }
+
+    /* Letreiro (Ticker) no Celular */
+    .pixel-ticker-bar {
+        height: auto;
+        min-height: 30px;
+    }
+
+    .pixel-ticker {
+        font-size: 0.7rem;
+    }
+
+    /* Ajustar animação central da empresa */
+    .company-hub {
+        transform: scale(0.7);
+        margin-top: -50px;
+    }
+
+    /* Botão Iniciar Turno (START) */
+    .btn-iniciar {
+        padding: 0.5rem 1rem !important;
+        font-size: 0.85rem !important;
     }
 }
 
-/* Language Switcher */
-.lang-switcher {
-    display: flex;
-    gap: 0.5rem;
-    background: rgba(255, 255, 255, 0.05);
-    padding: 0.3rem;
-    border-radius: 12px;
-    border: 1px solid var(--border-color);
-    margin-left: 1rem;
+/* Ajustes para telas MUITO pequenas (iPhone SE, etc) */
+@media (max-width: 350px) {
+    .hud {
+        gap: 5px;
+    }
+    
+    .icon-btn img {
+        width: 22px !important;
+        height: 22px !important;
+    }
+
+    .lang-btn img {
+        width: 20px !important;
+        height: 20px !important;
+    }
+}
+/* --- PELE RETRO ANOS 90 (SURPRESA) --- */
+
+/* Keyframe: Overlay escurece vindo da esquerda */
+@keyframes retroOverlayIn {
+    from {
+        opacity: 0;
+        background-position: -100% 0;
+    }
+    to {
+        opacity: 1;
+        background-position: 0 0;
+    }
 }
 
-.lang-btn {
-    background: transparent;
-    border: none;
-    color: var(--text-muted);
-    padding: 0.4rem 0.8rem;
-    font-size: 0.8rem;
-    font-weight: 700;
-    cursor: pointer;
-    border-radius: 8px;
-    transition: all 0.2s;
+/* Keyframe: Janela desliza da esquerda com efeito parallax */
+@keyframes retroSlideIn {
+    0% {
+        transform: translateX(-120%) scaleX(0.85);
+        opacity: 0;
+        box-shadow: none;
+    }
+    60% {
+        transform: translateX(8%) scaleX(1.02);
+        opacity: 1;
+    }
+    80% {
+        transform: translateX(-3%) scaleX(0.99);
+    }
+    100% {
+        transform: translateX(0) scaleX(1);
+        opacity: 1;
+    }
 }
 
-.lang-btn:hover {
-    color: var(--text-color);
-    background: rgba(255, 255, 255, 0.05);
+.modal-overlay.retro-skin {
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: none;
+    animation: retroOverlayIn 0.4s ease forwards;
 }
 
-.lang-btn.active {
-    background: var(--accent);
+/* Modal Content Retro */
+.modal-overlay.retro-skin .modal-content {
+    background: #c0c0c0 !important; /* Cinza Clássico Windows */
+    border: 3px outset #ffffff !important;
+    box-shadow: 2px 2px 0px #000, -2px -2px 0px #ffffff, 5px 5px 15px rgba(0,0,0,0.5) !important;
+    border-radius: 0 !important;
+    padding: 2px !important;
+    color: #000 !important;
+    font-family: 'Press Start 2P', cursive !important;
+    max-width: 650px !important;
+
+    /* Parallax Slide-in */
+    animation: retroSlideIn 0.55s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+    transform-origin: left center;
+}
+
+/* Titulo Retro */
+#retro-title-bar {
+    display: none; 
+    background: linear-gradient(90deg, #000080, #1084d0);
+    padding: 3px 6px;
+    justify-content: space-between;
+    align-items: center;
     color: white;
-    box-shadow: 0 4px 10px rgba(155, 81, 224, 0.3);
+    font-size: 10px;
+    margin-bottom: 8px;
+    text-shadow: 1px 1px 0px #000;
+    font-family: sans-serif !important; /* Estilo Windows 95 usa fontes simples */
+    font-weight: bold;
+}
+
+.modal-overlay.retro-skin #retro-title-bar {
+    display: flex;
+}
+
+.close-btn-retro {
+    background: #c0c0c0;
+    border: 1px outset #fff;
+    color: #000;
+    font-weight: bold;
+    width: 16px;
+    height: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    cursor: pointer;
+    box-shadow: 1px 1px 0 #000;
+    font-family: Arial, sans-serif !important;
+}
+
+/* Ajustes de Texto no Retro */
+.modal-overlay.retro-skin h3, 
+.modal-overlay.retro-skin p {
+    color: #000; /* Removido !important para permitir cores conceituais */
+    text-shadow: none !important;
+    font-family: 'Press Start 2P', cursive !important;
+    font-size: 11px !important;
+    line-height: 1.6 !important;
+    text-align: left !important;
+}
+
+.retro-question {
+    color: #0000ff !important; /* Azul Retro */
+    font-weight: bold;
+    margin-top: 15px;
+}
+
+.modal-overlay.retro-skin #modal-text {
+    background: #ffffff;
+    border: 2px inset #808080;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.modal-overlay.retro-skin h3,
+.modal-overlay.retro-skin #modal-title {
+    display: none !important;
+}
+
+.modal-overlay.retro-skin h3.visible-retro {
+    display: block !important;
 }
 
 
+/* Botões Retro */
+.modal-overlay.retro-skin .option-btn {
+    background: #c0c0c0 !important;
+    border: 2px outset #ffffff !important;
+    border-radius: 0 !important;
+    color: #000 !important;
+    box-shadow: 1px 1px 0px #000 !important;
+    margin-bottom: 8px !important;
+    padding: 10px !important;
+    transition: none !important;
+}
+
+.modal-overlay.retro-skin .option-btn:hover {
+    background: #c0c0c0 !important;
+    transform: none !important;
+    box-shadow: 1px 1px 0px #000 !important;
+}
+
+.modal-overlay.retro-skin .option-btn:active {
+    border: 2px inset #ffffff !important;
+    padding: 11px 9px 9px 11px !important; /* Efeito de clique */
+}
+
+.modal-overlay.retro-skin .option-btn span,
+.modal-overlay.retro-skin .option-btn b {
+    color: #000 !important;
+    font-family: 'Press Start 2P', cursive !important;
+    font-size: 9px !important;
+}
+
+.modal-overlay.retro-skin .action-btn,
+.modal-overlay.retro-skin .secondary-btn {
+    background: #c0c0c0 !important;
+    border: 2px outset #ffffff !important;
+    border-radius: 0 !important;
+    color: #000 !important;
+    box-shadow: 1px 1px 0px #000 !important;
+    font-family: 'Press Start 2P', cursive !important;
+    font-size: 10px !important;
+    padding: 6px 20px !important;
+}
+
+.modal-overlay.retro-skin .action-btn:active {
+    border: 2px inset #ffffff !important;
+}
+
+/* Feedback Retro */
+.modal-overlay.retro-skin #modal-feedback {
+    background: #c0c0c0 !important;
+    border: 2px inset #808080 !important;
+    color: #000 !important;
+    font-size: 10px !important;
+    border-radius: 0 !important;
+    padding: 10px !important;
+}
+
+.modal-overlay.retro-skin #modal-feedback.success { border-left: 8px solid #000080 !important; }
+.modal-overlay.retro-skin #modal-feedback.error { border-left: 8px solid #800000 !important; }
 
