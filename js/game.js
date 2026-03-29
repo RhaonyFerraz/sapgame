@@ -8,7 +8,11 @@ const GRAVITY_IMAGES = [
     "cenario1/04.png",
     "cenario1/05.png",
     "cenario1/06.png",
-    "cenario1/07.png"
+    "cenario1/07.png",
+    "cenario1/08.png",
+    "cenario1/09.png",
+    "cenario1/10.png",
+    "cenario1/11.png"
 ];
 
 const state = {
@@ -172,11 +176,11 @@ async function initGame() {
     // Apply translation on load
     updateLanguageUI();
 
-    // Start background slideshow (30s)
+    // Start background slideshow (15s)
     setInterval(() => {
         state.bgIndex = (state.bgIndex + 1) % GRAVITY_IMAGES.length;
         updateBackgroundImage();
-    }, 30000);
+    }, 15000);
 }
 
 function renderBoard() {
