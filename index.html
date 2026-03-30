@@ -9,6 +9,36 @@
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 </head>
 <body>
+    <!-- Game Title Intro -->
+    <div id="title-intro" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 10002; display: flex; justify-content: center; align-items: center; flex-direction: column; transition: opacity 0.8s;">
+        <h1 id="title-text" style="font-family: 'Inter', sans-serif; font-size: 4rem; font-weight: 900; color: #fff; text-transform: uppercase; letter-spacing: 8px; text-align: center; opacity: 0; animation: titleReveal 1.5s ease forwards 0.5s;">
+            ACTION <span style="color: var(--accent); text-shadow: 0 0 30px rgba(155,81,224,0.6), 0 0 60px rgba(155,81,224,0.3);">STARTERS</span>
+        </h1>
+        <div style="width: 120px; height: 3px; background: linear-gradient(90deg, transparent, var(--accent), transparent); margin-top: 20px; opacity: 0; animation: lineReveal 1s ease forwards 1.2s;"></div>
+    </div>
+
+    <style>
+        @keyframes titleReveal {
+            0% { opacity: 0; transform: translateY(20px) scale(0.95); letter-spacing: 20px; }
+            60% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 1; transform: translateY(0) scale(1); letter-spacing: 8px; }
+        }
+        @keyframes lineReveal {
+            0% { opacity: 0; width: 0; }
+            100% { opacity: 1; width: 120px; }
+        }
+    </style>
+
+    <script>
+        setTimeout(() => {
+            const intro = document.getElementById('title-intro');
+            if (intro) {
+                intro.style.opacity = '0';
+                setTimeout(() => { intro.style.display = 'none'; }, 800);
+            }
+        }, 3500);
+    </script>
+
     <!-- Start Screen -->
     <div id="splash-screen" class="modal-overlay" style="z-index: 9999; background: rgba(0,0,0,0.9); transition: opacity 0.5s;">
         <div class="modal-content glass" style="max-width: 700px; text-align: center; padding: 3rem;">
