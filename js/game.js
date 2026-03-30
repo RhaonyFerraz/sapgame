@@ -98,38 +98,48 @@ const startJourney = (e) => {
     const reveal = document.getElementById('start-reveal-overlay');
     const rText = document.getElementById('reveal-text-container');
     const rImg = document.getElementById('reveal-image');
+    const rImg2 = document.getElementById('reveal-image-2');
     
     if (reveal && rText && rImg) {
-        // Step 1: Show overlay with black background and text only (4 seconds)
+        // Phase 1: mens3.png + text (4 seconds)
         reveal.classList.remove('hidden');
         reveal.style.opacity = '1';
+        rImg.classList.remove('hidden');
+        rImg.style.opacity = '1';
         rText.classList.remove('hidden');
         rText.style.opacity = '1';
         
         setTimeout(() => {
-            // Step 2: Hide text, then show image (Fade transition)
+            // Phase 2: Fade out text, keep mens3.png alone (4 seconds)
             rText.style.opacity = '0';
             
             setTimeout(() => {
                 rText.classList.add('hidden');
-                rImg.classList.remove('hidden');
-                rImg.style.opacity = '1';
 
                 setTimeout(() => {
-                    // Step 3: Fade out everything and start game
-                    reveal.style.opacity = '0';
-                    if (splash) splash.style.opacity = '0';
+                    // Phase 3: Swap to mens.png (4 seconds)
+                    if (rImg2) {
+                        rImg.style.opacity = '0';
+                        rImg2.classList.remove('hidden');
+                        rImg2.style.opacity = '1';
+                    }
 
                     setTimeout(() => {
-                        reveal.classList.add('hidden');
-                        if (splash) splash.style.display = 'none';
-                        console.log("Sequence complete, chamando initGame...");
-                        initGame();
-                        initTicker();
-                    }, 800);
-                }, 4000); // Wait 4 seconds for the image
-            }, 800); // Delay for text fade out
-        }, 4000); // Initial 4 seconds for the phrase
+                        // Phase 4: Fade out everything and start game
+                        reveal.style.opacity = '0';
+                        if (splash) splash.style.opacity = '0';
+
+                        setTimeout(() => {
+                            reveal.classList.add('hidden');
+                            if (splash) splash.style.display = 'none';
+                            console.log("Sequence complete, chamando initGame...");
+                            initGame();
+                            initTicker();
+                        }, 800);
+                    }, 4000); // mens.png por 4 segundos
+                }, 4000); // mens3.png sozinha por 4 segundos
+            }, 800); // Delay para o texto desaparecer
+        }, 4000); // Texto + mens3.png por 4 segundos
     } else {
         // Fallback
         if (splash) {
