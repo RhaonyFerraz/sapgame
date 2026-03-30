@@ -2,9 +2,9 @@
     --bg-color: #0d1117;
     --panel-bg: rgba(13, 17, 23, 0.6);
     --border-color: rgba(255, 255, 255, 0.08);
-    --primary: #0081d5; /* SAP Blue */
-    --primary-glow: rgba(0, 129, 213, 0.4);
-    --primary-hover: #00a3ff;
+    --primary: #9b51e0; /* Changed from Blue to Purple */
+    --primary-glow: rgba(155, 81, 224, 0.4);
+    --primary-hover: #b16cff;
     --success: #23d160;
     --success-glow: rgba(35, 209, 96, 0.3);
     --danger: #ff3860;
@@ -182,20 +182,20 @@ button.icon-btn:hover:not(:disabled) {
     display: flex;
     align-items: center;
     gap: 8px;
-    animation: pulse-red-shadow 2s infinite ease-in-out; /* Sombra pulsante */
+    animation: pulse-purple-shadow 2s infinite ease-in-out; /* Sombra pulsante */
 }
 
-@keyframes pulse-red-shadow {
-    0% { box-shadow: 0 0 10px rgba(231, 76, 60, 0.4); }
-    50% { box-shadow: 0 0 25px rgba(231, 76, 60, 0.7); }
-    100% { box-shadow: 0 0 10px rgba(231, 76, 60, 0.4); }
+@keyframes pulse-purple-shadow {
+    0% { box-shadow: 0 0 10px rgba(155, 81, 224, 0.4); }
+    50% { box-shadow: 0 0 25px rgba(155, 81, 224, 0.7); }
+    100% { box-shadow: 0 0 10px rgba(155, 81, 224, 0.4); }
 }
 
 .btn-iniciar:hover { 
     transform: translateY(-2px);
     border: 1px solid #38D31A !important;
     animation: none; /* Para a pulsação no hover para um brilho fixo e forte */
-    box-shadow: 0 0 25px rgba(231, 76, 60, 0.9);
+    box-shadow: 0 0 25px rgba(155, 81, 224, 0.9);
     background: rgba(56, 211, 26, 0.05) !important;
 }
 
@@ -206,7 +206,8 @@ button.icon-btn:hover:not(:disabled) {
 /* Pixel Art Ticker Below HUD */
 .pixel-ticker-bar {
     background: #090b0f;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border-top: 1px solid var(--accent);
+    box-shadow: 0 -1px 5px rgba(155, 81, 224, 0.2);
     padding: 8px 0;
     position: relative;
     transition: all 0.3s ease;
@@ -407,7 +408,7 @@ button:disabled {
     padding: 1rem 2.5rem;
     border-radius: 50px;
     margin-top: 1rem;
-    background: linear-gradient(135deg, var(--primary), #005f9e);
+    background: linear-gradient(135deg, var(--primary), #6f2da8);
     color: #ffffff;
     border: none;
     cursor: pointer;
@@ -618,8 +619,8 @@ button:disabled {
 }
 
 .reveal-btn {
-    background: linear-gradient(135deg, #3498db, #2980b9) !important;
-    box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4), inset 0 2px 0 rgba(255,255,255,0.2) !important;
+    background: linear-gradient(135deg, #8e44ad, #6c3483) !important;
+    box-shadow: 0 4px 15px rgba(142, 68, 173, 0.4), inset 0 2px 0 rgba(255,255,255,0.2) !important;
     margin: 10px auto;
     display: block;
     width: fit-content;
