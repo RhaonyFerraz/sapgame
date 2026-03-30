@@ -96,27 +96,42 @@ const startJourney = (e) => {
     
     const splash = document.getElementById('splash-screen');
     const reveal = document.getElementById('start-reveal-overlay');
+    const rText = document.getElementById('reveal-text-container');
+    const rImg = document.getElementById('reveal-image');
     
-    if (reveal) {
-        // Show the reveal image (4 seconds)
+    if (reveal && rText && rImg) {
+        // Step 1: Show overlay with black background and text only (4 seconds)
         reveal.classList.remove('hidden');
         reveal.style.opacity = '1';
+        rText.classList.remove('hidden');
+        rText.style.opacity = '1';
         
         setTimeout(() => {
-            // Fade out the reveal AND the splash
-            reveal.style.opacity = '0';
-            if (splash) splash.style.opacity = '0';
-
+            // Step 2: Hide text, then show image (Fade transition)
+            rText.style.opacity = '0';
+            
             setTimeout(() => {
-                reveal.classList.add('hidden');
-                if (splash) splash.style.display = 'none';
-                console.log("Reveal removido, chamando initGame...");
-                initGame();
-                initTicker();
-            }, 800); // Transition time matching CSS
-        }, 4000); // User requested 4 seconds
+                rText.classList.add('hidden');
+                rImg.classList.remove('hidden');
+                rImg.style.opacity = '1';
+
+                setTimeout(() => {
+                    // Step 3: Fade out everything and start game
+                    reveal.style.opacity = '0';
+                    if (splash) splash.style.opacity = '0';
+
+                    setTimeout(() => {
+                        reveal.classList.add('hidden');
+                        if (splash) splash.style.display = 'none';
+                        console.log("Sequence complete, chamando initGame...");
+                        initGame();
+                        initTicker();
+                    }, 800);
+                }, 4000); // Wait 4 seconds for the image
+            }, 800); // Delay for text fade out
+        }, 4000); // Initial 4 seconds for the phrase
     } else {
-        // Fallback to regular splash dismissal
+        // Fallback
         if (splash) {
             splash.style.opacity = '0';
             setTimeout(() => {
