@@ -89,24 +89,45 @@ const startJourney = (e) => {
     if (e && e.type === 'touchstart') e.preventDefault();
     
     try {
-        initAudio();
+        if (typeof initAudio === 'function') initAudio();
     } catch(err) {
         console.warn('Audio unlock blocked', err);
     }
     
     const splash = document.getElementById('splash-screen');
-    if (splash) {
-        splash.style.opacity = '0';
+    const reveal = document.getElementById('start-reveal-overlay');
+    
+    if (reveal) {
+        // Show the reveal image (4 seconds)
+        reveal.classList.remove('hidden');
+        reveal.style.opacity = '1';
+        
         setTimeout(() => {
-            splash.style.display = 'none';
-            console.log("Splash removido, chamando initGame...");
+            // Fade out the reveal AND the splash
+            reveal.style.opacity = '0';
+            if (splash) splash.style.opacity = '0';
+
+            setTimeout(() => {
+                reveal.classList.add('hidden');
+                if (splash) splash.style.display = 'none';
+                console.log("Reveal removido, chamando initGame...");
+                initGame();
+                initTicker();
+            }, 800); // Transition time matching CSS
+        }, 4000); // User requested 4 seconds
+    } else {
+        // Fallback to regular splash dismissal
+        if (splash) {
+            splash.style.opacity = '0';
+            setTimeout(() => {
+                splash.style.display = 'none';
+                initGame();
+                initTicker();
+            }, 500);
+        } else {
             initGame();
             initTicker();
-        }, 500);
-    } else {
-        console.warn("Splash screen not found, starting game anyway...");
-        initGame();
-        initTicker();
+        }
     }
 };
 // Bind to window for onclick fallback
