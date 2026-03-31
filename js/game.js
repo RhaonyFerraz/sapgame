@@ -1,4 +1,8 @@
 // SAP Game - Logic Core
+window.onerror = function(msg, url, lineNo, colNo, error) {
+    alert("ERRO GLOBAL: " + msg + "\nLinha: " + lineNo + "\nArquivo: " + url);
+    return false;
+};
 
 const GRAVITY_IMAGES = [
     "cenario1/01.png",
@@ -209,7 +213,11 @@ const startJourney = (e) => {
 
                         setTimeout(() => {
                             reveal.classList.add('hidden');
-                            if (splash) splash.style.display = 'none';
+                            reveal.style.pointerEvents = 'none'; // Previne bloqueio de clique
+                            if (splash) {
+                                splash.style.display = 'none';
+                                splash.style.pointerEvents = 'none'; // Previne bloqueio de clique
+                            }
                             console.log("Sequence complete, chamando initGame...");
                             initGame();
                             initTicker();
@@ -235,6 +243,27 @@ const startJourney = (e) => {
 };
 // Bind to window for onclick fallback
 window.startJourney = startJourney;
+
+window.skipIntro = () => {
+    console.log("skipIntro: Pulo acionado pelo usuário.");
+    if (window.gameInitialized) return;
+    
+    // Esconde todos os elementos de intro imediatamente
+    const ids = ['splash-screen', 'start-reveal-overlay', 'title-intro'];
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.style.display = 'none';
+            el.style.opacity = '0';
+            el.style.pointerEvents = 'none';
+            el.classList.add('hidden');
+        }
+    });
+    
+    // Inicia o jogo sem delay
+    initGame();
+    initTicker();
+};
 
 // Attach listeners immediately
 document.addEventListener('DOMContentLoaded', () => {
@@ -391,6 +420,7 @@ function updateUIReferences() {
         btnPayLater: document.getElementById('btn-pay-later'),
         
         // New Pill HUD elements
+        hudHeader: document.getElementById('hud-header'),
         btnLangToggle: document.getElementById('btn-lang-toggle'),
         btnStartTurn: document.getElementById('btn-start-turn')
     };
@@ -460,27 +490,33 @@ function toggleLanguage() {
 }
 
 async function initGame() {
+    if (window.gameInitialized) return;
+    window.gameInitialized = true;
+    
+    console.log("initGame: INICIANDO...");
     updateUIReferences();
-    console.log("Iniciando Jogo... Verificando referências UI:");
-    Object.keys(UI).forEach(k => {
-        if (!UI[k] && !['bankTabs','bankPanels'].includes(k)) console.warn(`Elemento não encontrado: ${k}`);
-    });
+    if (UI.hudHeader) UI.hudHeader.classList.remove('hidden');
+    console.log("initGame: Referências UI atualizadas.");
 
     try {
+        console.log(`initGame: Carregando perguntas para idioma: ${state.language}`);
         await loadQuestions(state.language);
         state.questions = [...questionsList];
+        console.log(`initGame: ${state.questions.length} perguntas carregadas.`);
     } catch(e) {
-        console.error("Erro ao carregar perguntas:", e);
+        console.error("initGame ERROR ao carregar perguntas:", e);
     }
 
     try {
+        console.log("initGame: Renderizando tabuleiro e HUD inicial...");
         renderBoard();
         updateHUD();
     } catch(e) {
-        console.error("Erro ao renderizar tabuleiro/HUD:", e);
+        console.error("initGame ERROR ao renderizar tabuleiro/HUD:", e);
     }
     
     // Binding events safely
+    console.log("initGame: Vinculando eventos...");
     if (UI.mAction) UI.mAction.addEventListener('click', closeModal);
     if (UI.btnBuy) UI.btnBuy.addEventListener('click', buyConsultant);
     
@@ -535,10 +571,16 @@ async function initGame() {
     updateLanguageUI();
 
     // Start background slideshow (15s)
-    setInterval(() => {
-        state.bgIndex = (state.bgIndex + 1) % GRAVITY_IMAGES.length;
-        updateBackgroundImage();
-    }, 15000);
+    try {
+        setInterval(() => {
+            if (typeof GRAVITY_IMAGES !== 'undefined' && GRAVITY_IMAGES.length > 0) {
+                state.bgIndex = (state.bgIndex + 1) % GRAVITY_IMAGES.length;
+                updateBackgroundImage();
+            }
+        }, 15000);
+    } catch(e) { console.warn("Erro no slideshow:", e); }
+    
+    console.log("initGame: CONCLUÍDO COM SUCESSO.");
 }
 
 function renderBoard() {
@@ -596,6 +638,8 @@ function applyBlitzPenalty() {
 }
 
 function updateHUD() {
+    console.log("updateHUD: Atualizando interface...");
+    if (!UI.money) { console.warn("updateHUD: UI.money não disponível"); return; }
     if (UI.money) {
         const isNegative = state.money < 0;
         const absVal = Math.abs(state.money).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
@@ -832,7 +876,14 @@ function updateBackgroundImage() {
     document.body.style.backgroundImage = `url('${imgUrl}')`;
 }
 
-function startTurn(skipExpenseCheck = false) {
+window.startTurn = function(skipExpenseCheck = false) {
+    console.log("startTurn: INICIANDO TURNO na casa", state.pos);
+    
+    // Fallback de perguntas
+    if (!state.questions || state.questions.length === 0) {
+        state.questions = [...questionsList];
+    }
+
     // Mecânica de Aluguel (Pós-Liquidação)
     if (state.isRenting) {
         state.rentCounter++;
@@ -880,8 +931,13 @@ function startTurn(skipExpenseCheck = false) {
     document.querySelectorAll('.space').forEach(s => s.onclick = null);
     
     // Process Bank logic BEFORE the turn starts (Loans and Investments maturing)
-    processBankTurn();
-    processFinanceTurn();
+    try {
+        console.log("startTurn: Processando Banco e Financeiro...");
+        processBankTurn();
+        processFinanceTurn();
+    } catch(e) {
+        console.error("startTurn ERROR no processamento financeiro:", e);
+    }
     
     if (state.pos > 300) {
         showGameOver();
@@ -894,8 +950,10 @@ function startTurn(skipExpenseCheck = false) {
     
     // 20% imprevisto, otherwise normal question
     if (Math.random() < 0.2) {
+        console.log("startTurn: Sorteando Evento...");
         triggerEvent();
     } else {
+        console.log("startTurn: Sorteando Pergunta...");
         askQuestion();
     }
 }
@@ -1032,10 +1090,17 @@ function triggerEvent() {
 }
 
 function askQuestion(skipRePick = false) {
+    console.log("askQuestion: Carregando pergunta para posição", state.pos);
     // Pick question by house position (1-indexed) if not skipping
     if (!skipRePick) {
         state.currentQuestion = state.questions.find(q => q.id === state.pos) || state.questions[0];
     }
+    
+    if (!state.currentQuestion) {
+        console.error("askQuestion ERROR: state.questions está vazio ou questão não encontrada!");
+        return;
+    }
+    console.log("askQuestion: Questão selecionada:", state.currentQuestion.id);
 
     updateHUD(); // Unlocks the card buttons
     
@@ -1053,11 +1118,20 @@ function askQuestion(skipRePick = false) {
         UI.mBtnReveal.classList.add('hidden');
     }
 
-    openModal(t("question_house", { pos: state.pos }), state.currentQuestion.text);
+    // Exibe o título e o conteúdo da questão
+    const qTitle = t("question_house", { pos: state.pos });
+    // Fallback para o campo .text se .intro/.question não existirem
+    const qContent = state.currentQuestion.text || 
+                    ((state.currentQuestion.intro || "") + "<br><br>" + (state.currentQuestion.question || ""));
+                    
+    openModal(qTitle, qContent);
     UI.mOptions.innerHTML = '';
     
     if (state.currentQuestion.image && UI.mImage) {
         UI.mImage.src = state.currentQuestion.image;
+        UI.mImage.classList.remove('hidden');
+    } else if (UI.mImage) {
+        UI.mImage.classList.add('hidden');
     }
 
     if (state.currentQuestion.revealImage && UI.mBtnReveal) {
@@ -1587,8 +1661,9 @@ function forceScrollToTop() {
 }
 
 function openModal(title, text) {
-    UI.mTitle.innerText = title;
-    UI.mText.innerHTML = text;
+    console.log("HUD: ABRINDO MODAL ->", title);
+    if (UI.mTitle) UI.mTitle.innerHTML = title;
+    if (UI.mText) UI.mText.innerHTML = text;
     
     const modalImage = document.getElementById('modal-image');
     if (modalImage) {
@@ -1596,9 +1671,16 @@ function openModal(title, text) {
         modalImage.src = "";
     }
     
+    // FORÇA VISIBILIDADE EXTREMA
     UI.modal.classList.remove('hidden');
+    UI.modal.style.display = 'flex';
+    UI.modal.style.zIndex = '999999';
+    UI.modal.style.opacity = '1';
+    UI.modal.style.pointerEvents = 'auto';
+    
     forceScrollToTop();
 }
+window.openModal = openModal;
 
 function closeModal() {
     stopSurpriseTimer(); 
@@ -1614,12 +1696,13 @@ function closeModal() {
 }
 
 /* --- Expense Decision Logic (Moved to Modal) --- */
-function payExpensesNow() {
+window.payExpensesNow = function() {
+    console.log("Finance: Iniciando payExpensesNow...");
     const total = calculateTotalExpenses();
     if (state.money >= total) {
         updateMoney(-total, "extrato_expenses_paid");
         state.expensePaid = true;
-        alert(t("alert_expenses_paid", { amount: total.toLocaleString() }));
+        alert(t("alert_expenses_paid", { amount: total.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) }));
         updateHUD();
         closeExpenses(); // Fecha a tela de despesas para evitar duplo clique
         if (UI.btnOpenExpenses) UI.btnOpenExpenses.classList.remove('pulse-warning');
@@ -1628,7 +1711,7 @@ function payExpensesNow() {
     }
 }
 
-function postponeExpenses() {
+window.postponeExpenses = function() {
     const penaltyGrowth = state.expensePenalty === 0 ? 50 : Math.round(state.expensePenalty * 0.15);
     state.expensePenalty += penaltyGrowth;
     alert(`Pagamento adiado! Multa de R$ ${penaltyGrowth} (Juros sobre dívida) aplicada.`);
@@ -1648,20 +1731,22 @@ function buyConsultant() {
 function closeAllModals() {
     if (UI.bankModal) UI.bankModal.classList.add('hidden');
     if (UI.investModal) UI.investModal.classList.add('hidden');
+window.closeInventory = function() {
     if (UI.inventoryModal) UI.inventoryModal.classList.add('hidden');
+}
     if (UI.expensesModal) UI.expensesModal.classList.add('hidden');
     if (UI.extratoModal) UI.extratoModal.classList.add('hidden');
 }
 
 // --- Extrato Logic ---
 
-function openExtrato() {
+window.openExtrato = function() {
     closeAllModals();
     renderExtrato();
     UI.extratoModal.classList.remove('hidden');
 }
 
-function closeExtrato() {
+window.closeExtrato = function() {
     UI.extratoModal.classList.add('hidden');
 }
 
@@ -1696,13 +1781,13 @@ function renderExtrato() {
 
 // --- Bank Logic ---
 
-function openBank() {
+window.openBank = function() {
     closeAllModals();
     updateBankUI();
     UI.bankModal.classList.remove('hidden');
 }
 
-function closeBank() {
+window.closeBank = function() {
     UI.bankModal.classList.add('hidden');
 }
 
@@ -1906,29 +1991,30 @@ function processBankTurn() {
 
 // --- Strategic Investments Logic ---
 
-function openInvestments() {
+window.openInvestments = function() {
     closeAllModals();
     updateInvestUI();
     UI.investModal.classList.remove('hidden');
 }
 
-function closeInvest() {
+window.closeInvest = function() {
     UI.investModal.classList.add('hidden');
 }
 
 /* --- Expenses Logic --- */
-function openExpenses() {
+window.openExpenses = function() {
     closeAllModals();
     updateExpensesUI();
     UI.expensesModal.classList.remove('hidden');
+    forceScrollToTop(); // Adicionado para garantir visibilidade do topo
 }
 
-function closeExpenses() {
-    UI.expensesModal.classList.add('hidden');
+window.closeExpenses = function() {
+    if (UI.expensesModal) UI.expensesModal.classList.add('hidden');
 }
 
 /* --- Inventory Logic --- */
-function openInventory() {
+window.openInventory = function() {
     updateInventoryUI();
     UI.inventoryModal.classList.remove('hidden');
 }
@@ -2149,7 +2235,7 @@ function playSuccessSound() {
 
 // End of file
 // Finance Modal Functions
-function openFinance() {
+window.openFinance = function() {
     renderFinanceiro();
     UI.financeModal.classList.remove('hidden');
     // Pre-select first tab
@@ -2157,7 +2243,7 @@ function openFinance() {
     forceScrollToTop();
 }
 
-function closeFinance() {
+window.closeFinance = function() {
     UI.financeModal.classList.add('hidden');
 }
 
@@ -2313,48 +2399,56 @@ function addReceivable(name, amount, turns) {
 }
 
 function processFinanceTurn() {
-    if (!state.finance) return;
+    console.log("processFinanceTurn: Verificando faturas...");
+    if (!state.finance || !state.finance.receivables || !state.finance.payables) {
+        console.warn("processFinanceTurn: Sistema financeiro não inicializado.");
+        return;
+    }
 
     let alertMsgs = [];
 
     // Processar Recebimentos
-    for (let i = state.finance.receivables.length - 1; i >= 0; i--) {
-        let rec = state.finance.receivables[i];
-        if (rec.late) continue;
-        
-        rec.turnsLeft--;
-        if (rec.turnsLeft <= 0) {
-            // Cliente pagou normalmente ou atrasou? (5% chance default)
-            if (Math.random() < 0.05) {
-                rec.late = true;
-                alertMsgs.push(`⚠️ O cliente "${rec.name}" não pagou no prazo. Fatura movida para Recebimentos em Atraso!`);
-            } else {
-                updateMoney(rec.amount, `Recebimento: ${rec.name}`);
-                state.finance.receivables.splice(i, 1);
+    try {
+        for (let i = state.finance.receivables.length - 1; i >= 0; i--) {
+            let rec = state.finance.receivables[i];
+            if (rec.late) continue;
+            
+            rec.turnsLeft--;
+            if (rec.turnsLeft <= 0) {
+                // Cliente pagou normalmente ou atrasou? (5% chance default)
+                if (Math.random() < 0.05) {
+                    rec.late = true;
+                    alertMsgs.push(`⚠️ O cliente "${rec.name}" não pagou no prazo. Fatura movida para Recebimentos em Atraso!`);
+                } else {
+                    updateMoney(rec.amount, `Recebimento: ${rec.name}`);
+                    state.finance.receivables.splice(i, 1);
+                }
             }
         }
-    }
+    } catch (e) { console.error("Error processing receivables:", e); }
 
     // Processar Pagamentos
-    for (let i = state.finance.payables.length - 1; i >= 0; i--) {
-        let pay = state.finance.payables[i];
-        if (pay.late) {
-            pay.amount += (pay.amount * 0.05); // Penalidade contínua
-            continue;
-        }
+    try {
+        for (let i = state.finance.payables.length - 1; i >= 0; i--) {
+            let pay = state.finance.payables[i];
+            if (pay.late) {
+                pay.amount += (pay.amount * 0.05); // Penalidade contínua
+                continue;
+            }
 
-        pay.turnsLeft--;
-        if (pay.turnsLeft <= 0) {
-            pay.late = true;
-            alertMsgs.push(`🚨 A conta "${pay.name}" venceu! Movida para Contas Vencidas.`);
+            pay.turnsLeft--;
+            if (pay.turnsLeft <= 0) {
+                pay.late = true;
+                alertMsgs.push(`🚨 A conta "${pay.name}" venceu! Movida para Contas Vencidas.`);
+            }
         }
-    }
+    } catch (e) { console.error("Error processing payables:", e); }
 
     if (alertMsgs.length > 0) {
         alert("Avisos Financeiros (Fecho de Mês):\n\n" + alertMsgs.join("\n"));
     }
 
-    if (!UI.financeModal.classList.contains('hidden')) {
+    if (UI.financeModal && !UI.financeModal.classList.contains('hidden')) {
         renderFinanceiro();
     }
 }
