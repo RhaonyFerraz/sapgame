@@ -32,12 +32,14 @@ const state = {
     language: currentLang,
     pos: 1,
     money: DIFFICULTY.NORMAL.initialMoney, // Capital inicial rebalanceado
+    statement: [], // Histórico de transações (Extrato)
     difficulty: 'NORMAL',
     level: 1, // 1: Pequena, 2: Média, 3: Grande
     consultants: 0,
     questions: [],
     currentQuestion: null,
-    surpriseShown1: false, // Flag para a questão surpresa 1
+    millerRewardGiven: false,
+    lastFreeInvestTurn: 0,
     
     // NOVO: Rastreamento de métricas
     stats: {
@@ -59,14 +61,16 @@ const state = {
         machines: 0,
         training: 0,
         marketing: 0,
-        logistics: 0
+        logistics: 0,
+        consultants: 0
     },
     inventory: {
-        warehouse: 10000,
+        warehouse: 5000,
         machinery: 0,
         packaging: 800,
         rawMaterials: 0,
-        finishedGoods: 780
+        finishedGoods: 780,
+        fleet: 0
     },
     expensePenalty: 0,
     expensePaid: false,
@@ -77,8 +81,77 @@ const state = {
         water: 60,
         internet: 50
     },
-    bgIndex: 0
+    bgIndex: 0,
+    isRenting: false,
+    consecutiveWrong: 0,
+    pendingBlitz: false,
+    blitzDebt: 0,
+    rentCounter: 0,
+    rentType: null, // 'auto' ou 'manual'
+    finance: {
+        payables: [],
+        receivables: [],
+        nextId: 1
+    }
 };
+
+function updateMoney(amount, reasonKey) {
+    amount = Number(amount);
+    if (isNaN(amount) || amount === 0) return;
+    
+    state.money += amount;
+    
+    // Identificar tipo (entrada ou saída) e gravar no extrato
+    state.statement.unshift({
+        turn: state.pos,
+        amount: amount,
+        reason: t(reasonKey) || reasonKey,
+        balance: state.money,
+        type: amount > 0 ? 'income' : 'expense'
+    });
+    
+    // Auto-update HUD on every money change
+    updateHUD();
+    
+    // Manter apenas as últimas 100 transações
+    if (state.statement.length > 100) {
+        state.statement.pop();
+    }
+    
+    // Auto-Pawn Mechanism (Recuperação Judicial Automática)
+    const invTotal = state.inventory.warehouse + state.inventory.machinery + 
+                     state.inventory.packaging + state.inventory.rawMaterials + 
+                     state.inventory.finishedGoods + state.inventory.fleet;
+                     
+    if (invTotal > 0 && state.money <= -(invTotal * 0.05)) {
+        setTimeout(() => triggerAutoPawn(invTotal), 150); // Delay curto para o JS terminar chamadas locais
+    }
+}
+
+function triggerAutoPawn(total) {
+    if (total <= 0) return;
+    
+    // Zera o inventario ANTES de chamar updateMoney para evitar loops no gatilho interno
+    state.inventory.warehouse = 0;
+    state.inventory.machinery = 0;
+    state.inventory.packaging = 0;
+    state.inventory.rawMaterials = 0;
+    state.inventory.finishedGoods = 0;
+    state.inventory.fleet = 0;
+    
+    // Ativa status de inquilino eterno do Banco
+    state.isRenting = true;
+    state.rentCounter = 0;
+    state.rentType = 'auto';
+    
+    const liquidationValue = Math.floor(total * 0.5);
+    updateMoney(liquidationValue, "extrato_inventory_pawn");
+    
+    if (typeof updateInventoryUI === 'function') updateInventoryUI();
+    if (typeof updateHUD === 'function') updateHUD();
+    
+    alert(t("alert_auto_pawn", { amount: liquidationValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) }));
+}
 
 // --- Start Screen Logic (Promoted for priority) ---
 let hasStarted = false;
@@ -101,13 +174,18 @@ const startJourney = (e) => {
     const rImg2 = document.getElementById('reveal-image-2');
     
     if (reveal && rText && rImg) {
+        console.log("Iniciando sequência de introdução...");
         // Phase 1: mens3.png + text (4 seconds)
         reveal.classList.remove('hidden');
-        reveal.style.opacity = '1';
         rImg.classList.remove('hidden');
-        rImg.style.opacity = '1';
         rText.classList.remove('hidden');
-        rText.style.opacity = '1';
+        
+        // Pequeno delay para garantir que o browser processou o fim do display:none
+        setTimeout(() => {
+            reveal.style.opacity = '1';
+            rImg.style.opacity = '1';
+            rText.style.opacity = '1';
+        }, 50);
         
         setTimeout(() => {
             // Phase 2: Fade out text, keep mens3.png alone (4 seconds)
@@ -174,18 +252,44 @@ const GAME_CONFIG = {
         wrongBasePenalty: 100,
         expensesBase: 540,
         passiveRevenue: {
-            infra: 150,
-            machines: 220,
-            training: 100,
-            marketing: 160,
-            logistics: 180
+            infra: 0,
+            machines: 0,
+            training: 0,
+            marketing: 0,
+            logistics: 0,
+            consultants: 0
         },
         upgradeCosts: {
-            infra: [500, 625, 781, 976, 1220, 1525],
-            machines: [800, 1000, 1280, 1638, 2097, 2684],
-            training: [400, 500, 640, 819, 1048, 1342],
-            marketing: [600, 750, 960, 1229, 1573, 2016],
-            logistics: [700, 875, 1120, 1434, 1835, 2348]
+            infra: [
+                500, 600, 720, 864, 1037, 1244, 1493, 1792, 2150, 2580,
+                3096, 3715, 4458, 5350, 6420, 7704, 9245, 11094, 13313, 15975,
+                19170, 23004, 27605, 33126, 39751, 47701, 57241, 68689, 82427, 98912
+            ],
+            machines: [
+                800, 960, 1152, 1382, 1658, 1990, 2388, 2866, 3439, 4127,
+                4952, 5942, 7131, 8557, 10268, 12322, 14786, 17743, 21292, 25550,
+                30660, 36792, 44150, 52980, 63576, 76291, 91549, 109859, 131831, 158197
+            ],
+            training: [
+                400, 480, 576, 691, 829, 995, 1194, 1433, 1720, 2064, 
+                2477, 2972, 3566, 4279, 5135, 6162, 7394, 8873, 10648, 12778, 
+                15334, 18401, 22081, 26497, 31796, 38155, 45786, 54943, 65932, 79118
+            ],
+            marketing: [
+                600, 720, 864, 1037, 1244, 1493, 1792, 2150, 2580, 3096,
+                3715, 4458, 5350, 6420, 7704, 9245, 11094, 13313, 15975, 19170,
+                23004, 27605, 33126, 39751, 47701, 57241, 68689, 82427, 98912, 118694
+            ],
+            consultants: [
+                500, 590, 696, 821, 969, 1144, 1349, 1592, 1879, 2217,
+                2616, 3087, 3643, 4299, 5073, 5986, 7063, 8334, 9835, 11605,
+                13694, 16159, 19067, 22500, 26550, 31329, 36968, 43622, 51474, 60739
+            ],
+            logistics: [
+                700, 840, 1008, 1210, 1452, 1742, 2090, 2508, 3010, 3612,
+                4334, 5201, 6241, 7489, 8987, 10784, 12941, 15529, 18635, 22362,
+                26834, 32201, 38641, 46369, 55643, 66772, 80126, 96151, 115381, 138457
+            ]
         },
         eventProbabilityBase: 0.15
     }
@@ -196,7 +300,8 @@ const STRATEGIC_DATA = {
     machines: { name: "Máquinas", baseCost: 800, costMult: 1.6, revenue: 180 },
     training: { name: "Treinamento", baseCost: 400, costMult: 1.4, revenue: 70 },
     marketing: { name: "Propaganda", baseCost: 600, costMult: 1.5, revenue: 120 },
-    logistics: { name: "Logística", baseCost: 700, costMult: 1.5, revenue: 140 }
+    logistics: { name: "Logística", baseCost: 700, costMult: 1.5, revenue: 140 },
+    consultants: { name: "Consultores", baseCost: 500, costMult: 1.5, revenue: 0 }
 };
 
 let UI = {};
@@ -207,7 +312,7 @@ function updateUIReferences() {
         level: document.getElementById('level'),
         consultants: document.getElementById('consultants'),
         consultantsModal: document.getElementById('consultants-modal'),
-        btnBuy: document.getElementById('btn-buy-consultant'),
+        btnBuy: null, // Removido botão antigo de compra
         board: document.getElementById('board-container'),
         modal: document.getElementById('modal'),
         mTitle: document.getElementById('modal-title'),
@@ -226,6 +331,12 @@ function updateUIReferences() {
         btnCloseBank: document.getElementById('btn-close-bank'),
         bankTabs: document.querySelectorAll('.bank-tab'),
         bankPanels: document.querySelectorAll('.bank-panel'),
+        
+        // Extrato UI
+        extratoModal: document.getElementById('extrato-modal'),
+        btnOpenExtrato: document.getElementById('btn-bank-extrato'),
+        btnCloseExtrato: document.getElementById('btn-close-extrato'),
+        extratoList: document.getElementById('extrato-list'),
         loanAmount: document.getElementById('loan-amount'),
         investAmount: document.getElementById('invest-amount'),
         investDuration: document.getElementById('invest-duration'),
@@ -237,10 +348,20 @@ function updateUIReferences() {
         btnOpenInvest: document.getElementById('btn-open-invest'),
         btnCloseInvest: document.getElementById('btn-close-invest'),
         
+        // Financeiro UI
+        financeModal: document.getElementById('finance-modal'),
+        btnOpenFinance: document.getElementById('btn-open-finance'),
+        btnCloseFinance: document.getElementById('btn-close-finance'),
+        ficheiroTabs: document.querySelectorAll('.ficheiro-tab'),
+        ficheiroPanels: document.querySelectorAll('.ficheiro-panel'),
+        ficheiroContent: document.querySelector('.ficheiro-content'),
+        
         // Inventory UI
         inventoryModal: document.getElementById('inventory-modal'),
         btnOpenInventory: document.getElementById('btn-open-inventory'),
         btnCloseInventory: document.getElementById('btn-close-inventory'),
+        btnPawnInventory: document.getElementById('btn-pawn-inventory'),
+        btnPatrimonialAgreement: document.getElementById('btn-patrimonial-agreement'),
         
         // Expenses UI
         expensesModal: document.getElementById('expenses-modal'),
@@ -253,6 +374,8 @@ function updateUIReferences() {
         invPackaging: document.getElementById('inv-packaging'),
         invRawMaterials: document.getElementById('inv-raw-materials'),
         invFinishedGoods: document.getElementById('inv-finished-goods'),
+        invFleet: document.getElementById('inv-fleet'),
+        invTotal: document.getElementById('inv-total'),
 
         expEmployees: document.getElementById('exp-employees'),
         expAccounting: document.getElementById('exp-accounting'),
@@ -260,14 +383,13 @@ function updateUIReferences() {
         expWater: document.getElementById('exp-water'),
         expInternet: document.getElementById('exp-internet'),
         expLoans: document.getElementById('exp-loans'),
+        expInfraDiscount: document.getElementById('exp-infra-discount'),
         expPenalty: document.getElementById('exp-penalty'),
         expTotal: document.getElementById('exp-total'),
         expenseDecisionBox: document.getElementById('expense-decision-box'),
         btnPayNow: document.getElementById('btn-pay-now'),
         btnPayLater: document.getElementById('btn-pay-later'),
         
-        totalRevenue: document.getElementById('total-revenue-val'),
-
         // New Pill HUD elements
         btnLangToggle: document.getElementById('btn-lang-toggle'),
         btnStartTurn: document.getElementById('btn-start-turn')
@@ -376,13 +498,28 @@ async function initGame() {
     if (UI.btnConfirmLoan) UI.btnConfirmLoan.addEventListener('click', confirmLoan);
     if (UI.btnConfirmInvest) UI.btnConfirmInvest.addEventListener('click', confirmInvest);
     
+    // Extrato events
+    if (UI.btnOpenExtrato) UI.btnOpenExtrato.addEventListener('click', openExtrato);
+    if (UI.btnCloseExtrato) UI.btnCloseExtrato.addEventListener('click', closeExtrato);
+    
     // Strategic Invest events
     if (UI.btnOpenInvest) UI.btnOpenInvest.addEventListener('click', openInvestments);
     if (UI.btnCloseInvest) UI.btnCloseInvest.addEventListener('click', closeInvest);
     
+    // Financeiro events
+    if (UI.btnOpenFinance) UI.btnOpenFinance.addEventListener('click', openFinance);
+    if (UI.btnCloseFinance) UI.btnCloseFinance.addEventListener('click', closeFinance);
+    if (UI.ficheiroTabs) {
+        UI.ficheiroTabs.forEach(tab => {
+            tab.addEventListener('click', () => switchFicheiroTab(tab.dataset.ficha));
+        });
+    }
+    
     // Inventory events
     if (UI.btnOpenInventory) UI.btnOpenInventory.addEventListener('click', openInventory);
     if (UI.btnCloseInventory) UI.btnCloseInventory.addEventListener('click', closeInventory);
+    if (UI.btnPawnInventory) UI.btnPawnInventory.addEventListener('click', pawnInventory);
+    if (UI.btnPatrimonialAgreement) UI.btnPatrimonialAgreement.addEventListener('click', performPatrimonialAgreement);
     
     // Expenses events
     if (UI.btnOpenExpenses) UI.btnOpenExpenses.addEventListener('click', openExpenses);
@@ -410,8 +547,70 @@ function renderBoard() {
     if (UI.board) UI.board.innerHTML = '';
 }
 
+function applyBlitzPenalty() {
+    const penalty = 1000;
+    
+    // Reutiliza o modal já aberto — troca o conteúdo
+    UI.mTitle.innerText = t("blitz_title");
+    UI.mText.innerText = t("blitz_text");
+    UI.mOptions.innerHTML = '';
+    UI.mFeedback.innerHTML = '';
+    UI.mFeedback.classList.add('hidden');
+    if (UI.mBtnBonus) UI.mBtnBonus.classList.add('hidden');
+    if (UI.mBtnReveal) UI.mBtnReveal.classList.add('hidden');
+    const btnRevealEn = document.getElementById('btn-reveal-en');
+    if (btnRevealEn) btnRevealEn.classList.add('hidden');
+    
+    // Esconde o botão de ação padrão — usaremos botões custom
+    UI.mAction.style.display = 'none';
+    
+    // Botão: PAGAR AGORA
+    const btnPagar = document.createElement('button');
+    btnPagar.className = 'option-btn';
+    btnPagar.style.cssText = 'background: linear-gradient(135deg, #27ae60, #2ecc71); border: none; color: #fff; font-weight: bold; margin: 5px;';
+    btnPagar.innerText = '💰 Pagar Agora (R$ 1.000)';
+    btnPagar.onclick = () => {
+        updateMoney(-penalty, "extrato_blitz_penalty");
+        closeModal();
+        updateHUD();
+    };
+    
+    // Botão: PAGAR DEPOIS
+    const btnDepois = document.createElement('button');
+    btnDepois.className = 'option-btn';
+    btnDepois.style.cssText = 'background: linear-gradient(135deg, #e74c3c, #c0392b); border: none; color: #fff; font-weight: bold; margin: 5px;';
+    btnDepois.innerText = '⏳ Pagar Depois (+5% por rodada)';
+    btnDepois.onclick = () => {
+        state.blitzDebt += penalty;
+        console.log(`BLITZ: Multa adiada. Dívida acumulada: R$ ${state.blitzDebt}`);
+        closeModal();
+        updateHUD();
+    };
+    
+    UI.mOptions.appendChild(btnPagar);
+    UI.mOptions.appendChild(btnDepois);
+    
+    // Garante que o modal está visível
+    UI.modal.classList.remove('hidden');
+    forceScrollToTop();
+}
+
 function updateHUD() {
-    if (UI.money) UI.money.innerText = `$ ${state.money.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+    if (UI.money) {
+        const isNegative = state.money < 0;
+        const absVal = Math.abs(state.money).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+        UI.money.innerText = (isNegative ? '-$ ' : '$ ') + absVal;
+        UI.money.classList.toggle('negative-money', isNegative);
+
+        // GATILHO DE FALÊNCIA: Negativo + Sem Bens (Inquilino)
+        if (state.money < 0 && state.isRenting) {
+            setTimeout(() => showGameOver(true), 500);
+        }
+    }
+
+    if (UI.btnOpenInventory) {
+        UI.btnOpenInventory.classList.toggle('liquidated', state.isRenting);
+    }
     
     // Atualizar o texto do botão START com a QUESTÃO atual (state.pos)
     const startBtnText = UI.btnStartTurn ? UI.btnStartTurn.querySelector('[data-t="hud_start"]') : null;
@@ -420,7 +619,6 @@ function updateHUD() {
     }
     
     
-    // Pulse effect for expenses if due (Every 4 rounds)
     if (UI.btnOpenExpenses) {
         if (state.pos >= 4 && !state.expensePaid) {
             UI.btnOpenExpenses.classList.add('pulse-warning');
@@ -429,22 +627,111 @@ function updateHUD() {
         }
     }
     
+    // Pulse effect for free investments (Every 5 rounds)
+    if (UI.btnOpenInvest) {
+        const isPromoRound = (state.pos > 0 && state.pos % 5 === 0);
+        const promoAvailable = isPromoRound && (state.lastFreeInvestTurn !== state.pos);
+        UI.btnOpenInvest.classList.toggle('pulse-gold', promoAvailable);
+    }
+    
     // Background Image
     updateBackgroundImage();
     
     // Limits
     if (UI.btnBuy) UI.btnBuy.disabled = state.money < 500 || state.consultants >= 2;
     updateInventoryUI();
-    updateExpensesUI();
 }
 
 function updateInventoryUI() {
     if (!UI.inventoryModal) return;
-    UI.invWarehouse.innerText = state.inventory.warehouse.toLocaleString();
-    UI.invMachinery.innerText = state.inventory.machinery.toLocaleString();
-    UI.invPackaging.innerText = state.inventory.packaging.toLocaleString();
-    UI.invRawMaterials.innerText = state.inventory.rawMaterials.toLocaleString();
-    UI.invFinishedGoods.innerText = state.inventory.finishedGoods.toLocaleString();
+    
+    if (UI.invWarehouse) UI.invWarehouse.innerText = state.inventory.warehouse.toLocaleString();
+    if (UI.invMachinery) UI.invMachinery.innerText = state.inventory.machinery.toLocaleString();
+    if (UI.invPackaging) UI.invPackaging.innerText = state.inventory.packaging.toLocaleString();
+    if (UI.invRawMaterials) UI.invRawMaterials.innerText = state.inventory.rawMaterials.toLocaleString();
+    if (UI.invFinishedGoods) UI.invFinishedGoods.innerText = state.inventory.finishedGoods.toLocaleString();
+    if (UI.invFleet) UI.invFleet.innerText = state.inventory.fleet.toLocaleString();
+    
+    const totalValue = state.inventory.warehouse + state.inventory.machinery + 
+                       state.inventory.packaging + state.inventory.rawMaterials + 
+                       state.inventory.finishedGoods + state.inventory.fleet;
+    if (UI.invTotal) UI.invTotal.innerText = totalValue.toLocaleString();
+
+    // Toggle Acordo Patrimonial vs Penhorar
+    if (UI.btnPatrimonialAgreement) {
+        if (state.isRenting) {
+            UI.btnPatrimonialAgreement.classList.remove('hidden');
+            if (UI.btnPawnInventory) UI.btnPawnInventory.classList.add('hidden');
+        } else {
+            UI.btnPatrimonialAgreement.classList.add('hidden');
+            if (UI.btnPawnInventory) UI.btnPawnInventory.classList.remove('hidden');
+        }
+    }
+}
+
+function pawnInventory() {
+    const total = state.inventory.warehouse + 
+                  state.inventory.machinery + 
+                  state.inventory.packaging + 
+                  state.inventory.rawMaterials + 
+                  state.inventory.finishedGoods +
+                  state.inventory.fleet;
+                  
+    if (total <= 0) {
+        alert(t("alert_pawn_empty"));
+        return;
+    }
+    
+    const baseAssessment = 0.75;
+    const consultantsBonus = (state.upgrades.consultants || 0) * 0.01;
+    const assessment = baseAssessment + consultantsBonus;
+    
+    const liquidationValue = Math.floor(total * assessment);
+    const amountStr = liquidationValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+    
+    if (confirm(t("pawn_confirm_msg", { amount: amountStr }))) {
+        updateMoney(liquidationValue, "extrato_inventory_pawn");
+        
+        // Zera o inventario
+        state.inventory.warehouse = 0;
+        state.inventory.machinery = 0;
+        state.inventory.packaging = 0;
+        state.inventory.rawMaterials = 0;
+        state.inventory.finishedGoods = 0;
+        state.inventory.fleet = 0;
+        
+        // Ativa status de inquilino (ícone vermelho e ciclo de aluguel)
+        state.isRenting = true;
+        state.rentCounter = 0;
+        state.rentType = 'manual';
+        
+        updateInventoryUI();
+        updateHUD();
+        alert(t("alert_pawn_success", { amount: liquidationValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) }));
+    }
+}
+
+function performPatrimonialAgreement() {
+    if (!state.isRenting) return;
+
+    if (state.money < 6000) {
+        alert(t("alert_agreement_no_funds"));
+        return;
+    }
+
+    if (confirm(t("msg_agreement_confirm"))) {
+        updateMoney(-6000, "extrato_agreement");
+        
+        // Restaura a posse do Galpão
+        state.inventory.warehouse = 5000;
+        state.isRenting = false;
+        state.rentCounter = 0;
+        state.rentType = null;
+
+        updateInventoryUI();
+        updateHUD();
+        alert(t("alert_agreement_success"));
+    }
 }
 
 function calculateDynamicExpenses() {
@@ -459,14 +746,16 @@ function calculateDynamicExpenses() {
         internet: 30 * multiplier
     };
 
+    // Reduções de Eficiência (Módulos Treinamento e Logística)
     const reductions = {
-        accounting: state.upgrades.training * 20,
-        electricity: state.upgrades.logistics * 15
+        accounting: state.upgrades.training * 20, // R$ 20 de desconto por nível
+        electricity: state.upgrades.logistics * 15 // R$ 15 de desconto por nível
     };
 
     const loanPenalty = state.bank.loans.length > 0 ? 100 : 0;
 
-    const total = 
+    // Subtotal antes do desconto de infraestrutura
+    const subtotal = 
         costs.employees + 
         Math.max(10, costs.accounting - reductions.accounting) + 
         Math.max(10, costs.electricity - reductions.electricity) + 
@@ -474,7 +763,12 @@ function calculateDynamicExpenses() {
         costs.internet + 
         loanPenalty;
 
-    return { total, costs, reductions, loanPenalty };
+    // NOVO: Desconto de Infraestrutura (3% por nível)
+    const infraDiscountPercent = (state.upgrades.infra || 0) * 0.03;
+    const infraDiscountValue = Math.round(subtotal * infraDiscountPercent);
+    const total = subtotal - infraDiscountValue;
+
+    return { total, costs, reductions, loanPenalty, infraDiscountValue, infraDiscountPercent };
 }
 
 function calculateTotalExpenses() {
@@ -517,6 +811,12 @@ function updateExpensesUI() {
     const total = calculateTotalExpenses();
     UI.expTotal.innerText = total.toLocaleString();
 
+    if (UI.expInfraDiscount) {
+        UI.expInfraDiscount.innerText = dynamic.infraDiscountValue.toLocaleString();
+        const percentLabel = Math.round(dynamic.infraDiscountPercent * 100);
+        UI.expInfraDiscount.parentElement.previousElementSibling.innerText = `Economia (Infra ${percentLabel}%)`;
+    }
+
     // Show decision box if due (Every 4 rounds)
     if (UI.expenseDecisionBox) {
         if (state.pos >= 4 && !state.expensePaid) {
@@ -533,6 +833,34 @@ function updateBackgroundImage() {
 }
 
 function startTurn(skipExpenseCheck = false) {
+    // Mecânica de Aluguel (Pós-Liquidação)
+    if (state.isRenting) {
+        state.rentCounter++;
+        if (state.rentCounter >= 3) {
+            if (state.rentType === 'manual') {
+                alert(t("alert_rent_pawn"));
+                updateMoney(-700, "extrato_rent_paid_pawn");
+            } else {
+                alert(t("alert_rent_due"));
+                updateMoney(-800, "extrato_rent_paid");
+            }
+            state.rentCounter = 0;
+        }
+    }
+    
+    // Bônus Especial: Fidelidade John Miller (Rodada 10/Casa 11)
+    if (state.pos === 11 && state.surprise1Correct && state.surprise2Correct && !state.millerRewardGiven) {
+        state.millerRewardGiven = true;
+        updateMoney(3000, "extrato_miller_bonus");
+        updateHUD();
+        alert(t("alert_miller_reward"));
+    }
+
+    // Alerta de Rodada Promocional foi removido a pedido do utilizador
+    // if (state.pos > 0 && state.pos % 5 === 0) {
+    //     ...
+    // }
+
     // Hide ticker when turn starts
     const tickerBar = document.getElementById('ticker-bar');
     const tickerBtn = document.getElementById('btn-toggle-ticker');
@@ -553,6 +881,7 @@ function startTurn(skipExpenseCheck = false) {
     
     // Process Bank logic BEFORE the turn starts (Loans and Investments maturing)
     processBankTurn();
+    processFinanceTurn();
     
     if (state.pos > 300) {
         showGameOver();
@@ -620,9 +949,18 @@ function triggerEvent() {
     let ctxEvent = evaluateContextualEvents();
     
     if (ctxEvent) {
-        state.money += ctxEvent.change;
-        if (ctxEvent.change < 0) state.stats.totalEventsDamage += Math.abs(ctxEvent.change);
-        else state.stats.totalEventsGains += ctxEvent.change;
+        let finalChange = ctxEvent.change;
+        if (finalChange > 0) {
+            const mktBonus = (state.upgrades.marketing || 0) * 20;
+            if (mktBonus > 0) {
+                finalChange += mktBonus;
+                ctxEvent.text += `<br><br><strong style="color: #2ecc71;">📈 Bônus Propaganda: + R$ ${mktBonus}</strong>`;
+            }
+        }
+
+        updateMoney(finalChange, ctxEvent.title || "extrato_event");
+        if (finalChange < 0) state.stats.totalEventsDamage += Math.abs(finalChange);
+        else state.stats.totalEventsGains += finalChange;
 
         openModal(ctxEvent.title, ctxEvent.text);
         UI.mOptions.innerHTML = '';
@@ -633,31 +971,57 @@ function triggerEvent() {
         UI.mFeedback.classList.remove('hidden');
     } else {
         // Fallback to purely random generic events
-        const events = [
+        let events = [
             { change: -200, key: "event_stock_fail" },
-            { change: -100, key: "event_supplier_delay" },
-            { change: -300, key: "event_market_crisis" },
-            { change: 500, key: "event_sap_bonus" },
-            { change: 400, key: "event_logistics_win" }
+            { change: -100, key: "event_supplier_delay" }
         ];
+        
+        // Evento de crise de mercado estrangeiro (Só após rodada 5)
+        if (state.pos > 5) {
+            events.push({ change: -300, key: "event_market_crisis" });
+        }
+        
+        // Bonus de propaganda (limite de 3 por jogo)
+        if (!state.eventMarketingCount) state.eventMarketingCount = 0;
+        if (state.upgrades && state.upgrades.marketing > 0 && state.eventMarketingCount < 3) {
+            events.push({ change: 500, key: "event_sap_bonus" });
+        }
+
+        // Bonus de logística só aparece se a empresa investiu em logística
+        if (state.upgrades && state.upgrades.logistics > 0) {
+            events.push({ change: 400, key: "event_logistics_win" });
+        }
         const ev = events[Math.floor(Math.random() * events.length)];
         
-        state.money += ev.change;
-        if (ev.change < 0) state.stats.totalEventsDamage += Math.abs(ev.change);
-        else state.stats.totalEventsGains += ev.change;
+        if (ev.key === "event_sap_bonus") {
+            state.eventMarketingCount++;
+        }
         
-        openModal(t("event_title") + " 📊", t(ev.key));
+        let feedbackHTML = "";
+        let evName = t(ev.key) || ev.key;
+        if (ev.change < 0) {
+            addPayable(evName, Math.abs(ev.change), 2);
+            state.stats.totalEventsDamage += Math.abs(ev.change);
+            feedbackHTML = `🚨 Nova fatura gerada: R$ ${Math.abs(ev.change)}<br><small>Verifique suas <b>Contas a Pagar</b> no Ficheiro (Vence em 2 rodadas).</small>`;
+            UI.mFeedback.className = 'error';
+        } else {
+            addReceivable(evName, ev.change, 2);
+            state.stats.totalEventsGains += ev.change;
+            feedbackHTML = `✅ Novo recebimento futuro: R$ ${ev.change}<br><small>Verifique suas <b>Contas a Receber</b> no Ficheiro (Cai em 2 rodadas).</small>`;
+            UI.mFeedback.className = 'success';
+        }
+        
+        openModal(t("event_title") + " 📊", evName);
         UI.mOptions.innerHTML = '';
         if (UI.mBtnBonus) UI.mBtnBonus.classList.add('hidden');
         if (UI.mBtnReveal) UI.mBtnReveal.classList.add('hidden');
-        UI.mFeedback.innerHTML = ev.change > 0 ? t("event_gain", { amount: ev.change }) : t("event_loss", { amount: Math.abs(ev.change) });
-        UI.mFeedback.className = ev.change > 0 ? 'success' : 'error';
+        UI.mFeedback.innerHTML = feedbackHTML;
         UI.mFeedback.classList.remove('hidden');
     }
 
-    // Processar ganhos estratégicos (Upgrades) no evento surpresa também
-    processStrategicTurn();
-    
+    // Processamentos de Fim de Turno
+    processBankTurn();
+    updateHUD();
     UI.mAction.classList.remove('hidden');
     UI.mAction.onclick = () => {
         closeModal();
@@ -780,22 +1144,51 @@ function handleAnswer(selectedId, btnElement) {
         b.onclick = null;
     });
 
+    if (!state.currentQuestion) {
+        console.error("No active question found!");
+        closeModal();
+        return;
+    }
+
     const selectedOpt = state.currentQuestion.options.find(o => o.id === selectedId);
+    if (!selectedOpt) return;
+    
     const isCorrect = selectedOpt.isCorrect;
     if (UI.mBtnBonus) UI.mBtnBonus.classList.add('hidden');
     
     if (isCorrect) {
+        state.consecutiveWrong = 0; // Reset na sequência de erros
+        
         btnElement.classList.add('correct');
-        const reward = 150;
-        state.money += reward;
+        // RECOMPENSA DINÂMICA: Base 150 + Bonus Máquinas (10/nv) + Bonus Logística (5/nv)
+        const baseReward = 150;
+        const machinesBonus = (state.upgrades.machines || 0) * 10;
+        const logisticsBonus = (state.upgrades.logistics || 0) * 5;
+        const reward = baseReward + machinesBonus + logisticsBonus;
+        
+        updateMoney(reward, "extrato_question_win");
+        
         state.pos++;
+        
+        // JUROS da Blitz: +5% por rodada na dívida pendente
+        if (state.blitzDebt > 0) {
+            const interest = Math.round(state.blitzDebt * 0.05);
+            state.blitzDebt += interest;
+            console.log(`BLITZ Juros: +R$ ${interest} (5%). Dívida total: R$ ${state.blitzDebt}`);
+        }
+        
         // Reset expense payment for the new cycle (Every 4 rounds)
         if (state.pos % 4 === 0) {
             state.expensePaid = false;
             console.log(`Nova rodada de faturamento! Iniciando ciclo: ${state.pos}`);
         }
         
-        UI.mFeedback.innerHTML = `${t("ans_correct", { reward })}<br><br>${selectedOpt.justification}`;
+        let bonusParts = [];
+        if (machinesBonus > 0) bonusParts.push(`Máquinas: +${machinesBonus}`);
+        if (logisticsBonus > 0) bonusParts.push(`Logística: +${logisticsBonus}`);
+        
+        const rewardText = bonusParts.length > 0 ? `${reward} (Bônus: ${bonusParts.join(', ')})` : `${reward}`;
+        UI.mFeedback.innerHTML = `${t("ans_correct", { reward: rewardText })}<br><br>${selectedOpt.justification}`;
         UI.mFeedback.className = 'success';
         
         // Visual Success Feedback
@@ -819,15 +1212,33 @@ function handleAnswer(selectedId, btnElement) {
         
     } else {
         btnElement.classList.add('wrong');
+        
+        // Mecânica de BLITZ: Apenas até a questão 20
+        if (state.pos <= 20) {
+            state.consecutiveWrong++;
+            if (state.consecutiveWrong >= 3) {
+                state.pendingBlitz = true;  // Sinaliza para exibir APÓS o feedback normal
+                state.consecutiveWrong = 0;
+            }
+        } else {
+            state.consecutiveWrong = 0; // Inativo após Q20
+        }
+        
         // Prevent loss using consultant
         if (state.consultants > 0) {
             state.consultants--;
             UI.mFeedback.innerHTML = `${selectedOpt.justification}<br><br>${t("ans_consultant")}`;
             UI.mFeedback.className = 'info';
         } else {
-            const loss = 100;
-            state.money -= loss;
-            UI.mFeedback.innerHTML = `${selectedOpt.justification}<br><br>${t("ans_wrong", { loss })}`;
+            const baseLoss = 500;
+            const trainingDiscountPercent = (state.upgrades.training || 0) * 0.02;
+            const lossReduction = Math.round(baseLoss * trainingDiscountPercent);
+            const loss = baseLoss - lossReduction;
+
+            updateMoney(-loss, "extrato_question_loss");
+            
+            let lossText = lossReduction > 0 ? `${loss} (Desconto Treinamento -${Math.round(trainingDiscountPercent * 100)}%: R$ ${lossReduction})` : `${loss}`;
+            UI.mFeedback.innerHTML = `${selectedOpt.justification}<br><br>${t("ans_wrong", { loss: lossText })}`;
             UI.mFeedback.className = 'error';
             
             // Visual Error Feedback
@@ -848,10 +1259,15 @@ function handleAnswer(selectedId, btnElement) {
         UI.mFeedback.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 100);
 
-    // Processar ganhos estratégicos (Upgrades) APÓS a ação para evitar "ganho no start"
-    processStrategicTurn();
+    // Ganhos estratégicos removidos conforme solicitação
 
     UI.mAction.onclick = () => {
+        // GATILHO: Blitz pendente — exibe APÓS o feedback do erro
+        if (state.pendingBlitz) {
+            state.pendingBlitz = false;
+            applyBlitzPenalty();
+            return; // Não fecha o modal ainda; applyBlitzPenalty mostra o próprio
+        }
         // GATILHO: Questão Surpresa após acertar a primeira questão
         if (isCorrect && state.pos === 2 && !state.surpriseShown1) {
             loadSurpriseQuestion(1);
@@ -945,8 +1361,10 @@ async function loadSurpriseQuestion(num) {
             UI.mOptions.appendChild(btn);
         });
 
-        // Iniciar Contagem Regressiva de 60 segundos
-        startSurpriseTimer(60, num, correctAnswer);
+        // Iniciar Contagem Regressiva de 60 segundos + Bônus Consultores (2s/nv)
+        const baseTime = 60;
+        const consultBonus = (state.upgrades.consultants || 0) * 2;
+        startSurpriseTimer(baseTime + consultBonus, num, correctAnswer);
 
         // Força o scroll para o topo após as alternativas serem inseridas
         forceScrollToTop();
@@ -1001,12 +1419,18 @@ function selectSurpriseOption(num, choice, correctLetter) {
     });
 
     // SEMPRE marcar como mostrada, independente de acerto ou erro
-    if (num === 1) state.surpriseShown1 = true;
-    if (num === 2) state.surpriseShown2 = true;
+    if (num === 1) {
+        state.surpriseShown1 = true;
+        if (isCorrect) state.surprise1Correct = true;
+    }
+    if (num === 2) {
+        state.surpriseShown2 = true;
+        if (isCorrect) state.surprise2Correct = true;
+    }
 
     if (isCorrect) {
         const bonus = 50;
-        state.money = Number(state.money) + bonus;
+        updateMoney(bonus, "extrato_surprise_win");
         updateHUD();
         
         let bonusLessonHTML = '';
@@ -1097,7 +1521,7 @@ function selectSurpriseOption(num, choice, correctLetter) {
         playSuccessSound();
     } else {
         const penalty = 300;
-        state.money = Number(state.money) - penalty;
+        updateMoney(-penalty, "extrato_surprise_loss");
         updateHUD();
         const timeoutMsg = choice === 'TIMEOUT'
             ? '⏰ <b>TEMPO ESGOTADO!</b><br><br>Você não respondeu a tempo. O cliente John Miller ficou esperando e desistiu do contato.<br><br>'
@@ -1134,8 +1558,11 @@ function checkLevelUp() {
     }
 }
 
-function showGameOver() {
-    openModal(t("game_over_title"), t("game_over_text", { money: state.money, level: `${state.level}/30` }));
+function showGameOver(isBankrupt = false) {
+    const title = isBankrupt ? t("game_over_bankrupt_title") : t("game_over_title");
+    const text = isBankrupt ? t("game_over_bankrupt_text", { money: Math.abs(state.money), level: state.level }) : t("game_over_text", { money: state.money, level: `${state.level}/30` });
+    
+    openModal(title, text);
     
     UI.mOptions.innerHTML = '';
     UI.mFeedback.className = 'hidden';
@@ -1190,11 +1617,11 @@ function closeModal() {
 function payExpensesNow() {
     const total = calculateTotalExpenses();
     if (state.money >= total) {
-        state.money -= total;
+        updateMoney(-total, "extrato_expenses_paid");
         state.expensePaid = true;
         alert(t("alert_expenses_paid", { amount: total.toLocaleString() }));
         updateHUD();
-        // Feedback visual no botão
+        closeExpenses(); // Fecha a tela de despesas para evitar duplo clique
         if (UI.btnOpenExpenses) UI.btnOpenExpenses.classList.remove('pulse-warning');
     } else {
         alert(t("alert_no_funds"));
@@ -1212,7 +1639,7 @@ function postponeExpenses() {
 // Powerups Actions
 function buyConsultant() {
     if (state.money >= 500 && state.consultants < 2) {
-        state.money -= 500;
+        updateMoney(-500, "extrato_hire_consultant");
         state.consultants++;
         updateHUD();
     }
@@ -1223,6 +1650,48 @@ function closeAllModals() {
     if (UI.investModal) UI.investModal.classList.add('hidden');
     if (UI.inventoryModal) UI.inventoryModal.classList.add('hidden');
     if (UI.expensesModal) UI.expensesModal.classList.add('hidden');
+    if (UI.extratoModal) UI.extratoModal.classList.add('hidden');
+}
+
+// --- Extrato Logic ---
+
+function openExtrato() {
+    closeAllModals();
+    renderExtrato();
+    UI.extratoModal.classList.remove('hidden');
+}
+
+function closeExtrato() {
+    UI.extratoModal.classList.add('hidden');
+}
+
+function renderExtrato() {
+    if (!UI.extratoList) return;
+    UI.extratoList.innerHTML = '';
+    
+    if (state.statement.length === 0) {
+        UI.extratoList.innerHTML = `<p style="text-align:center; color:#8b949e; margin-top: 20px;">Nenhuma transação financeira registrada.</p>`;
+        return;
+    }
+    
+    state.statement.forEach((t_record) => {
+        const isIncome = t_record.type === 'income';
+        const color = isIncome ? '#2ecc71' : '#e74c3c';
+        const sign = isIncome ? '+' : '-';
+        
+        UI.extratoList.innerHTML += `
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding: 12px 0; font-size: 0.9rem;">
+                <div>
+                    <strong style="color: #fff;">${t_record.reason}</strong>
+                    <div style="font-size: 0.75rem; color: #8b949e; margin-top: 4px;">Rodada ${t_record.turn}</div>
+                </div>
+                <div style="text-align: right;">
+                    <div style="color: ${color}; font-weight: bold;">${sign} R$ ${Math.abs(t_record.amount).toFixed(2)}</div>
+                    <div style="font-size: 0.75rem; color: #8b949e; margin-top: 4px;">Saldo: R$ ${t_record.balance.toFixed(2)}</div>
+                </div>
+            </div>
+        `;
+    });
 }
 
 // --- Bank Logic ---
@@ -1234,7 +1703,6 @@ function openBank() {
 }
 
 function closeBank() {
-    UI.bankModal.classList.remove('hidden');
     UI.bankModal.classList.add('hidden');
 }
 
@@ -1297,7 +1765,7 @@ function confirmLoan() {
     
     const total = amount * (1 + rate);
     
-    state.money += amount;
+    updateMoney(amount, "extrato_loan_received");
     state.bank.loans.push({
         amount: amount,
         totalToPay: total,
@@ -1333,7 +1801,7 @@ function confirmInvest() {
     const rate = 0.03 + (duration * 0.005);
     const finalVal = amount * (1 + rate);
     
-    state.money -= amount;
+    updateMoney(-amount, "extrato_invest_made");
     state.bank.investments.push({
         amount: amount,
         finalVal: finalVal,
@@ -1348,7 +1816,11 @@ function confirmInvest() {
 }
 
 function updateBankUI() {
-    document.getElementById('bank-balance-val').innerText = `R$ ${state.money}`;
+    const bankBalanceEl = document.getElementById('bank-balance-val');
+    const isNegative = state.money < 0;
+    const absVal = Math.abs(state.money).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+    bankBalanceEl.innerText = (isNegative ? '-R$ ' : 'R$ ') + absVal;
+    bankBalanceEl.classList.toggle('negative-money', isNegative);
     
     const totalDebt = state.bank.loans.reduce((acc, l) => acc + (l.installmentVal * l.remainingInstallments), 0);
     document.getElementById('bank-debt-val').innerText = `R$ ${totalDebt.toFixed(2)}`;
@@ -1403,7 +1875,7 @@ function processBankTurn() {
     state.bank.isDefaulting = false; // Reset temporary para checagem
     state.bank.loans = state.bank.loans.filter(loan => {
         if (state.money >= loan.installmentVal) {
-            state.money -= loan.installmentVal;
+            updateMoney(-loan.installmentVal, "extrato_loan_payment");
             loan.remainingInstallments--;
             console.log(`Paga parcela de R$ ${loan.installmentVal}`);
             return loan.remainingInstallments > 0;
@@ -1421,7 +1893,7 @@ function processBankTurn() {
     state.bank.investments = state.bank.investments.filter(inv => {
         inv.remainingRounds--;
         if (inv.remainingRounds <= 0) {
-            state.money += inv.finalVal;
+            updateMoney(inv.finalVal, "extrato_invest_return");
             alert(t("alert_invest_matured", { amount: inv.amount, total: inv.finalVal.toFixed(2) }));
             return false;
         }
@@ -1442,17 +1914,6 @@ function openInvestments() {
 
 function closeInvest() {
     UI.investModal.classList.add('hidden');
-}
-
-/* --- Inventory Logic --- */
-function openInventory() {
-    closeAllModals();
-    updateInventoryUI();
-    UI.inventoryModal.classList.remove('hidden');
-}
-
-function closeInventory() {
-    UI.inventoryModal.classList.add('hidden');
 }
 
 /* --- Expenses Logic --- */
@@ -1509,54 +1970,122 @@ function calculatePassiveRevenue(upgrades) {
 }
 
 function updateInvestUI() {
-    document.getElementById('invest-balance-val').innerText = `R$ ${state.money}`;
     let totalRevenue = calculatePassiveRevenue(state.upgrades);
     const config = GAME_CONFIG[state.difficulty] || GAME_CONFIG.NORMAL;
+    const isPromoRound = (state.pos > 0 && state.pos % 5 === 0);
+    const promoAvailable = isPromoRound && (state.lastFreeInvestTurn !== state.pos);
 
     Object.keys(STRATEGIC_DATA).forEach(area => {
         const level = state.upgrades[area];
         const card = document.querySelector(`.invest-card[data-area="${area}"]`);
-        
-        const nextCost = getUpgradeCost(area, level);
+        if (!card) return;
+
+        let nextCost = getUpgradeCost(area, level);
         const currentRevenue = level * config.passiveRevenue[area];
 
         card.querySelector('.invest-level').innerText = `${t('level')} ${level}`;
-        card.querySelector('.benefit-tag').innerHTML = `+ R$ ${currentRevenue} <span data-t="per_round">${t('per_round')}</span>`;
+        
+        // Especial para todos os pilares estratégicos (30 níveis)
+        const isThirtyLevel = (area === 'infra' || area === 'machines' || area === 'marketing' || area === 'training' || area === 'logistics' || area === 'consultants');
+        if (isThirtyLevel) {
+            const grid = card.querySelector('.progress-bar-grid');
+            if (grid) {
+                grid.innerHTML = '';
+                for (let i = 0; i < 30; i++) {
+                    const bar = document.createElement('div');
+                    bar.className = 'bar-segment';
+                    if (i < level) {
+                        bar.classList.add('filled');
+                        // Cor diferente para cada barra usando HSL (Arco-íris)
+                        const hue = (i * 12) % 360;
+                        bar.style.setProperty('--bar-color', `hsl(${hue}, 80%, 55%)`);
+                    }
+                    grid.appendChild(bar);
+                }
+            }
+        } else {
+            const benefitTag = card.querySelector('.benefit-tag');
+            if (benefitTag) {
+                benefitTag.innerHTML = `+ R$ ${currentRevenue} <span data-t="per_round">${t('per_round')}</span>`;
+            }
+        }
         
         const btn = card.querySelector('.upgrade-btn');
-        btn.innerText = `${t('btn_upgrade')} (R$ ${nextCost})`;
-        btn.disabled = state.money < nextCost;
+        if (btn) {
+            const maxLevel = isThirtyLevel ? 30 : 6;
+            if (promoAvailable) {
+                btn.innerText = t('btn_upgrade_free');
+                btn.disabled = level >= maxLevel;
+                btn.style.boxShadow = "0 0 15px #f1c40f";
+            } else {
+                btn.innerText = `${t('btn_upgrade')} (R$ ${nextCost})`;
+                btn.disabled = state.money < nextCost || level >= maxLevel;
+                btn.style.boxShadow = "none";
+            }
+        }
     });
-
-    UI.totalRevenue.innerText = `R$ ${totalRevenue}`;
 }
 
 window.upgradeArea = function(area) {
     const level = state.upgrades[area];
-    const cost = getUpgradeCost(area, level);
+    let cost = getUpgradeCost(area, level);
+    
+    // Lógica de Promoção Grátis (1 por rodada a cada 5 rodadas)
+    const isPromoRound = (state.pos > 0 && state.pos % 5 === 0);
+    const usingPromo = isPromoRound && (state.lastFreeInvestTurn !== state.pos);
+
+    if (usingPromo) {
+        cost = 0;
+        state.lastFreeInvestTurn = state.pos;
+        console.log(`Promoção utilizada na rodada ${state.pos} para ${area}`);
+    }
 
     if (state.money >= cost) {
-        state.money -= cost;
+        const reason = cost === 0 ? "extrato_upgrade_free" : "extrato_upgrade_" + area;
+        updateMoney(-cost, reason);
         state.upgrades[area]++;
         state.stats.investmentsMade++;
+        
+        // NOVO: Valorização do Galpão (2x o investimento em Infraestrutura)
+        if (area === 'infra' && cost > 0) {
+            state.inventory.warehouse += (cost * 2);
+            console.log(`Infraestrutura Nível ${state.upgrades[area]}: Galpão valorizado em R$ ${cost * 2}`);
+        }
+
+        // NOVO: Valorização das Máquinas (Reflexo de 1:1 do investimento)
+        if (area === 'machines' && cost > 0) {
+            state.inventory.machinery += cost;
+            console.log(`Máquinas Nível ${state.upgrades[area]}: Maquinário valorizado em R$ ${cost}`);
+        }
+
+        // NOVO: Valorização da Propaganda (Reflexo de 1:1 do investimento em Produtos Acabados)
+        if (area === 'marketing' && cost > 0) {
+            state.inventory.finishedGoods += cost;
+            console.log(`Propaganda Nível ${state.upgrades[area]}: Produtos Acabados valorizados em R$ ${cost}`);
+        }
+
+        // NOVO: Valorização do Treinamento (Reflexo de 1:1 do investimento em Matéria-Prima)
+        if (area === 'training' && cost > 0) {
+            state.inventory.rawMaterials += cost;
+            console.log(`Treinamento Nível ${state.upgrades[area]}: Matéria-Prima valorizada em R$ ${cost}`);
+        }
+
+        // NOVO: Valorização da Logística (Reflexo de 1:1 do investimento em Frota)
+        if (area === 'logistics' && cost > 0) {
+            state.inventory.fleet += cost;
+            console.log(`Logística Nível ${state.upgrades[area]}: Frota valorizada em R$ ${cost}`);
+        }
         
         alert(t('alert_upgrade_success', { name: t(area + '_name'), level: state.upgrades[area] }));
         updateHUD();
         updateInvestUI();
+        updateInventoryUI(); // Garante atualização do modal de inventário
     } else {
         alert(t('alert_no_funds'));
     }
 };
 
-function processStrategicTurn() {
-    const turnGain = calculatePassiveRevenue(state.upgrades);
-
-    if (turnGain > 0) {
-        state.money += turnGain;
-        console.log(`💹 Ganho estratégico: +R$ ${turnGain}`);
-        updateHUD();
-    }
-}
+// Função Removida: processStrategicTurn() para não gerar receita passiva
 
 /* --- Ticker Tips System --- */
 const TICKER_TIPS = [
@@ -1619,3 +2148,335 @@ function playSuccessSound() {
 }
 
 // End of file
+// Finance Modal Functions
+function openFinance() {
+    renderFinanceiro();
+    UI.financeModal.classList.remove('hidden');
+    // Pre-select first tab
+    switchFicheiroTab('pagar');
+    forceScrollToTop();
+}
+
+function closeFinance() {
+    UI.financeModal.classList.add('hidden');
+}
+
+function switchFicheiroTab(fichaName) {
+    if (!UI.ficheiroTabs || !UI.ficheiroPanels || !UI.ficheiroContent) return;
+
+    // Remove active da tab anterior e adiciona na nova
+    UI.ficheiroTabs.forEach(tab => {
+        if (tab.dataset.ficha === fichaName) {
+            tab.classList.add('active');
+        } else {
+            tab.classList.remove('active');
+        }
+    });
+
+    // Esconde os painéis antigos e mostra o novo
+    UI.ficheiroPanels.forEach(panel => {
+        if (panel.id === `panel-${fichaName}`) {
+            panel.classList.add('active');
+        } else {
+            panel.classList.remove('active');
+        }
+    });
+
+    // Troca a borda geral do contêiner baseado na tab ativa
+    UI.ficheiroContent.setAttribute('data-active-ficha', fichaName);
+}
+
+// Lógica para Contas a Pagar: Pagamento Adiantado com 3% de Desconto
+function payAdvance(elementId, amount, name, financeId) {
+    const discountPercent = 0.03;
+    const discountValue = amount * discountPercent;
+    const finalAmount = amount - discountValue;
+
+    if (state.money < finalAmount) {
+        alert(t("alert_no_funds"));
+        return;
+    }
+
+    let confirmMsg = `Deseja pagar ${name} adiantado com 3% de desconto?\n\nValor original: R$ ${amount.toFixed(2)}\nDesconto: - R$ ${discountValue.toFixed(2)}\nTotal a pagar: R$ ${finalAmount.toFixed(2)}`;
+    if (translations[state.language] && translations[state.language]["confirm_pay_advance"]) {
+        confirmMsg = t("confirm_pay_advance", { 
+            name: name,
+            amount: amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 }),
+            discount: discountValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 }),
+            finalAmount: finalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })
+        });
+    }
+
+    if (confirm(confirmMsg)) {
+        updateMoney(-finalAmount, t("extrato_pay_advance", { name: name }) || `Pgto Adiantado: ${name} (-3%)`);
+        
+        // Remove from state
+        if (state.finance && state.finance.payables) {
+            state.finance.payables = state.finance.payables.filter(p => p.id !== financeId);
+        }
+        
+        renderFinanceiro();
+        updateHUD();
+    }
+}
+
+// Lógica para Contas Vencidas: Pagamento com 5% de Multa
+function payLate(elementId, amount, name, financeId) {
+    const penaltyPercent = 0.05;
+    const penaltyValue = amount * penaltyPercent;
+    const finalAmount = amount + penaltyValue;
+
+    if (state.money < finalAmount) {
+        alert(t("alert_no_funds"));
+        return;
+    }
+
+    let confirmMsg = `Deseja quitar ${name} atrasado?\n\nValor original: R$ ${amount.toFixed(2)}\nMulta (+5%): + R$ ${penaltyValue.toFixed(2)}\nTotal a pagar: R$ ${finalAmount.toFixed(2)}`;
+    if (translations[state.language] && translations[state.language]["confirm_pay_late"]) {
+        confirmMsg = t("confirm_pay_late", { 
+            name: name,
+            amount: amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 }),
+            penalty: penaltyValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 }),
+            finalAmount: finalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })
+        });
+    }
+
+    if (confirm(confirmMsg)) {
+        updateMoney(-finalAmount, t("extrato_pay_late", { name: name }) || `Pgto em Atraso: ${name} (+5%)`);
+        
+        // Remove from state
+        if (state.finance && state.finance.payables) {
+            state.finance.payables = state.finance.payables.filter(p => p.id !== financeId);
+        }
+
+        renderFinanceiro();
+        updateHUD();
+    }
+}
+
+// Lógica para Contas a Receber: Antecipação com 3% de Taxa
+function anticipateReceivable(elementId, amount, name, financeId) {
+    const feePercent = 0.03;
+    const feeValue = amount * feePercent;
+    const finalAmount = amount - feeValue;
+
+    let confirmMsg = `Deseja antecipar o recebimento de ${name}?\n\nValor original: R$ ${amount.toFixed(2)}\nTaxa de Antecipação (-3%): - R$ ${feeValue.toFixed(2)}\nTotal líquido a receber: R$ ${finalAmount.toFixed(2)}`;
+    if (translations[state.language] && translations[state.language]["confirm_anticipate"]) {
+        confirmMsg = t("confirm_anticipate", { 
+            name: name,
+            amount: amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 }),
+            fee: feeValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 }),
+            finalAmount: finalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })
+        });
+    }
+
+    if (confirm(confirmMsg)) {
+        updateMoney(finalAmount, t("extrato_anticipate", { name: name }) || `Antecipação: ${name} (-3% taxa)`);
+        
+        if (state.finance && state.finance.receivables) {
+            state.finance.receivables = state.finance.receivables.filter(r => r.id !== financeId);
+        }
+
+        renderFinanceiro();
+        updateHUD();
+    }
+}
+
+// --- Dynamic Finance Core Engine ---
+
+function generateFinanceId() {
+    if (!state.finance) state.finance = { payables: [], receivables: [], nextId: 1 };
+    state.finance.nextId = state.finance.nextId || 1;
+    return 'fin_' + state.finance.nextId++;
+}
+
+function addPayable(name, amount, turns) {
+    if (!state.finance) state.finance = { payables: [], receivables: [], nextId: 1 };
+    state.finance.payables.push({
+        id: generateFinanceId(),
+        name: name,
+        amount: amount,
+        turnsLeft: turns,
+        late: false
+    });
+}
+
+function addReceivable(name, amount, turns) {
+    if (!state.finance) state.finance = { payables: [], receivables: [], nextId: 1 };
+    state.finance.receivables.push({
+        id: generateFinanceId(),
+        name: name,
+        amount: amount,
+        turnsLeft: turns,
+        late: false
+    });
+}
+
+function processFinanceTurn() {
+    if (!state.finance) return;
+
+    let alertMsgs = [];
+
+    // Processar Recebimentos
+    for (let i = state.finance.receivables.length - 1; i >= 0; i--) {
+        let rec = state.finance.receivables[i];
+        if (rec.late) continue;
+        
+        rec.turnsLeft--;
+        if (rec.turnsLeft <= 0) {
+            // Cliente pagou normalmente ou atrasou? (5% chance default)
+            if (Math.random() < 0.05) {
+                rec.late = true;
+                alertMsgs.push(`⚠️ O cliente "${rec.name}" não pagou no prazo. Fatura movida para Recebimentos em Atraso!`);
+            } else {
+                updateMoney(rec.amount, `Recebimento: ${rec.name}`);
+                state.finance.receivables.splice(i, 1);
+            }
+        }
+    }
+
+    // Processar Pagamentos
+    for (let i = state.finance.payables.length - 1; i >= 0; i--) {
+        let pay = state.finance.payables[i];
+        if (pay.late) {
+            pay.amount += (pay.amount * 0.05); // Penalidade contínua
+            continue;
+        }
+
+        pay.turnsLeft--;
+        if (pay.turnsLeft <= 0) {
+            pay.late = true;
+            alertMsgs.push(`🚨 A conta "${pay.name}" venceu! Movida para Contas Vencidas.`);
+        }
+    }
+
+    if (alertMsgs.length > 0) {
+        alert("Avisos Financeiros (Fecho de Mês):\n\n" + alertMsgs.join("\n"));
+    }
+
+    if (!UI.financeModal.classList.contains('hidden')) {
+        renderFinanceiro();
+    }
+}
+
+function renderFinanceiro() {
+    const listPagar = document.getElementById('list-pagar');
+    const listVencidas = document.getElementById('list-vencidas');
+    const listReceber = document.getElementById('list-receber');
+    const listFaturasVencidas = document.getElementById('list-faturas_vencidas');
+
+    if (!listPagar || !listVencidas || !listReceber || !listFaturasVencidas) return;
+    if (!state.finance) return;
+
+    listPagar.innerHTML = '';
+    listVencidas.innerHTML = '';
+    listReceber.innerHTML = '';
+    listFaturasVencidas.innerHTML = '';
+
+    let hasPagar = false;
+    let hasVencidas = false;
+    let hasReceber = false;
+    let hasRecAtraso = false;
+
+    // Render Previsão de Despesas (Fixed game expenses)
+    let isCurrentlyDue = (state.pos > 0 && state.pos % 4 === 0);
+    let roundsUntilDue;
+
+    if (isCurrentlyDue) {
+        if (!state.expensePaid) {
+            roundsUntilDue = 0; // It's due right now
+        } else {
+            roundsUntilDue = 4; // Paid this round, next one is in 4 rounds
+        }
+    } else {
+        roundsUntilDue = state.pos === 0 ? 4 : (4 - (state.pos % 4));
+    }
+    
+    // Total expense projection based on current state
+    const totalExp = calculateTotalExpenses();
+    hasPagar = true;
+    
+    let dueText = roundsUntilDue === 0 ? '<small style="color: #e74c3c;">Vence nesta rodada!</small>' : `<small style="color: #8b949e;">Vence em ${roundsUntilDue} rodada(s) (Previsão)</small>`;
+    let btnHtml = roundsUntilDue === 0 
+        ? `<button class="action-btn" style="font-size: 0.7rem; padding: 0.4rem 0.8rem; margin: 0; min-width: auto; background: linear-gradient(135deg, #e74c3c, #c0392b); box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3);" onclick="openExpenses()">Pagar Agora</button>`
+        : `<button class="action-btn" style="font-size: 0.7rem; padding: 0.4rem 0.8rem; margin: 0; min-width: auto; background: linear-gradient(135deg, #9b59b6, #8e44ad); box-shadow: 0 4px 10px rgba(155, 89, 182, 0.3);" onclick="openExpenses()">Ver Detalhes</button>`;
+    
+    listPagar.innerHTML += `
+        <div class="finance-item pagar" style="border-left-color: ${roundsUntilDue === 0 ? '#e74c3c' : '#9b59b6'};">
+            <div>
+                <strong style="color: #fff;">Despesas Operacionais</strong><br>
+                ${dueText}
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 5px;">
+                <div style="color: ${roundsUntilDue === 0 ? '#e74c3c' : '#9b59b6'}; font-weight: bold;">R$ ${totalExp.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                ${btnHtml}
+            </div>
+        </div>`;
+
+    // Render Payables (Dynamic invoices)
+    state.finance.payables.forEach(p => {
+        if (!p.late) {
+            hasPagar = true;
+            listPagar.innerHTML += `
+                <div class="finance-item pagar" id="${p.id}">
+                    <div>
+                        <strong style="color: #fff;">${p.name}</strong><br>
+                        <small style="color: #8b949e;">Vence em ${p.turnsLeft} rodada(s)</small>
+                    </div>
+                    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 5px;">
+                        <div style="color: #f39c12; font-weight: bold;">R$ ${p.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                        <button class="action-btn" style="font-size: 0.7rem; padding: 0.4rem 0.8rem; margin: 0; min-width: auto; background: linear-gradient(135deg, #f39c12, #d35400); box-shadow: 0 4px 10px rgba(243, 156, 18, 0.3);" onclick="payAdvance('${p.id}', ${p.amount}, '${p.name.replace(/'/g, "\\'")}', '${p.id}')">${t("btn_pay_advance")}</button>
+                    </div>
+                </div>`;
+        } else {
+            hasVencidas = true;
+            listVencidas.innerHTML += `
+                <div class="finance-item vencidas" id="${p.id}">
+                    <div>
+                        <strong style="color: #fff;">${p.name}</strong><br>
+                        <small style="color: #e74c3c;">Vencida!</small>
+                    </div>
+                    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 5px;">
+                        <div style="color: #e74c3c; font-weight: bold;">R$ ${p.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                        <button class="action-btn" style="font-size: 0.7rem; padding: 0.4rem 0.8rem; margin: 0; min-width: auto; background: linear-gradient(135deg, #e74c3c, #c0392b); box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3);" onclick="payLate('${p.id}', ${p.amount}, '${p.name.replace(/'/g, "\\'")}', '${p.id}')">${t("btn_pay_late")}</button>
+                    </div>
+                </div>`;
+        }
+    });
+
+    // Render Receivables
+    state.finance.receivables.forEach(r => {
+        if (!r.late) {
+            hasReceber = true;
+            listReceber.innerHTML += `
+                <div class="finance-item receber" id="${r.id}">
+                    <div>
+                        <strong style="color: #fff;">${r.name}</strong><br>
+                        <small style="color: #8b949e;">Recebimento em ${r.turnsLeft} rodada(s)</small>
+                    </div>
+                    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 5px;">
+                        <div style="color: #2ecc71; font-weight: bold;">R$ ${r.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                        <button class="action-btn" style="font-size: 0.7rem; padding: 0.4rem 0.8rem; margin: 0; min-width: auto; background: linear-gradient(135deg, #2ecc71, #27ae60); box-shadow: 0 4px 10px rgba(46, 204, 113, 0.3);" onclick="anticipateReceivable('${r.id}', ${r.amount}, '${r.name.replace(/'/g, "\\'")}', '${r.id}')">${t("btn_anticipate")}</button>
+                    </div>
+                </div>`;
+        } else {
+            hasRecAtraso = true;
+            listFaturasVencidas.innerHTML += `
+                <div class="finance-item faturas_vencidas" id="${r.id}">
+                    <div>
+                        <strong style="color: #fff;">${r.name}</strong><br>
+                        <small style="color: #f1c40f;">Pagamento Atrasado pelo Cliente</small>
+                    </div>
+                    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 5px;">
+                        <div style="color: #f1c40f; font-weight: bold;">R$ ${r.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                    </div>
+                </div>`;
+        }
+    });
+
+    if (!hasPagar) listPagar.innerHTML = `<div style="color:#8b949e; text-align:center; width:100%; font-size: 0.9rem; padding: 10px;">Nenhuma conta a pagar no momento.</div>`;
+    if (!hasVencidas) listVencidas.innerHTML = `<div style="color:#8b949e; text-align:center; width:100%; font-size: 0.9rem; padding: 10px;">Nenhuma conta vencida.</div>`;
+    if (!hasReceber) listReceber.innerHTML = `<div style="color:#8b949e; text-align:center; width:100%; font-size: 0.9rem; padding: 10px;">Nenhum recebimento provisionado.</div>`;
+    if (!hasRecAtraso) listFaturasVencidas.innerHTML = `<div style="color:#8b949e; text-align:center; width:100%; font-size: 0.9rem; padding: 10px;">Todas as faturas estão em dia.</div>`;
+}
+

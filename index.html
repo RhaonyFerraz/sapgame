@@ -27,6 +27,29 @@
             0% { opacity: 0; width: 0; }
             100% { opacity: 1; width: 120px; }
         }
+
+        /* Barrinhas de Progresso (30 níveis) */
+        .progress-bar-grid {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 4px;
+            margin: 10px 0;
+            background: rgba(0,0,0,0.2);
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px inset rgba(255,255,255,0.05);
+        }
+        .bar-segment {
+            height: 12px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 2px;
+            transition: all 0.3s ease;
+            box-shadow: inset 0 1px 1px rgba(255,255,255,0.05);
+        }
+        .bar-segment.filled {
+            box-shadow: 0 0 10px var(--bar-color), inset 0 1px 2px rgba(255,255,255,0.3);
+            background: var(--bar-color);
+        }
     </style>
 
     <script>
@@ -49,6 +72,8 @@
                 <p style="margin-bottom: 15px;">Durante a jornada, aprenda conceitos de administração, ERP (como SAP) e inglês.</p>
                 <p style="font-size: 1.25rem; font-weight: 800; color: var(--success); text-align: center; margin-top: 25px;">Seu objetivo: transformar sua fábrica em uma grande indústria. Boa sorte!</p>
             </div>
+            <button id="btn-credits" onclick="document.getElementById('credits-modal').classList.remove('hidden')" style="font-size: 0.85rem; padding: 8px 25px; border-radius: 50px; background: linear-gradient(135deg, #f39c12, #e67e22); color: #fff; border: none; cursor: pointer; font-weight: 700; letter-spacing: 1px; box-shadow: 0 0 15px rgba(243, 156, 18, 0.4); margin-bottom: 10px; transition: all 0.3s ease;" onmouseover="this.style.transform='scale(1.05)';this.style.boxShadow='0 0 25px rgba(243,156,18,0.6)'" onmouseout="this.style.transform='scale(1)';this.style.boxShadow='0 0 15px rgba(243,156,18,0.4)'">CRÉDITOS</button>
+            <br>
             <button id="btn-password" style="font-size: 0.85rem; padding: 8px 25px; border-radius: 50px; background: var(--success); color: #fff; border: none; cursor: pointer; font-weight: 700; letter-spacing: 1px; box-shadow: 0 0 15px rgba(35, 209, 96, 0.3); margin-bottom: 15px; transition: all 0.3s ease;">PASSWORD</button>
             <br>
             <button id="btn-start-game" class="action-btn" onclick="startJourney()" style="font-size: 1.3rem; padding: 15px 50px; border-radius: 50px; box-shadow: 0 0 30px rgba(155, 81, 224, 0.4);">INICIAR JORNADA</button>
@@ -80,6 +105,7 @@
             <!-- Main Actions Group -->
             <div style="display: flex; gap: 15px; align-items: center;">
                 <button id="btn-open-bank" class="icon-btn"><img src="faviconsmenu/bank3.png" class="menu-icon" alt="Banco" style="width: 26px; height: 26px; filter: drop-shadow(0 0 5px rgba(255,255,255,0.3)); display: block;"> <span data-t="bank">BANCO</span></button>
+                <button id="btn-open-finance" class="icon-btn"><img src="faviconsmenu/accounting.png" class="menu-icon" alt="Financeiro" style="width: 26px; height: 26px; filter: drop-shadow(0 0 5px rgba(255,255,255,0.3)); display: block;"> <span data-t="finance">FINANCEIRO</span></button>
                 <button id="btn-open-inventory" class="icon-btn"><img src="faviconsmenu/inventario.png" class="menu-icon" alt="Inventário" style="width: 26px; height: 26px; filter: drop-shadow(0 0 5px rgba(255,255,255,0.3)); display: block;"> <span data-t="inventory">INVENTÁRIO</span></button>
                 <button id="btn-open-invest" class="icon-btn"><img src="faviconsmenu/investment.png" class="menu-icon" alt="Investimento" style="width: 26px; height: 26px; filter: drop-shadow(0 0 5px rgba(255,255,255,0.3)); display: block;"> <span data-t="investments">INVESTIMENTO</span></button>
                 <button id="btn-open-expenses" class="icon-btn"><img src="faviconsmenu/asset-allocation.png" class="menu-icon" alt="Despesas" style="width: 26px; height: 26px; filter: drop-shadow(0 0 5px rgba(255,255,255,0.3)); display: block;"> <span data-t="expenses">DESPESAS</span></button>
@@ -223,8 +249,97 @@
                 </div>
             </div>
 
-            <div class="modal-actions">
+            <div class="modal-actions" style="display: flex; gap: 10px; justify-content: center;">
+                <button id="btn-bank-extrato" class="action-btn" style="background: linear-gradient(135deg, #f39c12, #e67e22); padding: 0.6rem 1.8rem; font-size: 0.95rem; letter-spacing: 1px; box-shadow: 0 0 15px rgba(243, 156, 18, 0.3);">Extrato</button>
                 <button id="btn-close-bank" class="secondary-btn" data-t="btn_close">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Financeiro (Ficheiro) Modal -->
+    <div id="finance-modal" class="modal-overlay hidden">
+        <div class="finance-content">
+            <div class="ficheiro-container">
+                <!-- Ficheiro Tabs -->
+                <div class="ficheiro-tabs">
+                    <div class="ficheiro-tab active" data-ficha="pagar">
+                        <span data-t="tab_payable">Contas a Pagar</span>
+                    </div>
+                    <div class="ficheiro-tab" data-ficha="vencidas">
+                        <span data-t="tab_payable_late">Contas Vencidas</span>
+                    </div>
+                    <div class="ficheiro-tab" data-ficha="receber">
+                        <span data-t="tab_receivable">Contas a Receber</span>
+                    </div>
+                    <div class="ficheiro-tab" data-ficha="faturas_vencidas">
+                        <span data-t="tab_receivable_late">Recebimentos em Atraso</span>
+                    </div>
+                </div>
+
+                <!-- Ficheiro Content Panels -->
+                <div class="ficheiro-content" data-active-ficha="pagar">
+                    
+                    <div id="panel-pagar" class="ficheiro-panel active">
+                        <div class="ficheiro-header">
+                            <h3 data-t="tab_payable">Contas a Pagar</h3>
+                            <p data-t="desc_payable">Títulos em aberto que vencerão em breve.</p>
+                        </div>
+                        <div class="finance-list" id="list-pagar">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+                    </div>
+
+                    <div id="panel-vencidas" class="ficheiro-panel">
+                        <div class="ficheiro-header">
+                            <h3 data-t="tab_payable_late">Contas Vencidas</h3>
+                            <p data-t="desc_payable_late">Títulos atrasados com cobrança de juros.</p>
+                        </div>
+                        <div class="finance-list" id="list-vencidas">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+                    </div>
+
+                    <div id="panel-receber" class="ficheiro-panel">
+                        <div class="ficheiro-header">
+                            <h3 data-t="tab_receivable">Contas a Receber</h3>
+                            <p data-t="desc_receivable">Boletos de clientes com pagamento programado.</p>
+                        </div>
+                        <div class="finance-list" id="list-receber">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+                    </div>
+
+                    <div id="panel-faturas_vencidas" class="ficheiro-panel">
+                        <div class="ficheiro-header">
+                            <h3 data-t="tab_receivable_late">Recebimentos em Atraso</h3>
+                            <p data-t="desc_receivable_late">Pagamentos em atraso por parte dos clientes.</p>
+                        </div>
+                        <div class="finance-list" id="list-faturas_vencidas">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+                    </div>
+
+                    <div class="modal-actions" style="margin-top:20px; display: flex; justify-content: flex-end;">
+                        <button id="btn-close-finance" class="secondary-btn" data-t="btn_close">Fechar</button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Extrato Modal -->
+    <div id="extrato-modal" class="modal-overlay hidden" style="z-index: 10000;">
+        <div class="modal-content glass" style="max-height: 80vh; display: flex; flex-direction: column; width: 500px; max-width: 95%;">
+            <h2 data-t="extrato_title" style="font-size: 1.4rem; color: #f39c12; margin-bottom: 5px;">📄 Extrato Financeiro</h2>
+            <p data-t="extrato_subtitle" style="margin-bottom: 20px; font-size: 0.85rem; color: #8b949e;">Histórico de transações da empresa</p>
+            
+            <div id="extrato-list" style="flex: 1; overflow-y: auto; text-align: left; background: rgba(0,0,0,0.3); border-radius: 12px; padding: 10px; border: 1px solid rgba(255,255,255,0.05); min-height: 200px;">
+                <!-- Populated via JS -->
+            </div>
+            
+            <div class="modal-actions" style="margin-top: 20px;">
+                <button id="btn-close-extrato" class="secondary-btn" data-t="btn_close">Fechar</button>
             </div>
         </div>
     </div>
@@ -235,17 +350,6 @@
             <h2 id="invest-title">💼 Investimentos Estratégicos</h2>
             <p class="invest-subtitle">Aprimore sua operação para aumentar a eficiência e o lucro por rodada.</p>
             
-            <div class="invest-summary-bar">
-                <div class="invest-summary-item">
-                    <span>Ganhos por Turno:</span>
-                    <h3 id="total-revenue-val">R$ 0</h3>
-                </div>
-                <div class="invest-summary-item">
-                    <span>Saldo Disponível:</span>
-                    <h3 id="invest-balance-val">R$ 0</h3>
-                </div>
-            </div>
-
             <div id="invest-list" class="invest-grid">
                 <!-- Infraestrutura -->
                 <div class="invest-card" data-area="infra">
@@ -256,9 +360,11 @@
                             <span class="invest-level">Nível 0</span>
                         </div>
                     </div>
-                    <p class="invest-benefit" data-t="infra_desc">Aumenta o limite de produção e reduz gargalos.</p>
+                    <p class="invest-benefit" data-t="infra_desc">Aumenta o valor do Galpão no inventário em o dobro do investimento.</p>
                     <div class="invest-stats">
-                        <span class="benefit-tag">+ R$ 0 <span data-t="per_round"> / rodada</span></span>
+                        <div class="progress-bar-grid">
+                            <!-- JS will populate 30 segments -->
+                        </div>
                     </div>
                     <button class="upgrade-btn" onclick="upgradeArea('infra')" data-t="btn_upgrade">Melhorar (R$ 500)</button>
                 </div>
@@ -272,9 +378,11 @@
                             <span class="invest-level">Nível 0</span>
                         </div>
                     </div>
-                    <p class="invest-benefit" data-t="machines_desc">Aumenta produtividade e reduz custos operacionais.</p>
+                    <p class="invest-benefit" data-t="machines_desc">Pronto para aumentar a produtividade e o valor do maquinário.</p>
                     <div class="invest-stats">
-                        <span class="benefit-tag">+ R$ 0 <span data-t="per_round"> / rodada</span></span>
+                        <div class="progress-bar-grid">
+                            <!-- JS will populate 30 segments -->
+                        </div>
                     </div>
                     <button class="upgrade-btn" onclick="upgradeArea('machines')" data-t="btn_upgrade">Melhorar (R$ 800)</button>
                 </div>
@@ -288,9 +396,11 @@
                             <span class="invest-level">Nível 0</span>
                         </div>
                     </div>
-                    <p class="invest-benefit" data-t="training_desc">Aumenta eficiência da equipe e reduz erros.</p>
+                    <p class="invest-benefit" data-t="training_desc">Valoriza matéria-prima e reduz multas por erros em 2% por nível.</p>
                     <div class="invest-stats">
-                        <span class="benefit-tag">+ R$ 0 <span data-t="per_round"> / rodada</span></span>
+                        <div class="progress-bar-grid">
+                            <!-- JS will populate 30 segments -->
+                        </div>
                     </div>
                     <button class="upgrade-btn" onclick="upgradeArea('training')" data-t="btn_upgrade">Melhorar (R$ 400)</button>
                 </div>
@@ -304,9 +414,11 @@
                             <span class="invest-level">Nível 0</span>
                         </div>
                     </div>
-                    <p class="invest-benefit" data-t="marketing_desc">Atrai mais clientes e eleva o faturamento.</p>
+                    <p class="invest-benefit" data-t="marketing_desc">Valoriza produtos acabados e dá + R$ 20 em eventos positivos.</p>
                     <div class="invest-stats">
-                        <span class="benefit-tag">+ R$ 0 <span data-t="per_round"> / rodada</span></span>
+                        <div class="progress-bar-grid">
+                            <!-- JS will populate 30 segments -->
+                        </div>
                     </div>
                     <button class="upgrade-btn" onclick="upgradeArea('marketing')" data-t="btn_upgrade">Melhorar (R$ 600)</button>
                 </div>
@@ -320,27 +432,31 @@
                             <span class="invest-level">Nível 0</span>
                         </div>
                     </div>
-                    <p class="invest-benefit" data-t="logistics_desc">Reduz custos de entrega e aumenta velocidade.</p>
+                    <p class="invest-benefit" data-t="logistics_desc">Valoriza frota e dá + R$ 5 de bônus por acerto.</p>
                     <div class="invest-stats">
-                        <span class="benefit-tag">+ R$ 0 <span data-t="per_round"> / rodada</span></span>
+                        <div class="progress-bar-grid">
+                            <!-- JS will populate 30 segments -->
+                        </div>
                     </div>
                     <button class="upgrade-btn" onclick="upgradeArea('logistics')" data-t="btn_upgrade">Melhorar (R$ 700)</button>
                 </div>
 
-                <!-- Consultor -->
-                <div class="invest-card" id="consultant-card">
+                <!-- Consultores -->
+                <div class="invest-card" data-area="consultants" id="consultant-card">
                     <div class="invest-card-header">
                         <span class="invest-icon">👔</span>
                         <div class="invest-card-title">
-                            <h4 data-t="hire_consultant">Contratar Consultor</h4>
-                            <span class="invest-level"><span id="consultants-modal">0</span>/2</span>
+                            <h4 data-t="hire_consultant">Consultores</h4>
+                            <span class="invest-level">Nível 0</span>
                         </div>
                     </div>
-                    <p class="invest-benefit" data-t="hire_cost">Custará R$ 500</p>
+                    <p class="invest-benefit" data-t="hire_cost">+2s questões, +1% val. penhora e +10% limite crédito.</p>
                     <div class="invest-stats">
-                        <span class="benefit-tag">🛡️ Blinda contra perdas financeiras</span>
+                        <div class="progress-bar-grid">
+                            <!-- JS will populate 30 segments -->
+                        </div>
                     </div>
-                    <button id="btn-buy-consultant" class="upgrade-btn" data-t="hire_consultant" data-t-title="hire_cost">Contratar (R$ 500)</button>
+                    <button class="upgrade-btn" onclick="upgradeArea('consultants')" data-t="btn_upgrade">Melhorar (R$ 500)</button>
                 </div>
             </div>
 
@@ -374,13 +490,23 @@
                     <span class="value">$ <span id="inv-raw-materials">0</span></span>
                 </div>
                 <div class="bank-stat-card">
-                    <label data-t="finished_goods">Estoque Acabado</label>
+                    <label data-t="inventory_finished_goods">Produtos Acabados</label>
                     <span class="value">$ <span id="inv-finished-goods">0</span></span>
+                </div>
+                <div class="bank-stat-card highlight">
+                    <label data-t="inventory_fleet">Frota de Veículos</label>
+                    <span class="value">$ <span id="inv-fleet">0</span></span>
+                </div>
+                <div class="bank-stat-card highlight" style="grid-column: 1 / -1; border-color: var(--primary);">
+                    <label data-t="inventory_total">Total do Inventário</label>
+                    <span class="value" style="color: var(--success);">$ <span id="inv-total">0</span></span>
                 </div>
             </div>
 
-            <div class="modal-footer">
-                <button id="btn-close-inventory" class="action-btn" data-t="btn_close">Fechar</button>
+            <div class="modal-actions" style="display: flex; justify-content: center; gap: 10px; margin-top: 20px;">
+                <button id="btn-pawn-inventory" class="action-btn" style="background: linear-gradient(135deg, #e74c3c, #c0392b); font-size: 0.95rem; padding: 0.6rem 1.8rem;" data-t="btn_pawn_inventory">Penhorar Inventário</button>
+                <button id="btn-patrimonial-agreement" class="action-btn hidden" style="background: linear-gradient(135deg, #2980b9, #2c3e50); font-size: 0.95rem; padding: 0.6rem 1.8rem; border: 1px solid #f1c40f;" data-t="btn_patrimonial_agreement">Acordo Patrimonial</button>
+                <button id="btn-close-inventory" class="secondary-btn" data-t="btn_close">Fechar</button>
             </div>
         </div>
     </div>
@@ -416,6 +542,10 @@
                     <label data-t="bank_loans">Empréstimos</label>
                     <span class="value">$ <span id="exp-loans">0</span></span>
                 </div>
+                <div class="bank-stat-card highlight" style="border: 1px solid #2ecc71;">
+                    <label>Economia (Infra)</label>
+                    <span class="value" style="color: #2ecc71;">- $ <span id="exp-infra-discount">0</span></span>
+                </div>
                 <div class="bank-stat-card highlight">
                     <label>Multa Acumulada (+$10/rodada)</label>
                     <span class="value">$ <span id="exp-penalty">0</span></span>
@@ -436,6 +566,22 @@
 
             <div class="modal-footer">
                 <button id="btn-close-expenses" class="action-btn" data-t="btn_close">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Credits Modal -->
+    <div id="credits-modal" class="modal-overlay hidden" style="z-index: 10001;" onclick="if(event.target===this)this.classList.add('hidden')">
+        <div class="modal-content glass" style="max-width: 560px; text-align: center; padding: 2.5rem; position: relative;">
+            <button onclick="document.getElementById('credits-modal').classList.add('hidden')" style="position: absolute; top: 15px; right: 18px; background: none; border: none; font-size: 1.5rem; color: #8b949e; cursor: pointer; line-height: 1;" title="Fechar">×</button>
+            <div style="font-size: 2.5rem; margin-bottom: 8px;">🏆</div>
+            <h2 style="font-size: 1.6rem; color: var(--primary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 2px;">Créditos</h2>
+            <p style="color: #8b949e; font-size: 0.8rem; margin-bottom: 28px; letter-spacing: 1px;">SAP Business One — Board Game</p>
+
+
+
+            <div style="margin-top: 28px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.06); color: #555d6b; font-size: 0.75rem; letter-spacing: 0.5px;">
+                © 2025 Action Starters · Todos os direitos reservados
             </div>
         </div>
     </div>

@@ -41,6 +41,28 @@ body.flash-error {
     20%, 40%, 60%, 80% { transform: translateX(5px); }
 }
 
+@keyframes pulse-gold {
+    0% {
+        box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.7);
+        transform: scale(1);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(241, 196, 15, 0);
+        transform: scale(1.05);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(241, 196, 15, 0);
+        transform: scale(1);
+    }
+}
+
+.pulse-gold {
+    animation: pulse-gold 2s infinite;
+    background: linear-gradient(135deg, #f1c40f, #f39c12) !important;
+    color: #000 !important;
+    border: 1px solid #fff !important;
+}
+
 body {
     background-color: var(--bg-color);
     color: var(--text-color);
@@ -111,6 +133,11 @@ body {
     text-shadow: 0 0 15px rgba(56, 211, 26, 0.4);
 }
 
+.negative-money {
+    color: #ff3860 !important;
+    text-shadow: 0 0 15px rgba(255, 56, 96, 0.6) !important;
+}
+
 .val-level {
     color: #38D31A; /* Neon Green */
     font-weight: 900;
@@ -140,6 +167,20 @@ button.icon-btn:hover:not(:disabled) {
     box-shadow: 0 0 10px rgba(56, 211, 26, 0.3);
     border-radius: 8px;
     transform: translateY(-2px);
+}
+
+/* Estado de Liquidação */
+.icon-btn.liquidated img {
+    filter: invert(27%) sepia(51%) saturate(2878%) hue-rotate(346deg) brightness(104%) contrast(97%) drop-shadow(0 0 5px rgba(255, 56, 96, 0.6)) !important;
+}
+
+.icon-btn.liquidated span {
+    color: #ff3860 !important;
+    text-shadow: 0 0 8px rgba(255, 56, 96, 0.4) !important;
+}
+
+.icon-btn.liquidated {
+    border-color: rgba(255, 56, 96, 0.3) !important;
 }
 
 .lang-btn {
@@ -1478,5 +1519,176 @@ button:disabled {
 .modal-overlay.retro-skin #mBtnBonus,
 .modal-overlay.retro-skin #btn-reveal {
     display: none !important;
+}
+
+/* Ficheiro (Financeiro) Styles */
+.finance-content {
+    max-width: 900px;
+    padding: 0; /* Let the ficheiro tabs dictate padding */
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+.finance-content-inner {
+    background: var(--panel-bg);
+}
+
+.ficheiro-container {
+    display: flex;
+    flex-direction: column;
+    margin-top: 1rem;
+    text-align: left;
+}
+
+.ficheiro-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 0 10px;
+    z-index: 10;
+}
+
+.ficheiro-tab {
+    padding: 1rem 1.5rem;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #fff;
+    cursor: pointer;
+    background: rgba(20,20,30,0.9);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-bottom: none;
+    border-radius: 12px 12px 0 0;
+    margin-bottom: -1px; /* Overlap with content border */
+    transition: all 0.3s;
+    opacity: 0.6;
+    position: relative;
+    z-index: 1;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ficheiro-tab:hover {
+    opacity: 0.9;
+    transform: translateY(-2px);
+}
+
+.ficheiro-tab.active {
+    opacity: 1;
+    z-index: 3;
+    padding-bottom: 1.2rem;
+    transform: translateY(-2px);
+    box-shadow: 0 -4px 15px rgba(0,0,0,0.4);
+}
+
+/* Colors for specific tabs */
+.ficheiro-tab[data-ficha="pagar"] { border-top: 4px solid #f39c12; }
+.ficheiro-tab[data-ficha="pagar"].active { background: linear-gradient(to bottom, rgba(243, 156, 18, 0.15), var(--panel-bg)); border-color: #f39c12 #f39c12 transparent #f39c12; }
+
+.ficheiro-tab[data-ficha="vencidas"] { border-top: 4px solid #e74c3c; }
+.ficheiro-tab[data-ficha="vencidas"].active { background: linear-gradient(to bottom, rgba(231, 76, 60, 0.15), var(--panel-bg)); border-color: #e74c3c #e74c3c transparent #e74c3c; }
+
+.ficheiro-tab[data-ficha="receber"] { border-top: 4px solid #2ecc71; }
+.ficheiro-tab[data-ficha="receber"].active { background: linear-gradient(to bottom, rgba(46, 204, 113, 0.15), var(--panel-bg)); border-color: #2ecc71 #2ecc71 transparent #2ecc71; }
+
+.ficheiro-tab[data-ficha="faturas_vencidas"] { border-top: 4px solid #f1c40f; }
+.ficheiro-tab[data-ficha="faturas_vencidas"].active { background: linear-gradient(to bottom, rgba(241, 196, 15, 0.15), var(--panel-bg)); border-color: #f1c40f #f1c40f transparent #f1c40f; }
+
+.ficheiro-content {
+    background: var(--panel-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 0 12px 12px 12px;
+    padding: 2.5rem;
+    position: relative;
+    z-index: 2;
+    min-height: 400px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+    transition: border-color 0.4s ease;
+    backdrop-filter: blur(20px);
+}
+
+/* Dynamic Top Border based on active tab */
+.ficheiro-content[data-active-ficha="pagar"] { border-top: 3px solid #f39c12; }
+.ficheiro-content[data-active-ficha="vencidas"] { border-top: 3px solid #e74c3c; }
+.ficheiro-content[data-active-ficha="receber"] { border-top: 3px solid #2ecc71; }
+.ficheiro-content[data-active-ficha="faturas_vencidas"] { border-top: 3px solid #f1c40f; }
+
+.ficheiro-panel {
+    display: none;
+    animation: bankFadeIn 0.3s ease-out;
+}
+
+.ficheiro-panel.active {
+    display: block;
+}
+
+.ficheiro-header {
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.ficheiro-header h3 {
+    font-size: 1.5rem;
+    color: #fff;
+    margin-bottom: 5px;
+}
+
+.ficheiro-header p {
+    color: #8b949e;
+    font-size: 0.9rem;
+}
+
+.finance-list {
+    background: rgba(0,0,0,0.3);
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.05);
+    padding: 1rem;
+    max-height: 300px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.finance-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: rgba(255,255,255,0.03);
+    border-radius: 6px;
+    border-left: 4px solid transparent;
+    transition: transform 0.2s;
+}
+
+.finance-item:hover {
+    transform: translateX(5px);
+    background: rgba(255,255,255,0.06);
+}
+
+.finance-item.pagar { border-left-color: #f39c12; }
+.finance-item.vencidas { border-left-color: #e74c3c; }
+.finance-item.receber { border-left-color: #2ecc71; }
+.finance-item.faturas_vencidas { border-left-color: #f1c40f; }
+
+@media (max-width: 700px) {
+    .ficheiro-tabs {
+        flex-wrap: wrap;
+        gap: 0;
+    }
+    .ficheiro-tab {
+        flex: 1 1 45%;
+        text-align: center;
+        border-radius: 8px 8px 0 0;
+        font-size: 0.8rem;
+        padding: 0.8rem 0.5rem;
+        justify-content: center;
+    }
+    .ficheiro-content {
+        border-radius: 0 0 12px 12px;
+        padding: 1.5rem;
+    }
 }
 
