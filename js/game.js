@@ -243,6 +243,15 @@ const startJourney = (e) => {
             reveal.style.opacity = '1';
             rImg.style.opacity = '1';
             rText.style.opacity = '1';
+
+            // Som de abertura
+            try {
+                const openingSound = new Audio('sons/som de abertura at 18.48.19.aac');
+                openingSound.volume = 1.0;
+                openingSound.play().catch(err => console.warn('Erro ao tocar som de abertura:', err));
+            } catch(err) {
+                console.warn('Som de abertura não disponível:', err);
+            }
         }, 50);
         
         setTimeout(() => {
@@ -773,7 +782,7 @@ function updateHUD() {
     
     // E-mail Task Notification
     if (UI.btnOpenEmail) {
-        UI.btnOpenEmail.classList.toggle('active-task', !!state.emailTaskActive);
+        UI.btnOpenEmail.classList.toggle('pulse-gold', !!state.emailTaskActive);
     }
     
     // Limits
@@ -895,11 +904,9 @@ function calculateDynamicExpenses() {
 
     // Reduções de Eficiência (Módulos Treinamento e Logística)
     const reductions = {
-        accounting: state.upgrades.training * 20, // R$ 20 de desconto por nível
-        electricity: state.upgrades.logistics * 15 // R$ 15 de desconto por nível
+        accounting: state.upgrades.training * 20,
+        electricity: state.upgrades.logistics * 15
     };
-
-    const loanPenalty = state.bank.loans.length > 0 ? 100 : 0;
 
     // Subtotal antes do desconto de infraestrutura
     const subtotal = 
@@ -907,24 +914,18 @@ function calculateDynamicExpenses() {
         Math.max(10, costs.accounting - reductions.accounting) + 
         Math.max(10, costs.electricity - reductions.electricity) + 
         costs.water + 
-        costs.internet + 
-        loanPenalty;
+        costs.internet;
 
-    // NOVO: Desconto de Infraestrutura (3% por nível)
+    // Desconto de Infraestrutura (3% por nível)
     const infraDiscountPercent = (state.upgrades.infra || 0) * 0.03;
     const infraDiscountValue = Math.round(subtotal * infraDiscountPercent);
     const total = subtotal - infraDiscountValue;
 
-    return { total, costs, reductions, loanPenalty, infraDiscountValue, infraDiscountPercent };
+    return { total, costs, reductions, infraDiscountValue, infraDiscountPercent };
 }
 
 function calculateTotalExpenses() {
-    let loanCosts = 0;
-    state.bank.loans.forEach(loan => {
-        loanCosts += loan.installmentVal;
-    });
-    
-    return calculateDynamicExpenses().total + loanCosts + state.expensePenalty;
+    return calculateDynamicExpenses().total + state.expensePenalty;
 }
 
 function updateExpensesUI() {
@@ -942,16 +943,6 @@ function updateExpensesUI() {
     
     UI.expWater.innerText = dynamic.costs.water.toLocaleString();
     UI.expInternet.innerText = dynamic.costs.internet.toLocaleString();
-    
-    let loanCosts = 0;
-    state.bank.loans.forEach(loan => {
-        loanCosts += loan.installmentVal;
-    });
-    
-    const loanDisplay = loanCosts + dynamic.loanPenalty;
-    UI.expLoans.innerHTML = dynamic.loanPenalty > 0 
-        ? `${loanDisplay.toLocaleString()} <span style="font-size: 0.7rem; color: #e74c3c;">(+${dynamic.loanPenalty} Mora)</span>`
-        : loanDisplay.toLocaleString();
     
     if (UI.expPenalty) UI.expPenalty.innerText = state.expensePenalty.toLocaleString();
     
@@ -1522,6 +1513,13 @@ function handleAnswer(selectedId, btnElement) {
             return;
         }
 
+        // GATILHO: Evento Falha Elétrica na Rodada 8 (50% de chance)
+        if (isCorrect && state.pos === 8 && !state.electricEventShown) {
+            state.electricEventShown = true;
+            triggerElectricFailEvent();
+            return;
+        }
+
         closeModal();
         checkLevelUp();
         if (state.pos > 300) showGameOver();
@@ -1879,6 +1877,41 @@ function triggerInfluencerEvent() {
     UI.mFeedback.className = 'success';
     UI.mFeedback.classList.remove('hidden');
     
+    UI.mAction.innerText = t("btn_continue");
+    UI.mAction.classList.remove('hidden');
+    UI.mAction.onclick = () => {
+        closeModal();
+        if (typeof checkLevelUp === 'function') checkLevelUp();
+        if (state.pos > 300 && typeof showGameOver === 'function') showGameOver();
+        else {
+            if (UI.btnNext) UI.btnNext.classList.remove('hidden');
+        }
+    };
+}
+
+function triggerElectricFailEvent() {
+    const happened = Math.random() < 0.5;
+
+    if (!happened) {
+        openModal("⚡ EVENTO DO TURNO", "<b>Falha Elétrica no Galpão</b><br><br>A equipe de manutenção inspecionou o sistema elétrico esta semana, mas desta vez tudo estava em ordem. Você teve sorte!");
+        UI.mOptions.innerHTML = '';
+        if (UI.mBtnBonus) UI.mBtnBonus.classList.add('hidden');
+        if (UI.mBtnReveal) UI.mBtnReveal.classList.add('hidden');
+        UI.mFeedback.innerHTML = `✅ Nenhum problema elétrico detectado desta vez!`;
+        UI.mFeedback.className = 'success';
+        UI.mFeedback.classList.remove('hidden');
+    } else {
+        updateMoney(-100, "extrato_event");
+        updateHUD();
+        openModal("⚡ EVENTO DO TURNO", "<b>Falha Elétrica no Galpão!</b><br><br>Um curto-circuito danificou parte do sistema elétrico do seu galpão. A equipe de manutenção precisou ser acionada de emergência.");
+        UI.mOptions.innerHTML = '';
+        if (UI.mBtnBonus) UI.mBtnBonus.classList.add('hidden');
+        if (UI.mBtnReveal) UI.mBtnReveal.classList.add('hidden');
+        UI.mFeedback.innerHTML = `❌ - R$ 100,00 🔧 (Custo de Manutenção Elétrica)`;
+        UI.mFeedback.className = 'error';
+        UI.mFeedback.classList.remove('hidden');
+    }
+
     UI.mAction.innerText = t("btn_continue");
     UI.mAction.classList.remove('hidden');
     UI.mAction.onclick = () => {
