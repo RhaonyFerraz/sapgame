@@ -93,6 +93,28 @@
         .money-pulse-red {
             animation: money-pulse-red 0.5s ease-out;
         }
+
+        /* Blinking Animation for Bonus Points HUD button */
+        @keyframes blink-bonus-pulse {
+            0% { 
+                border-color: rgba(241, 196, 15, 0.4); 
+                box-shadow: 0 0 5px rgba(241, 196, 15, 0.2);
+            }
+            50% { 
+                border-color: #f1c40f; 
+                box-shadow: 0 0 20px rgba(241, 196, 15, 0.6);
+            }
+            100% { 
+                border-color: rgba(241, 196, 15, 0.4); 
+                box-shadow: 0 0 5px rgba(241, 196, 15, 0.2);
+            }
+        }
+        .blink-bonus {
+            animation: blink-bonus-pulse 1s infinite ease-in-out !important;
+            border: 2px solid #f1c40f !important;
+            background: rgba(241, 196, 15, 0.1) !important;
+            border-radius: 8px;
+        }
     </style>
 
     <script>
@@ -156,7 +178,7 @@
                 <button id="btn-open-bank" class="icon-btn" onclick="if(window.openBank) openBank();"><img src="faviconsmenu/bank3.png" class="menu-icon" alt="Banco" style="width: 26px; height: 26px; filter: drop-shadow(0 0 5px rgba(255,255,255,0.3)); display: block;"> <span data-t="bank">BANCO</span></button>
                 <button id="btn-open-finance" class="icon-btn" onclick="if(window.openFinance) openFinance();"><img src="faviconsmenu/accounting.png" class="menu-icon" alt="Financeiro" style="width: 26px; height: 26px; filter: drop-shadow(0 0 5px rgba(255,255,255,0.3)); display: block;"> <span data-t="finance">FINANCEIRO</span></button>
                 <button id="btn-open-inventory" class="icon-btn" onclick="if(window.openInventory) openInventory();"><img src="faviconsmenu/inventario.png" class="menu-icon" alt="Inventário" style="width: 26px; height: 26px; filter: drop-shadow(0 0 5px rgba(255,255,255,0.3)); display: block;"> <span data-t="inventory">INVENTÁRIO</span></button>
-                <button id="btn-open-invest" class="icon-btn" onclick="if(window.openInvestments) openInvestments();"><img src="faviconsmenu/investment.png" class="menu-icon" alt="Investimento" style="width: 26px; height: 26px; filter: drop-shadow(0 0 5px rgba(255,255,255,0.3)); display: block;"> <span data-t="investments">INVESTIMENTO</span></button>
+                <button id="btn-open-invest" class="icon-btn" onclick="if(window.openInvestments) openInvestments();"><img src="faviconsmenu/investment.png" class="menu-icon" alt="Melhorias" style="width: 26px; height: 26px; filter: drop-shadow(0 0 5px rgba(255,255,255,0.3)); display: block;"> <span data-t="investments">MELHORIAS</span></button>
                 <button id="btn-open-expenses" class="icon-btn" onclick="if(window.openExpenses) openExpenses();"><img src="faviconsmenu/asset-allocation.png" class="menu-icon" alt="Despesas" style="width: 26px; height: 26px; filter: drop-shadow(0 0 5px rgba(255,255,255,0.3)); display: block;"> <span data-t="expenses">DESPESAS</span></button>
                 <button id="btn-open-email" class="icon-btn" onclick="if(window.openEmail) openEmail();"><img src="faviconsmenu/management.png" class="menu-icon" alt="E-mail" style="width: 26px; height: 26px; filter: drop-shadow(0 0 5px rgba(255,255,255,0.3)); display: block;"> <span data-t="email">E-MAIL</span></button>
             </div>
@@ -296,7 +318,10 @@
             <div id="bank-loans-panel" class="bank-panel hidden">
                 <div class="bank-form">
                     <div class="form-group">
-                        <label data-t="loan_amount_label">Valor do Empréstimo (R$)</label>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <label data-t="loan_amount_label" style="margin-bottom: 0;">Valor do Empréstimo (R$)</label>
+                            <span style="color: #2ecc71; font-size: 0.75rem;">Limite Liberado: <strong id="loan-available-limit">R$ 0,00</strong></span>
+                        </div>
                         <input type="number" id="loan-amount" placeholder="Ex: 1000" min="100">
                     </div>
                     <div class="form-group">
@@ -320,27 +345,6 @@
             </div>
 
             <div id="bank-investments-panel" class="bank-panel hidden">
-                <!-- Pontos de Brinde -->
-                <div id="invest-bonus-card" style="background: linear-gradient(135deg, rgba(241,196,15,0.15), rgba(241,196,15,0.05)); border: 1px solid rgba(241,196,15,0.4); border-radius: 10px; padding: 14px 16px; margin-bottom: 16px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <div>
-                            <strong style="color: #f1c40f; font-size: 0.9rem;">🎁 Pontos de Brinde</strong>
-                            <small style="display: block; color: #8b949e; font-size: 0.72rem; margin-top: 2px;">Use para melhorar qualquer área gratuitamente.</small>
-                        </div>
-                        <span id="invest-bonus-points" style="font-size: 1.8rem; font-weight: bold; color: #f1c40f;">0</span>
-                    </div>
-                    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                        <select id="bonus-area-select" style="flex: 1; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; padding: 8px 10px; font-size: 0.8rem; min-width: 160px;">
-                            <option value="infra">🖥️ Infraestrutura</option>
-                            <option value="machines">⚙️ Máquinas</option>
-                            <option value="training">📚 Treinamento</option>
-                            <option value="marketing">📢 Propaganda</option>
-                            <option value="logistics">🚚 Logística</option>
-                            <option value="consultants">👔 Consultores</option>
-                        </select>
-                        <button onclick="window.useBonusPoint()" style="background: linear-gradient(135deg, #f1c40f, #e67e22); border: none; border-radius: 8px; color: #000; font-weight: bold; padding: 8px 16px; font-size: 0.8rem; cursor: pointer; white-space: nowrap;">✅ Usar Ponto</button>
-                    </div>
-                </div>
                 <div class="bank-form">
                     <div class="form-group">
                         <label data-t="invest_amount_label">Valor do Investimento (R$)</label>
@@ -480,8 +484,8 @@
     <!-- Strategic Investments Modal -->
     <div id="invest-modal" class="modal-overlay hidden">
         <div class="modal-content invest-content glass">
-            <h2 id="invest-title">💼 Investimentos Estratégicos</h2>
-            <p class="invest-subtitle">Aprimore sua operação para aumentar a eficiência e o lucro por rodada.</p>
+            <h2 id="invest-title" data-t="invest_title">💼 Melhorias Estratégicas</h2>
+            <p class="invest-subtitle" data-t="invest_subtitle">Aprimore sua operação para aumentar a eficiência e o lucro por rodada.</p>
             
             <div id="invest-list" class="invest-grid">
                 <!-- Infraestrutura -->

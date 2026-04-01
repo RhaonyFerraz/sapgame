@@ -557,6 +557,19 @@ async function initGame() {
     if (UI.hudHeader) UI.hudHeader.classList.remove('hidden');
     console.log("initGame: Referências UI atualizadas.");
 
+    // Start background slideshow (20s) - Moved to top of initGame to prevent blocking
+    try {
+        if (!window.bgInterval) {
+            window.bgInterval = setInterval(() => {
+                if (typeof GRAVITY_IMAGES !== 'undefined' && GRAVITY_IMAGES.length > 0) {
+                    state.bgIndex = (state.bgIndex + 1) % GRAVITY_IMAGES.length;
+                    updateBackgroundImage();
+                }
+            }, 20000);
+            console.log("initGame: Slideshow de fundo iniciado (20s).");
+        }
+    } catch(e) { console.warn("Erro no slideshow:", e); }
+
     try {
         console.log(`initGame: Carregando perguntas para idioma: ${state.language}`);
         await loadQuestions(state.language);
@@ -605,15 +618,15 @@ async function initGame() {
     if (UI.btnCloseExtrato) UI.btnCloseExtrato.addEventListener('click', closeExtrato);
     
     // Strategic Invest events
-    if (UI.btnOpenInvest) UI.btnOpenInvest.addEventListener('click', openInvestments);
-    if (UI.btnCloseInvest) UI.btnCloseInvest.addEventListener('click', closeInvest);
+    if (UI.btnOpenInvest) UI.btnOpenInvest.addEventListener('click', () => window.openInvestments());
+    if (UI.btnCloseInvest) UI.btnCloseInvest.addEventListener('click', () => window.closeInvest());
     
     // Financeiro events
-    if (UI.btnOpenFinance) UI.btnOpenFinance.addEventListener('click', openFinance);
-    if (UI.btnCloseFinance) UI.btnCloseFinance.addEventListener('click', closeFinance);
+    if (UI.btnOpenFinance) UI.btnOpenFinance.addEventListener('click', () => window.openFinance());
+    if (UI.btnCloseFinance) UI.btnCloseFinance.addEventListener('click', () => window.closeFinance());
     
     // Email events
-    if (UI.btnOpenEmail) UI.btnOpenEmail.addEventListener('click', openEmail);
+    if (UI.btnOpenEmail) UI.btnOpenEmail.addEventListener('click', () => window.openEmail());
 
     if (UI.ficheiroTabs) {
         UI.ficheiroTabs.forEach(tab => {
@@ -622,17 +635,17 @@ async function initGame() {
     }
     
     // Inventory events
-    if (UI.btnOpenInventory) UI.btnOpenInventory.addEventListener('click', openInventory);
-    if (UI.btnCloseInventory) UI.btnCloseInventory.addEventListener('click', closeInventory);
-    if (UI.btnPawnInventory) UI.btnPawnInventory.addEventListener('click', pawnInventory);
-    if (UI.btnPatrimonialAgreement) UI.btnPatrimonialAgreement.addEventListener('click', performPatrimonialAgreement);
+    if (UI.btnOpenInventory) UI.btnOpenInventory.addEventListener('click', () => window.openInventory());
+    if (UI.btnCloseInventory) UI.btnCloseInventory.addEventListener('click', () => window.closeInventory());
+    if (UI.btnPawnInventory) UI.btnPawnInventory.addEventListener('click', () => pawnInventory());
+    if (UI.btnPatrimonialAgreement) UI.btnPatrimonialAgreement.addEventListener('click', () => performPatrimonialAgreement());
     
     // Expenses events
-    if (UI.btnOpenExpenses) UI.btnOpenExpenses.addEventListener('click', openExpenses);
-    if (UI.btnCloseExpenses) UI.btnCloseExpenses.addEventListener('click', closeExpenses);
+    if (UI.btnOpenExpenses) UI.btnOpenExpenses.addEventListener('click', () => window.openExpenses());
+    if (UI.btnCloseExpenses) UI.btnCloseExpenses.addEventListener('click', () => window.closeExpenses());
     
-    if (UI.btnPayNow) UI.btnPayNow.addEventListener('click', payExpensesNow);
-    if (UI.btnPayLater) UI.btnPayLater.addEventListener('click', postponeExpenses);
+    if (UI.btnPayNow) UI.btnPayNow.addEventListener('click', () => payExpensesNow());
+    if (UI.btnPayLater) UI.btnPayLater.addEventListener('click', () => postponeExpenses());
 
     if (UI.btnLangToggle) UI.btnLangToggle.addEventListener('click', toggleLanguage);
     if (UI.btnStartTurn) UI.btnStartTurn.addEventListener('click', () => startTurn());
@@ -640,15 +653,7 @@ async function initGame() {
     // Apply translation on load
     updateLanguageUI();
 
-    // Start background slideshow (15s)
-    try {
-        setInterval(() => {
-            if (typeof GRAVITY_IMAGES !== 'undefined' && GRAVITY_IMAGES.length > 0) {
-                state.bgIndex = (state.bgIndex + 1) % GRAVITY_IMAGES.length;
-                updateBackgroundImage();
-            }
-        }, 15000);
-    } catch(e) { console.warn("Erro no slideshow:", e); }
+    // Slideshow start moved to beginning of initGame
     
     console.log("initGame: CONCLUÍDO COM SUCESSO.");
 }
@@ -693,8 +698,17 @@ function applyBlitzPenalty() {
     btnDepois.style.cssText = 'background: linear-gradient(135deg, #e74c3c, #c0392b); border: none; color: #fff; font-weight: bold; margin: 5px;';
     btnDepois.innerText = '⏳ Pagar Depois (+5% por rodada)';
     btnDepois.onclick = () => {
-        state.blitzDebt += penalty;
-        console.log(`BLITZ: Multa adiada. Dívida acumulada: R$ ${state.blitzDebt}`);
+        // Integração com SISTEMA FINANCEIRO (Contas Vencidas)
+        if (!state.finance) state.finance = { payables: [], receivables: [], nextId: 1 };
+        const id = 'fin_' + (state.finance.nextId++);
+        state.finance.payables.push({
+            id: id,
+            name: "Multa: Blitz Policial (Habilitação)",
+            amount: penalty,
+            turnsLeft: 0,
+            late: true
+        });
+        console.log(`BLITZ: Multa movida para Contas Vencidas do Financeiro (ID: ${id})`);
         closeModal();
         updateHUD();
     };
@@ -732,9 +746,15 @@ function updateHUD() {
         startBtnText.innerText = t("hud_start", { level: state.pos.toString().padStart(2, '0') });
     }
     
-    
     if (UI.btnOpenExpenses) {
-        if (state.pos >= 4 && !state.expensePaid) {
+        let shouldPulse = (state.pos >= 4 && state.pos !== 8 && !state.expensePaid && state.stats.correctAnswers >= 4);
+        
+        // Usuário solicitou que não pulse caso o débito automático esteja ativado e haja fundos
+        if (state.bank && state.bank.autoDebit && state.money >= calculateTotalExpenses()) {
+            shouldPulse = false;
+        }
+
+        if (shouldPulse) {
             UI.btnOpenExpenses.classList.add('pulse-warning');
         } else {
             UI.btnOpenExpenses.classList.remove('pulse-warning');
@@ -770,6 +790,14 @@ function updateInventoryUI() {
     if (UI.invRawMaterials) UI.invRawMaterials.innerText = state.inventory.rawMaterials.toLocaleString();
     if (UI.invFinishedGoods) UI.invFinishedGoods.innerText = state.inventory.finishedGoods.toLocaleString();
     if (UI.invFleet) UI.invFleet.innerText = state.inventory.fleet.toLocaleString();
+    if (UI.investments) UI.investments.innerText = state.bonusPoints > 0 ? `⭐ ${state.bonusPoints}` : state.stats.investmentsMade;
+
+    // Alerta visual de pontos de brinde no botão do menu
+    const btnInvest = document.getElementById('btn-open-invest');
+    if (btnInvest) {
+        if (state.bonusPoints > 0) btnInvest.classList.add('blink-bonus');
+        else btnInvest.classList.remove('blink-bonus');
+    }
     
     const totalValue = state.inventory.warehouse + state.inventory.machinery + 
                        state.inventory.packaging + state.inventory.rawMaterials + 
@@ -951,7 +979,15 @@ function updateBackgroundImage() {
     document.body.style.backgroundImage = `url('${imgUrl}')`;
 }
 
+window.isTurnProcessing = false;
 window.startTurn = function(skipExpenseCheck = false) {
+    if (window.isTurnProcessing) {
+        console.warn("Bloqueio de duplo-clique: Turno já está sendo processado.");
+        return;
+    }
+    window.isTurnProcessing = true;
+    setTimeout(() => { window.isTurnProcessing = false; }, 1000); // Failsafe unlock após a renderização do modal
+
     console.log("startTurn: INICIANDO TURNO na casa", state.pos);
     
     // Fallback de perguntas
@@ -1023,19 +1059,14 @@ window.startTurn = function(skipExpenseCheck = false) {
         state.questions = [...questionsList];
     }
     
-    // 20% imprevisto, otherwise normal question
-    if (Math.random() < 0.2) {
-        console.log("startTurn: Sorteando Evento...");
-        triggerEvent();
-    } else {
-        console.log("startTurn: Sorteando Pergunta...");
-        askQuestion();
-    }
+    // TODOS OS EVENTOS CANCELADOS TEMPORARIAMENTE (Apenas perguntas)
+    console.log("startTurn: Sorteando Pergunta (Eventos desativados)...");
+    askQuestion();
 }
 
 function evaluateContextualEvents() {
-    // 1. CASH CRISIS: Payday coming up and not enough money
-    if (state.pos % 4 === 0 && state.money < calculateDynamicExpenses()) {
+    // 1. CASH CRISIS: Payday coming up and not enough money (Except on skip round 8)
+    if (state.pos % 4 === 0 && state.pos !== 8 && state.money < calculateDynamicExpenses() && state.stats.correctAnswers >= 4) {
         return {
             title: "🚨 CRISE DE CAIXA",
             text: "O financeiro avisou que não temos saldo para as despesas! O banco providenciou um empréstimo de emergência com taxas altíssimas e peças foram liquidadas.",
@@ -1155,6 +1186,7 @@ function triggerEvent() {
     // Processamentos de Fim de Turno
     processBankTurn();
     updateHUD();
+    UI.mAction.innerText = t("btn_ok");
     UI.mAction.classList.remove('hidden');
     UI.mAction.onclick = () => {
         closeModal();
@@ -1356,14 +1388,11 @@ function handleAnswer(selectedId, btnElement) {
         }
         
         // JUROS da Blitz: +5% por rodada na dívida pendente
-        if (state.blitzDebt > 0) {
-            const interest = Math.round(state.blitzDebt * 0.05);
-            state.blitzDebt += interest;
-            console.log(`BLITZ Juros: +R$ ${interest} (5%). Dívida total: R$ ${state.blitzDebt}`);
-        }
+        // Blitz Penalty is now managed by the Financeiro module (Contas Vencidas)
+        // Manual blitzDebt interest logic removed here to avoid redundancy.
         
-        // Reset expense payment for the new cycle (Every 4 rounds)
-        if (state.pos % 4 === 0) {
+        // Reset expense payment for the new cycle (Every 4 rounds, skipped on round 8)
+        if (state.pos % 4 === 0 && state.pos !== 8 && state.stats.correctAnswers >= 4) {
             state.expensePaid = false;
             console.log(`Nova rodada de faturamento! Iniciando ciclo: ${state.pos}`);
             
@@ -1375,7 +1404,8 @@ function handleAnswer(selectedId, btnElement) {
                     updateMoney(-total, "extrato_expenses_paid");
                     state.expensePaid = true;
                     // Inform player with ticker or alert? User requested "Ticker or brief notification"
-                    const msg = `💰 Débito Automático: R$ ${total.toFixed(2)} pagos com sucesso!`;
+                    const formattedTotal = total.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                    const msg = `💰 Débito Automático: R$ ${formattedTotal} pagos com sucesso!`;
                     // Brief sound
                     playSuccessSound();
                     // Alert or ticker message
@@ -1476,6 +1506,13 @@ function handleAnswer(selectedId, btnElement) {
         // GATILHO: Questão Surpresa após acertar a primeira questão
         if (isCorrect && state.pos === 2 && !state.surpriseShown1) {
             loadSurpriseQuestion(1);
+            return;
+        }
+
+        // GATILHO: Evento Fixo Influenciador ao acertar a Quarta Questão
+        if (isCorrect && state.pos === 4 && !state.influencerEventShown) {
+            state.influencerEventShown = true;
+            triggerInfluencerEvent();
             return;
         }
         
@@ -1821,14 +1858,47 @@ function closeModal() {
     
     UI.modal.classList.remove('retro-skin');
     UI.mAction.innerText = t("btn_continue");
+    UI.mAction.style.display = ''; // GUARANTEES BUTTON CAN BE SHOWN AGAIN AVOIDING SOFT-LOCKS
 
     // Limpa a rolagem (scroll) de forma oculta após a animação (400ms)
     setTimeout(forceScrollToTop, 400);
 }
 
+function triggerInfluencerEvent() {
+    openModal("📱 EVENTO FIXO", "<b>Influenciador Divulgou sua Marca!</b><br><br>Um grande criador de conteúdo mostrou seus produtos nos stories organicamente. O engajamento com seus produtos disparou!");
+    
+    UI.mOptions.innerHTML = '';
+    if (UI.mBtnBonus) UI.mBtnBonus.classList.add('hidden');
+    if (UI.mBtnReveal) UI.mBtnReveal.classList.add('hidden');
+    
+    updateMoney(650, "extrato_event");
+    updateHUD();
+    playSuccessSound();
+    
+    UI.mFeedback.innerHTML = `✅ + R$ 650,00 💰 (Lucro Imediato)`;
+    UI.mFeedback.className = 'success';
+    UI.mFeedback.classList.remove('hidden');
+    
+    UI.mAction.innerText = t("btn_continue");
+    UI.mAction.classList.remove('hidden');
+    UI.mAction.onclick = () => {
+        closeModal();
+        if (typeof checkLevelUp === 'function') checkLevelUp();
+        if (state.pos > 300 && typeof showGameOver === 'function') showGameOver();
+        else {
+            if (UI.btnNext) UI.btnNext.classList.remove('hidden');
+        }
+    };
+}
+
 /* --- Expense Decision Logic (Moved to Modal) --- */
 window.payExpensesNow = function() {
     console.log("Finance: Iniciando payExpensesNow...");
+    if (state.expensePaid) {
+        console.warn("Despesas já foram pagas neste ciclo!");
+        closeExpenses();
+        return;
+    }
     const total = calculateTotalExpenses();
     if (state.money >= total) {
         updateMoney(-total, "extrato_expenses_paid");
@@ -1902,8 +1972,8 @@ function renderExtrato() {
                     <div style="font-size: 0.75rem; color: #8b949e; margin-top: 4px;">Rodada ${t_record.turn}</div>
                 </div>
                 <div style="text-align: right;">
-                    <div style="color: ${color}; font-weight: bold;">${sign} R$ ${Math.abs(t_record.amount).toFixed(2)}</div>
-                    <div style="font-size: 0.75rem; color: #8b949e; margin-top: 4px;">Saldo: R$ ${t_record.balance.toFixed(2)}</div>
+                    <div style="color: ${color}; font-weight: bold;">${sign} R$ ${Math.abs(t_record.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                    <div style="font-size: 0.75rem; color: #8b949e; margin-top: 4px;">Saldo: R$ ${t_record.balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
                 </div>
             </div>
         `;
@@ -1950,6 +2020,12 @@ window.confirmPix = function() {
     const pixCode = digits.join('');
     
     if (pixCode === '22037') {
+        if (!state.machineryReplySeen) {
+            document.getElementById('pix-status').style.color = '#e74c3c';
+            document.getElementById('pix-status').innerText = '⚠️ Esse pix ainda não está valido!';
+            return;
+        }
+
         if (state.money < 300) {
             document.getElementById('pix-status').style.color = '#e74c3c';
             document.getElementById('pix-status').innerText = '❌ Saldo insuficiente para o PIX inicial (R$ 300)!';
@@ -1986,6 +2062,43 @@ window.confirmPix = function() {
         });
         
         alert('💸 PIX de R$ 300 enviado para Máquinas industriais usadas ltda!\n\n🏭 +R$ 3.000 adicionados ao Maquinário do Inventário\n🎁 +1 Ponto de Brinde desbloqueado\n\n9 boletos de R$ 300 foram registrados nas suas obrigações.\nVerifique o Inventário e o Resumo bancário.');
+        return;
+    }
+
+    if (pixCode === '22036') {
+        if (!state.machineryReplySeen) {
+            document.getElementById('pix-status').style.color = '#e74c3c';
+            document.getElementById('pix-status').innerText = '⚠️ Esse pix ainda não está valido!';
+            return;
+        }
+
+        if (state.money < 2700) {
+            document.getElementById('pix-status').style.color = '#e74c3c';
+            document.getElementById('pix-status').innerText = '❌ Saldo insuficiente para o PIX de Melhoria (R$ 2.700)!';
+            return;
+        }
+
+        // Debita o valor total
+        updateMoney(-2700, 'extrato_pix_melhoria_direta');
+        
+        // Premia com 3000 em maquinário e 1 ponto de brinde
+        state.inventory.machinery += 3000;
+        state.bonusPoints += 1;
+        
+        updateHUD();
+        updateBankUI();
+        updateInventoryUI();
+        
+        document.getElementById('pix-status').style.color = '#2ecc71';
+        document.getElementById('pix-status').innerText = '✅ PIX enviado! R$ 2.700 debitado • +3.000 Maquinário • +1 Brinde';
+        
+        // Limpa os campos
+        [1,2,3,4,5].forEach(i => {
+            const el = document.getElementById(`pix-digit-${i}`);
+            if (el) el.value = '';
+        });
+        
+        alert('🎁 Ponto de Melhoria e Maquinário adquiridos!\n\n💸 R$ 2.700 descontados do seu caixa.\n🏭 +R$ 3.000 adicionados ao Maquinário do Inventário.\n⭐ Você agora possui um novo Ponto de Brinde para usar em qualquer Melhoria Estratégica.');
         return;
     }
     
@@ -2111,8 +2224,8 @@ function updateLoanPreview() {
     
     const shieldText = hasConfidenceShield ? ' <span style="color: #2ecc71; font-size: 0.7rem;">(Escudo de Confiança Ativo -50%)</span>' : '';
     document.getElementById('loan-rate').innerHTML = `${(rate * 100).toFixed(1)}%${shieldText}`;
-    document.getElementById('loan-total').innerText = `R$ ${total.toFixed(2)}`;
-    document.getElementById('loan-installment-val').innerText = `R$ ${perMonth.toFixed(2)}`;
+    document.getElementById('loan-total').innerText = `R$ ${total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+    document.getElementById('loan-installment-val').innerText = `R$ ${perMonth.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
 }
 
 function updateInvestPreview() {
@@ -2209,10 +2322,15 @@ function updateBankUI() {
     bankBalanceEl.classList.toggle('negative-money', isNegative);
     
     const totalDebt = state.bank.loans.reduce((acc, l) => acc + (l.installmentVal * l.remainingInstallments), 0);
-    document.getElementById('bank-debt-val').innerText = `R$ ${totalDebt.toFixed(2)}`;
+    document.getElementById('bank-debt-val').innerText = `R$ ${totalDebt.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
     
     const totalYield = state.bank.investments.reduce((acc, i) => acc + (i.finalVal - i.amount), 0);
-    document.getElementById('bank-yield-val').innerText = `R$ ${totalYield.toFixed(2)}`;
+    document.getElementById('bank-yield-val').innerText = `R$ ${totalYield.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+    
+    const limitEl = document.getElementById('loan-available-limit');
+    if (limitEl) {
+        limitEl.innerText = `R$ ${(state.bank.creditLimit || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+    }
     
     // Pontos de Brinde no painel de Investimentos
     const investBonusPtsEl = document.getElementById('invest-bonus-points');
@@ -2235,10 +2353,10 @@ function updateBankUI() {
             <div class="bank-item">
                 <div class="bank-item-info">
                     <h4>${displayLabel}</h4>
-                    <p>${t("loan_installment_val")}: R$ ${l.installmentVal.toFixed(2)}</p>
+                    <p>${t("loan_installment_val")}: R$ ${l.installmentVal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                 </div>
                 <div class="bank-item-status">
-                    <span class="amount">R$ ${(l.installmentVal * l.remainingInstallments).toFixed(2)}</span>
+                    <span class="amount">R$ ${(l.installmentVal * l.remainingInstallments).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                     <span class="rounds">${l.remainingInstallments} ${t("loan_installments_label")}</span>
                 </div>
             </div>
@@ -2250,10 +2368,10 @@ function updateBankUI() {
             <div class="bank-item">
                 <div class="bank-item-info">
                     <h4>${t("invest_label")} #${index + 1}</h4>
-                    <p>${t("invest_amount_label")}: R$ ${inv.amount.toFixed(2)}</p>
+                    <p>${t("invest_amount_label")}: R$ ${inv.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                 </div>
                 <div class="bank-item-status" style="color: #2ecc71;">
-                    <span class="amount">R$ ${inv.finalVal.toFixed(2)}</span>
+                    <span class="amount">R$ ${inv.finalVal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                     <span class="rounds">${t("receives_in", { rounds: inv.remainingRounds })}</span>
                 </div>
             </div>
@@ -2271,8 +2389,8 @@ function updateBankUI() {
                     ${statusText}
                 </div>
                 <div class="item-details">
-                    <span>Total: R$ ${c.totalValue.toLocaleString()}</span>
-                    <span>Parcela: R$ ${c.installmentValue.toLocaleString()}</span>
+                    <span>Total: R$ ${c.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                    <span>Parcela: R$ ${c.installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                     <span>Progresso: ${c.totalInstallments - c.installmentsLeft}/${c.totalInstallments}</span>
                     ${bidBtn}
                 </div>
@@ -2335,7 +2453,7 @@ function processBankTurn() {
         inv.remainingRounds--;
         if (inv.remainingRounds <= 0) {
             updateMoney(inv.finalVal, "extrato_invest_return");
-            alert(t("alert_invest_matured", { amount: inv.amount, total: inv.finalVal.toFixed(2) }));
+            alert(t("alert_invest_matured", { amount: inv.amount, total: inv.finalVal.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) }));
             return false;
         }
         return true;
@@ -2699,6 +2817,8 @@ window.trashEmail = function(id) {
     }
 }
 
+// Removed invalid export aliases
+
 // --- Strategic Investments Logic ---
 
 window.openInvestments = function() {
@@ -2809,35 +2929,56 @@ function updateInvestUI() {
         const btn = card.querySelector('.upgrade-btn');
         if (btn) {
             const maxLevel = isThirtyLevel ? 30 : 6;
-            if (promoAvailable) {
+            const hasBonus = state.bonusPoints > 0;
+
+            if (hasBonus) {
+                btn.innerText = t('btn_upgrade_bonus');
+                btn.disabled = level >= maxLevel;
+                btn.style.boxShadow = "0 0 15px #f1c40f";
+                btn.style.border = "1px solid #f1c40f";
+            } else if (promoAvailable) {
                 btn.innerText = t('btn_upgrade_free');
                 btn.disabled = level >= maxLevel;
                 btn.style.boxShadow = "0 0 15px #f1c40f";
+                btn.style.border = "none";
             } else {
                 btn.innerText = `${t('btn_upgrade')} (R$ ${nextCost})`;
                 btn.disabled = state.money < nextCost || level >= maxLevel;
                 btn.style.boxShadow = "none";
+                btn.style.border = "none";
             }
         }
     });
+
+    // Atualiza Pontos de Brinde no painel de Melhorias
+    const investBonusPtsEl = document.getElementById('invest-bonus-points');
+    if (investBonusPtsEl) investBonusPtsEl.innerText = state.bonusPoints || 0;
 }
+
 
 window.upgradeArea = function(area) {
     const level = state.upgrades[area];
     let cost = getUpgradeCost(area, level);
     
+    // Prioridade 1: Pontos de Brinde
+    const usingBonus = state.bonusPoints > 0;
+    
     // Lógica de Promoção Grátis (1 por rodada a cada 5 rodadas)
     const isPromoRound = (state.pos > 0 && state.pos % 5 === 0);
-    const usingPromo = isPromoRound && (state.lastFreeInvestTurn !== state.pos);
+    const usingPromo = !usingBonus && isPromoRound && (state.lastFreeInvestTurn !== state.pos);
 
-    if (usingPromo) {
+    if (usingBonus) {
+        if (!confirm(`Deseja usar 1 Ponto de Brinde para melhorar ${STRATEGIC_DATA[area].name} gratuitamente?`)) return;
+        cost = 0;
+        state.bonusPoints--;
+    } else if (usingPromo) {
         cost = 0;
         state.lastFreeInvestTurn = state.pos;
         console.log(`Promoção utilizada na rodada ${state.pos} para ${area}`);
     }
 
     if (state.money >= cost) {
-        const reason = cost === 0 ? "extrato_upgrade_free" : "extrato_upgrade_" + area;
+        const reason = usingBonus ? "extrato_upgrade_bonus" : (cost === 0 ? "extrato_upgrade_free" : "extrato_upgrade_" + area);
         updateMoney(-cost, reason);
         state.upgrades[area]++;
         state.stats.investmentsMade++;
@@ -3015,6 +3156,7 @@ function payAdvance(elementId, amount, name, financeId) {
         updateHUD();
     }
 }
+window.payAdvance = payAdvance;
 
 // Lógica para Contas Vencidas: Pagamento com 5% de Multa
 function payLate(elementId, amount, name, financeId) {
@@ -3049,6 +3191,7 @@ function payLate(elementId, amount, name, financeId) {
         updateHUD();
     }
 }
+window.payLate = payLate;
 
 // Lógica para Contas a Receber: Antecipação com 3% de Taxa
 function anticipateReceivable(elementId, amount, name, financeId) {
@@ -3077,6 +3220,7 @@ function anticipateReceivable(elementId, amount, name, financeId) {
         updateHUD();
     }
 }
+window.anticipateReceivable = anticipateReceivable;
 
 // --- Dynamic Finance Core Engine ---
 
@@ -3183,7 +3327,7 @@ function renderFinanceiro() {
     let hasRecAtraso = false;
 
     // Render Previsão de Despesas (Fixed game expenses)
-    let isCurrentlyDue = (state.pos > 0 && state.pos % 4 === 0);
+    let isCurrentlyDue = (state.pos > 0 && state.pos % 4 === 0 && state.pos !== 8);
     let roundsUntilDue;
 
     if (isCurrentlyDue) {
