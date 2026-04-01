@@ -244,9 +244,9 @@ const startJourney = (e) => {
             rImg.style.opacity = '1';
             rText.style.opacity = '1';
 
-            // Som de abertura
+            // Som de abertura (espaços no nome do arquivo precisam de codificação URL)
             try {
-                const openingSound = new Audio('sons/som de abertura at 18.48.19.aac');
+                const openingSound = new Audio('sons/som%20de%20abertura%20at%2018.48.19.aac');
                 openingSound.volume = 1.0;
                 openingSound.play().catch(err => console.warn('Erro ao tocar som de abertura:', err));
             } catch(err) {
@@ -756,7 +756,8 @@ function updateHUD() {
     }
     
     if (UI.btnOpenExpenses) {
-        let shouldPulse = (state.pos >= 4 && state.pos !== 8 && !state.expensePaid && state.stats.correctAnswers >= 4);
+        const expCycleDue = state.pos === 4 || (state.pos >= 14 && (state.pos - 14) % 10 === 0);
+        let shouldPulse = (expCycleDue && !state.expensePaid && state.stats.correctAnswers >= 4);
         
         // Usuário solicitou que não pulse caso o débito automático esteja ativado e haja fundos
         if (state.bank && state.bank.autoDebit && state.money >= calculateTotalExpenses()) {
@@ -1378,14 +1379,14 @@ function handleAnswer(selectedId, btnElement) {
             console.log("Resposta automática recebida: 'oii'");
         }
         
-        // JUROS da Blitz: +5% por rodada na dívida pendente
-        // Blitz Penalty is now managed by the Financeiro module (Contas Vencidas)
-        // Manual blitzDebt interest logic removed here to avoid redundancy.
-        
-        // Reset expense payment for the new cycle (Every 4 rounds, skipped on round 8)
-        if (state.pos % 4 === 0 && state.pos !== 8 && state.stats.correctAnswers >= 4) {
+        // Ciclo de Despesas Operacionais:
+        // 1ª vez: Rodada 4 (após 4 acertos)
+        // 2ª vez: Rodada 14 (pedido do usuário)
+        // Seguintes: a cada 10 rodadas após 14 (24, 34, 44...)
+        const expenseTrigger = state.pos === 4 || (state.pos >= 14 && (state.pos - 14) % 10 === 0);
+        if (expenseTrigger && state.stats.correctAnswers >= 4) {
             state.expensePaid = false;
-            console.log(`Nova rodada de faturamento! Iniciando ciclo: ${state.pos}`);
+            console.log(`Nova rodada de faturamento! Ciclo na casa: ${state.pos}`);
             
             // AUTO-DEBIT LOGIC
             if (state.bank.autoDebit) {
@@ -1394,12 +1395,9 @@ function handleAnswer(selectedId, btnElement) {
                     console.log("Finance: Processando Débito Automático...");
                     updateMoney(-total, "extrato_expenses_paid");
                     state.expensePaid = true;
-                    // Inform player with ticker or alert? User requested "Ticker or brief notification"
                     const formattedTotal = total.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
                     const msg = `💰 Débito Automático: R$ ${formattedTotal} pagos com sucesso!`;
-                    // Brief sound
                     playSuccessSound();
-                    // Alert or ticker message
                     alert(msg);
                     updateHUD();
                 } else {
