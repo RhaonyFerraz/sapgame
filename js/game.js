@@ -58,8 +58,20 @@ const state = {
         loans: [],
         investments: [],
         creditLimit: 2000,
-        isDefaulting: false // Bloqueio de novos créditos
+        isDefaulting: false, // Bloqueio de novos créditos
+        autoDebit: false,
+        consortiums: []
     },
+    emails: [], // Caixa de Entrada
+    emailOutbox: [], // Caixa de Saída
+    emailTrash: [], // Lixeira
+    currentEmailFolder: 'inbox',
+    emailTaskActive: false, // Novo: Alerta de tarefa/novidade
+    machineryTaskSeen: false, // Novo: Bloqueia o piscar após selecionado
+    machineryEmailSentRound: null, // Rodada em que o e-mail de máquinas foi enviado
+    machineryEmailReplied: false, // Se a resposta automática já foi entregue
+    machineryReplySeen: false, // Se o player já leu a resposta "oii"
+    bonusPoints: 0, // Pontos de Brinde acumulados
     upgrades: {
         infra: 0,
         machines: 0,
@@ -121,7 +133,7 @@ function updateMoney(amount, reasonKey) {
     if (state.statement.length > 100) {
         state.statement.pop();
     }
-    
+
     // Auto-Pawn Mechanism (Recuperação Judicial Automática)
     const invTotal = state.inventory.warehouse + state.inventory.machinery + 
                      state.inventory.packaging + state.inventory.rawMaterials + 
@@ -131,6 +143,48 @@ function updateMoney(amount, reasonKey) {
         setTimeout(() => triggerAutoPawn(invTotal), 150); // Delay curto para o JS terminar chamadas locais
     }
 }
+
+window.triggerFloatingMoney = function(amount, sourceElement, type = 'correct') {
+    if (!sourceElement || !UI.money) return;
+
+    // Pega as posições
+    const rect = sourceElement.getBoundingClientRect();
+    const targetRect = UI.money.getBoundingClientRect();
+
+    // Cria o elemento flutuante
+    const floatEl = document.createElement('div');
+    floatEl.className = `money-flutuante ${type}`;
+    floatEl.innerText = amount >= 0 ? `+$${amount}` : `-$${Math.abs(amount)}`;
+    
+    // Posição inicial (centro do botão)
+    floatEl.style.left = (rect.left + rect.width / 2) + 'px';
+    floatEl.style.top = (rect.top + rect.height / 2) + 'px';
+    floatEl.style.transform = 'translate(-50%, -50%)';
+    floatEl.style.opacity = '0';
+
+    document.body.appendChild(floatEl);
+
+    // Inicia animação
+    requestAnimationFrame(() => {
+        floatEl.style.opacity = '1';
+        floatEl.style.transform = 'translate(-50%, -100%) scale(1.5)';
+        
+        setTimeout(() => {
+            floatEl.style.left = (targetRect.left + targetRect.width / 2) + 'px';
+            floatEl.style.top = (targetRect.top + targetRect.height / 2) + 'px';
+            floatEl.style.transform = 'translate(-50%, -50%) scale(0.5)';
+            floatEl.style.opacity = '0.5';
+            
+            setTimeout(() => {
+                if (floatEl.parentNode) floatEl.parentNode.removeChild(floatEl);
+                // Pulso no saldo do HUD
+                const pulseClass = type === 'correct' ? 'money-pulse' : 'money-pulse-red';
+                UI.money.classList.add(pulseClass);
+                setTimeout(() => UI.money.classList.remove(pulseClass), 500);
+            }, 1200);
+        }, 300);
+    });
+};
 
 function triggerAutoPawn(total) {
     if (total <= 0) return;
@@ -419,6 +473,11 @@ function updateUIReferences() {
         btnPayNow: document.getElementById('btn-pay-now'),
         btnPayLater: document.getElementById('btn-pay-later'),
         
+        // Emails
+        emailModal: document.getElementById('email-modal'),
+        emailList: document.getElementById('email-list'),
+        btnOpenEmail: document.getElementById('btn-open-email'),
+
         // New Pill HUD elements
         hudHeader: document.getElementById('hud-header'),
         btnLangToggle: document.getElementById('btn-lang-toggle'),
@@ -534,6 +593,13 @@ async function initGame() {
     if (UI.btnConfirmLoan) UI.btnConfirmLoan.addEventListener('click', confirmLoan);
     if (UI.btnConfirmInvest) UI.btnConfirmInvest.addEventListener('click', confirmInvest);
     
+    // Consortium events
+    const consAmount = document.getElementById('consortium-amount');
+    if (consAmount) consAmount.addEventListener('input', updateConsortiumPreview);
+    document.querySelectorAll('input[name="consortium-installments"]').forEach(i => {
+        i.addEventListener('change', updateConsortiumPreview);
+    });
+    
     // Extrato events
     if (UI.btnOpenExtrato) UI.btnOpenExtrato.addEventListener('click', openExtrato);
     if (UI.btnCloseExtrato) UI.btnCloseExtrato.addEventListener('click', closeExtrato);
@@ -545,6 +611,10 @@ async function initGame() {
     // Financeiro events
     if (UI.btnOpenFinance) UI.btnOpenFinance.addEventListener('click', openFinance);
     if (UI.btnCloseFinance) UI.btnCloseFinance.addEventListener('click', closeFinance);
+    
+    // Email events
+    if (UI.btnOpenEmail) UI.btnOpenEmail.addEventListener('click', openEmail);
+
     if (UI.ficheiroTabs) {
         UI.ficheiroTabs.forEach(tab => {
             tab.addEventListener('click', () => switchFicheiroTab(tab.dataset.ficha));
@@ -680,6 +750,11 @@ function updateHUD() {
     
     // Background Image
     updateBackgroundImage();
+    
+    // E-mail Task Notification
+    if (UI.btnOpenEmail) {
+        UI.btnOpenEmail.classList.toggle('active-task', !!state.emailTaskActive);
+    }
     
     // Limits
     if (UI.btnBuy) UI.btnBuy.disabled = state.money < 500 || state.consultants >= 2;
@@ -1232,6 +1307,21 @@ function handleAnswer(selectedId, btnElement) {
     
     if (isCorrect) {
         state.consecutiveWrong = 0; // Reset na sequência de erros
+        state.stats.correctAnswers++; // Track progress for milestones
+        
+        // Trigger E-mail task notification at 3 answers
+        if (state.stats.correctAnswers === 3 && !state.machineryInquiryUnlocked) {
+            state.machineryInquiryUnlocked = true;
+            state.emailTaskActive = true;
+            state.emails.push({
+                id: 'unlock_' + Date.now(),
+                from: "SAP Business One",
+                subject: "Oportunidade: Novas Máquinas",
+                content: "Parabéns pelo progresso! Sua fábrica está pronta para expandir.\n\nAgora você já pode negociar equipamentos industriais usados.\n\nVá em ESCREVER e selecione 'Máquinas industriais usadas' para começar.\n\nBoa sorte!",
+                date: new Date().toLocaleDateString()
+            });
+            updateHUD();
+        }
         
         btnElement.classList.add('correct');
         // RECOMPENSA DINÂMICA: Base 150 + Bonus Máquinas (10/nv) + Bonus Logística (5/nv)
@@ -1241,8 +1331,29 @@ function handleAnswer(selectedId, btnElement) {
         const reward = baseReward + machinesBonus + logisticsBonus;
         
         updateMoney(reward, "extrato_question_win");
+        if (window.triggerFloatingMoney) window.triggerFloatingMoney(reward, btnElement);
         
         state.pos++;
+        
+        // Resposta automática de Máquinas (Após a 5ª questão correta)
+        if (state.machineryEmailSentRound !== null && !state.machineryEmailReplied && state.stats.correctAnswers >= 5) {
+            state.machineryEmailReplied = true;
+            state.machineryReplySeen = false;
+            state.emails.push({
+                id: 'reply_' + Date.now(),
+                from: "Máquinas industriais usadas",
+                subject: "Re: Comprar máquinas",
+                content: "clique no link que eu vou te enviar as fotos https://wa.me/5511994500277?text=Olá,%20tenho%20interesse",
+                date: "31/03/2026"
+            });
+            state.emailTaskActive = true;
+            updateHUD();
+            // Se o modal de e-mail estiver aberto, força a renderização para piscar a Inbox
+            if (UI.emailModal && !UI.emailModal.classList.contains('hidden')) {
+                renderEmails();
+            }
+            console.log("Resposta automática recebida: 'oii'");
+        }
         
         // JUROS da Blitz: +5% por rodada na dívida pendente
         if (state.blitzDebt > 0) {
@@ -1255,6 +1366,25 @@ function handleAnswer(selectedId, btnElement) {
         if (state.pos % 4 === 0) {
             state.expensePaid = false;
             console.log(`Nova rodada de faturamento! Iniciando ciclo: ${state.pos}`);
+            
+            // AUTO-DEBIT LOGIC
+            if (state.bank.autoDebit) {
+                const total = calculateTotalExpenses();
+                if (state.money >= total) {
+                    console.log("Finance: Processando Débito Automático...");
+                    updateMoney(-total, "extrato_expenses_paid");
+                    state.expensePaid = true;
+                    // Inform player with ticker or alert? User requested "Ticker or brief notification"
+                    const msg = `💰 Débito Automático: R$ ${total.toFixed(2)} pagos com sucesso!`;
+                    // Brief sound
+                    playSuccessSound();
+                    // Alert or ticker message
+                    alert(msg);
+                    updateHUD();
+                } else {
+                    console.warn("Finance: Saldo insuficiente para Débito Automático.");
+                }
+            }
         }
         
         let bonusParts = [];
@@ -1310,6 +1440,7 @@ function handleAnswer(selectedId, btnElement) {
             const loss = baseLoss - lossReduction;
 
             updateMoney(-loss, "extrato_question_loss");
+            if (window.triggerFloatingMoney) window.triggerFloatingMoney(-loss, btnElement, 'wrong');
             
             let lossText = lossReduction > 0 ? `${loss} (Desconto Treinamento -${Math.round(trainingDiscountPercent * 100)}%: R$ ${lossReduction})` : `${loss}`;
             UI.mFeedback.innerHTML = `${selectedOpt.justification}<br><br>${t("ans_wrong", { loss: lossText })}`;
@@ -1796,6 +1927,176 @@ function switchBankTab(tabId) {
     UI.bankPanels.forEach(p => p.classList.toggle('hidden', p.id !== `bank-${tabId}-panel`));
 }
 
+window.pixFocus = function(currentInput, nextId) {
+    // Only accept numeric digits
+    currentInput.value = currentInput.value.replace(/[^0-9]/g, '');
+    if (currentInput.value.length === 1 && nextId) {
+        document.getElementById(nextId).focus();
+    }
+}
+
+window.confirmPix = function() {
+    const digits = [1, 2, 3, 4, 5].map(i => {
+        const el = document.getElementById(`pix-digit-${i}`);
+        return el ? el.value : '';
+    });
+    
+    if (digits.some(d => d === '' || !/^\d$/.test(d))) {
+        document.getElementById('pix-status').style.color = '#e74c3c';
+        document.getElementById('pix-status').innerText = '⚠️ Preencha todos os 5 dígitos!';
+        return;
+    }
+    
+    const pixCode = digits.join('');
+    
+    if (pixCode === '22037') {
+        if (state.money < 300) {
+            document.getElementById('pix-status').style.color = '#e74c3c';
+            document.getElementById('pix-status').innerText = '❌ Saldo insuficiente para o PIX inicial (R$ 300)!';
+            return;
+        }
+        
+        // Debita a primeira parcela imediatamente
+        updateMoney(-300, 'extrato_pix_maquinas');
+        
+        // Premia com 3000 em maquinário e 1 ponto de brinde
+        state.inventory.machinery += 3000;
+        state.bonusPoints += 1;
+        
+        // Registra as 9 parcelas restantes como boletos no sistema de empréstimos
+        state.bank.loans.push({
+            amount: 2700,
+            totalToPay: 2700,
+            remainingInstallments: 9,
+            installmentVal: 300,
+            label: 'Boleto', // tipo boleto
+            owner: 'Máquinas industriais usadas ltda'
+        });
+        
+        updateHUD();
+        updateBankUI();
+        
+        document.getElementById('pix-status').style.color = '#2ecc71';
+        document.getElementById('pix-status').innerText = '✅ PIX enviado! R$ 300 debitado • +3.000 Maquinário • +1 Brinde';
+        
+        // Limpa os campos
+        [1,2,3,4,5].forEach(i => {
+            const el = document.getElementById(`pix-digit-${i}`);
+            if (el) el.value = '';
+        });
+        
+        alert('💸 PIX de R$ 300 enviado para Máquinas industriais usadas ltda!\n\n🏭 +R$ 3.000 adicionados ao Maquinário do Inventário\n🎁 +1 Ponto de Brinde desbloqueado\n\n9 boletos de R$ 300 foram registrados nas suas obrigações.\nVerifique o Inventário e o Resumo bancário.');
+        return;
+    }
+    
+    // Código genérico
+    state.pixCode = pixCode;
+    document.getElementById('pix-status').style.color = '#2ecc71';
+    document.getElementById('pix-status').innerText = `✅ Chave PIX ${pixCode} confirmada!`;
+}
+
+window.toggleAutoDebit = function() {
+    state.bank.autoDebit = !state.bank.autoDebit;
+    updateBankUI();
+}
+
+window.confirmConsortium = function() {
+    const amount = parseFloat(document.getElementById('consortium-amount').value) || 0;
+    const radioBtn = document.querySelector('input[name="consortium-installments"]:checked');
+    if (!radioBtn) return;
+    const installments = parseInt(radioBtn.value);
+    
+    if (amount < 1000) {
+        alert("O valor mínimo do consórcio é R$ 1.000,00");
+        return;
+    }
+    
+    const adminFee = amount * 0.005;
+    if (state.money < adminFee) {
+        alert("Saldo insuficiente para pagar a taxa de administração!");
+        return;
+    }
+    
+    if (confirm(`Confirma a contratação deste consórcio?\n\nValor: R$ ${amount.toLocaleString()}\nParcelas: ${installments}x R$ ${(amount/installments).toLocaleString()}\nTaxa de Adm (0,5%): R$ ${adminFee.toLocaleString()}`)) {
+        updateMoney(-adminFee, "Taxa Adm Consórcio");
+        
+        state.bank.consortiums.push({
+            id: 'cons_' + Date.now(),
+            totalValue: amount,
+            installmentValue: amount / installments,
+            totalInstallments: installments,
+            installmentsLeft: installments,
+            isDrawn: false
+        });
+        
+        alert("Consórcio contratado com sucesso!");
+        updateBankUI();
+    }
+}
+
+window.bidConsortium = function(id) {
+    const consortium = state.bank.consortiums.find(c => c.id === id);
+    if (!consortium || consortium.isDrawn) return;
+    
+    const count = parseInt(prompt(`🔨 LANCE NO CONSÓRCIO\n\nQuantas parcelas deseja ofertar como lance? (Máx: ${consortium.installmentsLeft})\nVALOR POR PARCELA: R$ ${consortium.installmentValue.toLocaleString()}`));
+    
+    if (isNaN(count) || count <= 0) return;
+    if (count > consortium.installmentsLeft) {
+        alert("Você não pode ofertar mais parcelas do que o restante!");
+        return;
+    }
+    
+    const totalCost = count * consortium.installmentValue;
+    if (state.money < totalCost) {
+        alert("Saldo insuficiente para cobrir o lance!");
+        return;
+    }
+    
+    if (confirm(`Confirma o lance de R$ ${totalCost.toLocaleString()} (${count} parcelas)?`)) {
+        updateMoney(-totalCost, "Lance no Consórcio");
+        consortium.installmentsLeft -= count;
+        
+        // Threshold para contemplação imediata: Aumentado para 50% (mais difícil)
+        const threshold = Math.ceil(consortium.totalInstallments * 0.5);
+        const totalPaid = consortium.totalInstallments - consortium.installmentsLeft;
+        
+        // Regra do Lance: Se o lance for >= 50% do total, tem 70% de chance de contemplar agora
+        if (count >= threshold) {
+            if (Math.random() < 0.7) { // 70% de chance para lances altos
+                consortium.isDrawn = true;
+                updateMoney(consortium.totalValue, "Contemplação por Lance");
+                alert(`🎊 LANCE VENCEDOR! Seu consórcio foi contemplado imediatamente!\nRecebido: R$ ${consortium.totalValue.toLocaleString()}`);
+            } else {
+                alert(`Lance aceito! Apesar da oferta generosa, você não foi sorteado nesta rodada. Suas parcelas restantes foram reduzidas para ${consortium.installmentsLeft}.`);
+            }
+        } else if (consortium.installmentsLeft === 0) {
+            // Garantia de recebimento no final
+            consortium.isDrawn = true;
+            updateMoney(consortium.totalValue, "Quitação Consórcio");
+            alert(`✅ CONCLUÍDO! Com o pagamento da última parcela, seu consórcio foi liberado.\nRecebido: R$ ${consortium.totalValue.toLocaleString()}`);
+        } else {
+            alert(`Lance aceito! Seu saldo devedor foi reduzido. Faltam agora ${consortium.installmentsLeft} parcelas.`);
+        }
+        
+        updateBankUI();
+    }
+}
+
+function updateConsortiumPreview() {
+    const amountInput = document.getElementById('consortium-amount');
+    const feeEl = document.getElementById('consortium-fee');
+    const instEl = document.getElementById('consortium-installment-val');
+    
+    if (!amountInput || !feeEl || !instEl) return;
+    
+    const amount = parseFloat(amountInput.value) || 0;
+    const radioBtn = document.querySelector('input[name="consortium-installments"]:checked');
+    const installments = radioBtn ? parseInt(radioBtn.value) : 1;
+    
+    feeEl.innerText = `R$ ${(amount * 0.005).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+    instEl.innerText = `R$ ${(amount / installments).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+}
+
 function updateLoanPreview() {
     const amount = parseFloat(UI.loanAmount.value) || 0;
     const installments = parseInt(document.querySelector('input[name="loan-installments"]:checked').value);
@@ -1878,8 +2179,8 @@ function confirmInvest() {
         return;
     }
     
-    if (isNaN(duration) || duration < 1 || duration > 10) {
-        alert(t("invest_rounds_limit"));
+    if (isNaN(duration) || duration < 1 || duration > 50) {
+        alert(t("invest_rounds_limit") || "O prazo de investimento deve ser entre 1 e 50 rodadas.");
         return;
     }
     
@@ -1913,6 +2214,10 @@ function updateBankUI() {
     const totalYield = state.bank.investments.reduce((acc, i) => acc + (i.finalVal - i.amount), 0);
     document.getElementById('bank-yield-val').innerText = `R$ ${totalYield.toFixed(2)}`;
     
+    // Pontos de Brinde no painel de Investimentos
+    const investBonusPtsEl = document.getElementById('invest-bonus-points');
+    if (investBonusPtsEl) investBonusPtsEl.innerText = state.bonusPoints || 0;
+
     const list = document.getElementById('bank-active-items');
     list.innerHTML = `<h4>${t("active_items_title")}</h4>`;
     
@@ -1921,10 +2226,15 @@ function updateBankUI() {
     }
     
     state.bank.loans.forEach((l, index) => {
+        const isBoleto = l.owner ? true : false;
+        const displayLabel = isBoleto
+            ? `📜 Boleto - ${l.owner}`
+            : `${t("loan_label")} #${index + 1}`;
+
         list.innerHTML += `
             <div class="bank-item">
                 <div class="bank-item-info">
-                    <h4>${t("loan_label")} #${index + 1}</h4>
+                    <h4>${displayLabel}</h4>
                     <p>${t("loan_installment_val")}: R$ ${l.installmentVal.toFixed(2)}</p>
                 </div>
                 <div class="bank-item-status">
@@ -1950,8 +2260,54 @@ function updateBankUI() {
         `;
     });
     
-    // Update credit limit based on level
-    state.bank.creditLimit = state.level * 2000;
+    state.bank.consortiums.forEach(c => {
+        const statusText = c.isDrawn ? '<span style="color: #2ecc71;">CONTEMPLADO ✅</span>' : '<span style="color: #f1c40f;">Aguardando Sorteio ⏳</span>';
+        const bidBtn = !c.isDrawn ? `<button class="action-btn" style="font-size: 0.65rem; padding: 4px 8px; margin-top: 8px; background: linear-gradient(135deg, #f39c12, #d35400); border:none; box-shadow: 0 2px 5px rgba(243,156,18,0.3);" onclick="window.bidConsortium('${c.id}')">🔨 DAR UM LANCE</button>` : '';
+
+        list.innerHTML += `
+            <div class="active-item-card consortium">
+                <div class="item-header">
+                    <span><b>Consórcio Corporativo</b></span>
+                    ${statusText}
+                </div>
+                <div class="item-details">
+                    <span>Total: R$ ${c.totalValue.toLocaleString()}</span>
+                    <span>Parcela: R$ ${c.installmentValue.toLocaleString()}</span>
+                    <span>Progresso: ${c.totalInstallments - c.installmentsLeft}/${c.totalInstallments}</span>
+                    ${bidBtn}
+                </div>
+            </div>
+        `;
+    });
+    
+    // Update credit limit based on 60% of Total Inventory + Auto-Debit Bonus (30%)
+    const invTotal = (state.inventory.warehouse || 0) + 
+                     (state.inventory.machinery || 0) + 
+                     (state.inventory.packaging || 0) + 
+                     (state.inventory.rawMaterials || 0) + 
+                     (state.inventory.finishedGoods || 0) + 
+                     (state.inventory.fleet || 0);
+
+    const baseLimit = Math.round(invTotal * 0.6);
+    state.bank.creditLimit = state.bank.autoDebit ? Math.round(baseLimit * 1.3) : baseLimit;
+
+    // Update Auto-Debit Status Button
+    const btnToggle = document.getElementById('btn-toggle-autodebit');
+    if (btnToggle) {
+        if (state.bank.autoDebit) {
+            btnToggle.innerText = 'ATIVADO ✅';
+            btnToggle.style.background = 'linear-gradient(135deg, #27ae60, #2ecc71)';
+            btnToggle.style.borderColor = '#2ecc71';
+            btnToggle.style.color = '#fff';
+            btnToggle.style.boxShadow = '0 0 10px rgba(46, 204, 113, 0.3)';
+        } else {
+            btnToggle.innerText = 'DESATIVADO ❌';
+            btnToggle.style.background = 'rgba(0,0,0,0.1)';
+            btnToggle.style.borderColor = 'rgba(255,255,255,0.2)';
+            btnToggle.style.color = '#8b949e';
+            btnToggle.style.boxShadow = 'none';
+        }
+    }
 }
 
 function processBankTurn() {
@@ -1985,8 +2341,362 @@ function processBankTurn() {
         return true;
     });
 
+    // Process Consortiums
+    for (let i = state.bank.consortiums.length - 1; i >= 0; i--) {
+        const c = state.bank.consortiums[i];
+        
+        // Pagamento da Parcela
+        if (state.money >= c.installmentValue) {
+            updateMoney(-c.installmentValue, "Parcela Consórcio");
+            c.installmentsLeft--;
+            
+            // Lógica de Sorteio (Contemplação)
+            if (!c.isDrawn) {
+                // Chance proporcional: 1 chance em installments totais por rodada
+                const drawChance = 1 / c.totalInstallments;
+                if (Math.random() < drawChance || c.installmentsLeft === 0) {
+                    c.isDrawn = true;
+                    updateMoney(c.totalValue, "Contemplação Consórcio");
+                    alert(`🎊 PARABÉNS! Seu consórcio de R$ ${c.totalValue.toLocaleString()} foi CONTEMPLADO! O valor integral foi creditado em sua conta.`);
+                }
+            }
+            
+            if (c.installmentsLeft <= 0) {
+                state.bank.consortiums.splice(i, 1);
+            }
+        } else {
+            console.warn("Saldo insuficiente para parcela do consórcio.");
+        }
+    }
+
     updateHUD();
     updateBankUI();
+}
+
+/* --- E-mail System Logic --- */
+
+window.openEmail = function() {
+    closeAllModals();
+    state.emailTaskActive = false; // Clear notification
+    updateHUD(); 
+    window.switchEmailFolder('inbox'); // Start at inbox
+    UI.emailModal.classList.remove('hidden');
+}
+
+window.closeEmail = function() {
+    UI.emailModal.classList.add('hidden');
+}
+
+window.switchEmailFolder = function(folder) {
+    state.currentEmailFolder = folder;
+    
+    // Update sidebar buttons
+    document.querySelectorAll('.retro-folder-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.innerText.toLowerCase().includes(folder === 'inbox' ? 'entrada' : folder === 'outbox' ? 'saída' : folder === 'compose' ? 'escrever' : 'lixeira')) {
+            btn.classList.add('active');
+        }
+    });
+
+    if (folder === 'inbox' && state.emailTaskActive) {
+        state.emailTaskActive = false; // Limpa o alerta da HUD assim que entra na Entrada
+        updateHUD();
+    }
+
+    renderEmails();
+}
+
+function renderEmails() {
+    const list = document.getElementById('email-list');
+    const header = document.getElementById('email-list-header');
+    if (!list || !header) return;
+    
+    list.innerHTML = '';
+    header.style.display = 'flex';
+
+    const composeBtn = document.getElementById('btn-compose-email');
+    const inboxBtn = document.getElementById('btn-inbox-email');
+
+    if (composeBtn) {
+        if (state.stats.correctAnswers >= 3 && state.currentEmailFolder !== 'compose' && !state.machineryTaskSeen) {
+            composeBtn.classList.add('retro-flash');
+        } else {
+            composeBtn.classList.remove('retro-flash');
+        }
+    }
+
+    if (inboxBtn) {
+        // Pisca amarelo de forma épica se tiver resposta de máquinas não lida
+        if (state.machineryEmailReplied && !state.machineryReplySeen) {
+            inboxBtn.classList.add('retro-flash-yellow');
+        } else {
+            inboxBtn.classList.remove('retro-flash-yellow');
+            inboxBtn.classList.remove('retro-flash');
+        }
+    }
+
+    if (state.currentEmailFolder === 'compose') {
+        renderCompose();
+        return;
+    }
+
+    let source = [];
+    if (state.currentEmailFolder === 'inbox') {
+        if (state.emails.length === 0) {
+            state.emails.push({
+                id: 'welcome',
+                from: 'CEO SAP Game',
+                subject: 'Bem-vindo ao Sistema!',
+                content: 'Olá! Sou o CEO. Parabéns por iniciar sua fábrica! Use este sistema para receber comunicados oficiais.',
+                date: new Date().toLocaleDateString()
+            });
+        }
+        source = state.emails;
+    } else if (state.currentEmailFolder === 'outbox') {
+        source = state.emailOutbox;
+    } else if (state.currentEmailFolder === 'trash') {
+        source = state.emailTrash;
+    }
+
+    if (source.length === 0) {
+        list.innerHTML = `<div style="text-align:center; padding: 40px; color: #808080; font-family: 'Press Start 2P'; font-size: 8px;">Pasta vazia.</div>`;
+        return;
+    }
+
+    source.forEach(email => {
+        const displayName = (state.currentEmailFolder === 'outbox' || (state.currentEmailFolder === 'trash' && email.to)) 
+            ? `PARA: ${email.to}` 
+            : email.from;
+
+        const isUnreadReply = (email.subject === "Re: Comprar máquinas" && !state.machineryReplySeen);
+        const blinkClass = isUnreadReply ? 'retro-item-blink' : '';
+
+        list.innerHTML += `
+            <div class="retro-email-item ${blinkClass}" onclick="viewEmail('${email.id}')">
+                <div style="flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; padding-right: 10px;">
+                    <b>${displayName}</b> - ${email.subject}
+                </div>
+                <div style="width: 80px; text-align: right; color: #666;">
+                    ${email.date}
+                </div>
+            </div>
+        `;
+    });
+}
+
+function renderCompose() {
+    const list = document.getElementById('email-list');
+    const header = document.getElementById('email-list-header');
+    header.style.display = 'none';
+
+    const contacts = [
+        "Suporte Técnico",
+        "Tião Cascudo Eletricista",
+        "Máquinas industriais usadas",
+        "Leilão do Wagner",
+        "RF Transportes",
+        "Zeti Pedreiro",
+        "Forró do Luizão",
+        "Dra. Aline advogada",
+        "Banco Corporativo",
+        "Consultoria RH",
+        "Diretor Comercial",
+        "Marketing Digital"
+    ];
+
+    let contactOptions = contacts.map(c => {
+        let style = "";
+        let prefix = "";
+        let classes = "";
+        if (c === "Máquinas industriais usadas" && state.stats.correctAnswers >= 3 && !state.machineryTaskSeen) {
+            style = 'style="font-weight: bold; color: #000080;"';
+            prefix = "⭐ ";
+            classes = 'data-blink="true"';
+        } else if (c === "Máquinas industriais usadas") {
+            style = 'style="font-weight: bold; color: #000080;"';
+            prefix = "⭐ ";
+        }
+        return `<option value="${c}" ${style} ${classes}>${prefix}${c}</option>`;
+    }).join('');
+    
+    list.innerHTML = `
+        <div style="padding: 10px; font-family: 'Press Start 2P';">
+            <label class="retro-label">PARA:</label>
+            <select id="mail-to" class="retro-input-inset" style="height: 35px; padding: 2px;" onchange="window.updateMailSubject()">
+                ${contactOptions}
+            </select>
+            
+            <label class="retro-label">ASSUNTO:</label>
+            <div id="mail-subject-container">
+                <input type="text" id="mail-subject" class="retro-input-inset" placeholder="Assunto da mensagem...">
+            </div>
+            
+            <label class="retro-label">MENSAGEM:</label>
+            <textarea id="mail-content" class="retro-input-inset" style="height: 120px; resize: none;" placeholder="Escreva aqui..."></textarea>
+            
+            <div style="text-align: right;">
+                <button class="action-btn" onclick="window.sendEmail()" style="font-size: 10px; border-radius: 0;">💾 ENVIAR AGORA</button>
+            </div>
+        </div>
+    `;
+    window.initBlinkingOptions();
+}
+
+window.initBlinkingOptions = function() {
+    const optTo = document.querySelector('option[data-blink="true"]');
+    if (optTo && !optTo.dataset.blinkStarted) {
+        optTo.dataset.blinkStarted = "true";
+        let state = true;
+        const interval = setInterval(() => {
+            if (!document.body.contains(optTo)) { clearInterval(interval); return; }
+            optTo.style.color = state ? "#cccccc" : "#444444"; // Toggle light/dark grey
+            state = !state;
+        }, 400);
+    }
+
+    const optSub = document.querySelector('option[data-blink-subject="true"]');
+    if (optSub && !optSub.dataset.blinkStarted) {
+        optSub.dataset.blinkStarted = "true";
+        let state = true;
+        const interval = setInterval(() => {
+            if (!document.body.contains(optSub)) { clearInterval(interval); return; }
+            optSub.style.color = state ? "#cccccc" : "#444444"; // Toggle light/dark grey
+            state = !state;
+        }, 400);
+    }
+}
+
+window.updateMailSubject = function() {
+    const to = document.getElementById('mail-to').value;
+    const container = document.getElementById('mail-subject-container');
+    const content = document.getElementById('mail-content');
+    
+    if (to === "Máquinas industriais usadas") {
+        if (state.stats.correctAnswers < 3) {
+            container.innerHTML = `<input type="text" id="mail-subject" class="retro-input-inset" value="🔒 BLOQUEADO: Acerte 3 questões" disabled style="color: #ff3860;">`;
+            if (content) {
+                content.value = "⚠️ Você precisa de mais conhecimento (3 acertos) para negociar máquinas industriais.";
+                content.disabled = true;
+            }
+            return;
+        }
+
+        if (content) content.disabled = false;
+        container.innerHTML = `
+            <select id="mail-subject" class="retro-input-inset" style="height: 35px; padding: 2px;" onchange="window.handleSubjectChange()">
+                <option value="">Escolha o assunto...</option>
+                <option value="Comprar máquinas" style="font-weight: bold; color: #000080;" ${!state.machineryTaskSeen ? 'data-blink-subject="true"': ''}>⭐ Comprar máquinas</option>
+                <option value="Vender máquinas">Vender máquinas</option>
+            </select>
+        `;
+        window.initBlinkingOptions();
+    } else {
+        if (content) {
+            content.disabled = false;
+            content.value = "";
+        }
+        container.innerHTML = `<input type="text" id="mail-subject" class="retro-input-inset" placeholder="Assunto da mensagem...">`;
+    }
+}
+
+window.handleSubjectChange = function() {
+    const subject = document.getElementById('mail-subject').value;
+    const content = document.getElementById('mail-content');
+    
+    if (subject === "Comprar máquinas") {
+        content.value = `Olá,\n\nEstou à procura de equipamentos para fabricação de calçados, especificamente uma prensa e duas máquinas de costura industrial.\n\nCaso tenha disponíveis, poderia me enviar informações sobre o estado, valores e condições de pagamento?\n\nFico no aguardo.\n\nAtenciosamente,\nVinícius`;
+        content.disabled = true; // Lock the automated message
+        
+        // Mark as seen and clear notifications
+        state.machineryTaskSeen = true;
+        state.emailTaskActive = false;
+        updateHUD();
+        // Delay a bit or just re-render sidebar in renderEmails
+        const composeBtn = document.getElementById('btn-compose-email');
+        if (composeBtn) composeBtn.classList.remove('retro-flash');
+
+    } else if (subject === "Vender máquinas") {
+        content.value = "";
+        content.disabled = false; // Allow manual entry for selling
+    } else {
+        content.value = "";
+        content.disabled = false; // Allow manual entry
+    }
+}
+
+window.sendEmail = function() {
+    const to = document.getElementById('mail-to').value;
+    const subject = document.getElementById('mail-subject').value;
+    const content = document.getElementById('mail-content').value;
+
+    if (!subject || !content) {
+        alert("Por favor, preencha o assunto e a mensagem!");
+        return;
+    }
+
+    if (to === "Máquinas industriais usadas" && subject === "Comprar máquinas") {
+        state.machineryEmailSentRound = state.pos;
+        console.log("Início do timer de resposta de máquinas: ", state.machineryEmailSentRound);
+    }
+
+    state.emailOutbox.push({
+        id: 'sent_' + Date.now(),
+        to: to,
+        subject: subject,
+        content: content,
+        date: new Date().toLocaleDateString()
+    });
+
+    alert("MENSAGEM ENVIADA !");
+    window.switchEmailFolder('outbox');
+}
+
+window.viewEmail = function(id) {
+    let email = state.emails.find(e => e.id === id) || 
+                state.emailOutbox.find(e => e.id === id) || 
+                state.emailTrash.find(e => e.id === id);
+    
+    if (!email) return;
+
+    if (email.subject === "Re: Comprar máquinas") {
+        state.machineryReplySeen = true;
+        state.emailTaskActive = false;
+        updateHUD();
+        // Não chamamos renderEmails aqui pois o conteúdo do e-mail já está sendo renderizado abaixo
+    }
+
+    const list = document.getElementById('email-list');
+    const header = document.getElementById('email-list-header');
+    header.style.display = 'none';
+
+    list.innerHTML = `
+        <div style="padding: 15px; font-family: 'Press Start 2P'; color: #000;">
+            <div style="border-bottom: 2px solid #808080; padding-bottom: 10px; margin-bottom: 15px;">
+                <div style="font-size: 10px; margin-bottom: 5px;"><b>DE/PARA:</b> ${email.from || email.to}</div>
+                <div style="font-size: 10px; margin-bottom: 5px;"><b>ASSUNTO:</b> ${email.subject}</div>
+                <div style="font-size: 8px; color: #666;">DATA: ${email.date}</div>
+            </div>
+            <div style="font-size: 10px; line-height: 1.6; white-space: pre-wrap; background: #f0f0f0; padding: 10px; border: 1px inset #fff;">
+                ${email.content.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" style="color: blue; text-decoration: underline;">$1</a>')}
+            </div>
+            <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
+                ${state.currentEmailFolder !== 'trash' ? `<button class="retro-folder-btn" style="width: auto; background: #ffcccc;" onclick="window.trashEmail('${email.id}')">🗑️ EXCLUIR</button>` : ''}
+                <button class="retro-folder-btn" style="width: auto;" onclick="window.switchEmailFolder('${state.currentEmailFolder}')">🔙 VOLTAR</button>
+            </div>
+        </div>
+    `;
+}
+
+window.trashEmail = function(id) {
+    let folder = state.emails.find(e => e.id === id) ? 'emails' : 'emailOutbox';
+    let idx = state[folder].findIndex(e => e.id === id);
+    
+    if (idx !== -1) {
+        let email = state[folder].splice(idx, 1)[0];
+        state.emailTrash.push(email);
+        alert("E-mail movido para a lixeira.");
+        renderEmails();
+    }
 }
 
 // --- Strategic Investments Logic ---

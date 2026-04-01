@@ -12,7 +12,8 @@
         #modal { z-index: 999999 !important; }
         .hud-header { z-index: 100000 !important; }
         .hidden { display: none !important; pointer-events: none !important; }
-        #start-reveal-overlay { pointer-events: none; }
+        /* Garantir que o overlay de revelação bloqueie o fundo mas permita cliques no botão de pular */
+        #start-reveal-overlay { pointer-events: auto !important; }
     </style>
 </head>
 <body>
@@ -57,6 +58,41 @@
             box-shadow: 0 0 10px var(--bar-color), inset 0 1px 2px rgba(255,255,255,0.3);
             background: var(--bar-color);
         }
+
+        /* Floating Money Animation */
+        .money-flutuante {
+            position: fixed;
+            z-index: 9999999;
+            pointer-events: none;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 1.1rem;
+            color: #2ecc71;
+            text-shadow: 2px 2px 0px #000, 0 0 10px rgba(46, 204, 113, 0.5);
+            font-weight: bold;
+            transition: all 1.2s cubic-bezier(0.19, 1, 0.22, 1);
+            filter: drop-shadow(0 0 5px rgba(0,0,0,0.5));
+        }
+        .money-flutuante.wrong {
+            color: #e74c3c;
+            text-shadow: 2px 2px 0px #000, 0 0 10px rgba(231, 76, 60, 0.5);
+        }
+
+        @keyframes money-pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.4); color: #2ecc71; text-shadow: 0 0 15px #2ecc71; }
+            100% { transform: scale(1); }
+        }
+        @keyframes money-pulse-red {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.4); color: #e74c3c; text-shadow: 0 0 15px #e74c3c; }
+            100% { transform: scale(1); }
+        }
+        .money-pulse {
+            animation: money-pulse 0.5s ease-out;
+        }
+        .money-pulse-red {
+            animation: money-pulse-red 0.5s ease-out;
+        }
     </style>
 
     <script>
@@ -85,7 +121,7 @@
             <br>
             <button id="btn-start-game" class="action-btn" onclick="startJourney()" style="font-size: 1.3rem; padding: 15px 50px; border-radius: 50px; box-shadow: 0 0 30px rgba(155, 81, 224, 0.4);">INICIAR JORNADA</button>
             <br>
-            <button id="btn-skip-intro" class="secondary-btn" onclick="if(window.skipIntro) skipIntro();" style="font-size: 0.9rem; padding: 10px 30px; margin-top: 15px; border-radius: 50px; background: rgba(255,255,255,0.05); color: #8b949e; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; font-weight: 600; letter-spacing: 1px; transition: all 0.3s ease;">PULAR ANIMAÇÃO</button>
+            <button id="btn-skip-intro" class="secondary-btn" onclick="if(window.skipIntro) skipIntro();" style="z-index: 10003; position: relative; font-size: 0.9rem; padding: 10px 30px; margin-top: 15px; border-radius: 50px; background: rgba(255,255,255,0.05); color: #8b949e; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; font-weight: 600; letter-spacing: 1px; transition: all 0.3s ease;">PULAR ANIMAÇÃO</button>
         </div>
     </div>
 
@@ -98,6 +134,10 @@
                 "Todos esses modelos estão ao seu alcance… a pergunta é: até onde você consegue chegar?"
             </h3>
         </div>
+
+        <!-- Skip Button during Reveal -->
+        <button id="btn-skip-reveal" class="secondary-btn" onclick="if(window.skipIntro) skipIntro();" style="position: absolute; bottom: 30px; right: 30px; z-index: 10003; font-size: 0.8rem; padding: 8px 20px; border-radius: 50px; background: rgba(255,255,255,0.1); color: #ccc; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; font-weight: 600; text-transform: uppercase;">Skip Pular Animação</button>
+    </div>
     </div>
 
     <header id="hud-header" class="hud-header hidden">
@@ -112,18 +152,19 @@
             <div class="hud-sep"></div>
 
             <!-- Main Actions Group -->
-            <div style="display: flex; gap: 15px; align-items: center;">
+            <div style="display: flex; gap: 8px; align-items: center;">
                 <button id="btn-open-bank" class="icon-btn" onclick="if(window.openBank) openBank();"><img src="faviconsmenu/bank3.png" class="menu-icon" alt="Banco" style="width: 26px; height: 26px; filter: drop-shadow(0 0 5px rgba(255,255,255,0.3)); display: block;"> <span data-t="bank">BANCO</span></button>
                 <button id="btn-open-finance" class="icon-btn" onclick="if(window.openFinance) openFinance();"><img src="faviconsmenu/accounting.png" class="menu-icon" alt="Financeiro" style="width: 26px; height: 26px; filter: drop-shadow(0 0 5px rgba(255,255,255,0.3)); display: block;"> <span data-t="finance">FINANCEIRO</span></button>
                 <button id="btn-open-inventory" class="icon-btn" onclick="if(window.openInventory) openInventory();"><img src="faviconsmenu/inventario.png" class="menu-icon" alt="Inventário" style="width: 26px; height: 26px; filter: drop-shadow(0 0 5px rgba(255,255,255,0.3)); display: block;"> <span data-t="inventory">INVENTÁRIO</span></button>
                 <button id="btn-open-invest" class="icon-btn" onclick="if(window.openInvestments) openInvestments();"><img src="faviconsmenu/investment.png" class="menu-icon" alt="Investimento" style="width: 26px; height: 26px; filter: drop-shadow(0 0 5px rgba(255,255,255,0.3)); display: block;"> <span data-t="investments">INVESTIMENTO</span></button>
                 <button id="btn-open-expenses" class="icon-btn" onclick="if(window.openExpenses) openExpenses();"><img src="faviconsmenu/asset-allocation.png" class="menu-icon" alt="Despesas" style="width: 26px; height: 26px; filter: drop-shadow(0 0 5px rgba(255,255,255,0.3)); display: block;"> <span data-t="expenses">DESPESAS</span></button>
+                <button id="btn-open-email" class="icon-btn" onclick="if(window.openEmail) openEmail();"><img src="faviconsmenu/management.png" class="menu-icon" alt="E-mail" style="width: 26px; height: 26px; filter: drop-shadow(0 0 5px rgba(255,255,255,0.3)); display: block;"> <span data-t="email">E-MAIL</span></button>
             </div>
 
             <div class="hud-sep"></div>
 
             <!-- System Group -->
-            <div style="display: flex; gap: 15px; align-items: center;">
+            <div style="display: flex; gap: 8px; align-items: center;">
                 <!-- Ticker Toggle Button Moved Here -->
                 <button id="btn-toggle-ticker" class="lang-btn" 
                         onclick="const bar = document.getElementById('ticker-bar'); bar.classList.toggle('collapsed'); this.classList.toggle('active-toggle');" 
@@ -197,9 +238,29 @@
             <h2 id="bank-title" data-t="bank_title">💰 Banco Corporativo SAP</h2>
             
             <div class="bank-tabs">
+                <button class="bank-tab" data-tab="pix">PIX</button>
                 <button class="bank-tab active" data-tab="status" data-t="bank_summary">Resumo</button>
                 <button class="bank-tab" data-tab="loans" data-t="bank_loans">Empréstimos</button>
                 <button class="bank-tab" data-tab="investments" data-t="bank_invest">Investimentos</button>
+                <button class="bank-tab" data-tab="consortium">Consórcio</button>
+            </div>
+
+            <!-- PIX Panel -->
+            <div id="bank-pix-panel" class="bank-panel hidden">
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 20px 0;">
+                    <div style="font-size: 2rem;">📲</div>
+                    <h3 style="color: #fff; font-size: 1rem; margin: 0;">Chave PIX</h3>
+                    <p style="color: #8b949e; font-size: 0.8rem; text-align: center; margin: 0;">Digite os 5 dígitos da sua chave PIX para transferências corporativas.</p>
+                    <div style="display: flex; gap: 10px; justify-content: center; margin-top: 10px;">
+                        <input type="text" id="pix-digit-1" class="pix-digit-input" maxlength="1" inputmode="numeric" pattern="[0-9]" oninput="pixFocus(this, 'pix-digit-2')" style="width: 48px; height: 56px; text-align: center; font-size: 1.4rem; font-weight: bold; background: rgba(255,255,255,0.05); border: 2px solid rgba(255,255,255,0.2); border-radius: 10px; color: #fff; outline: none;">
+                        <input type="text" id="pix-digit-2" class="pix-digit-input" maxlength="1" inputmode="numeric" pattern="[0-9]" oninput="pixFocus(this, 'pix-digit-3')" style="width: 48px; height: 56px; text-align: center; font-size: 1.4rem; font-weight: bold; background: rgba(255,255,255,0.05); border: 2px solid rgba(255,255,255,0.2); border-radius: 10px; color: #fff; outline: none;">
+                        <input type="text" id="pix-digit-3" class="pix-digit-input" maxlength="1" inputmode="numeric" pattern="[0-9]" oninput="pixFocus(this, 'pix-digit-4')" style="width: 48px; height: 56px; text-align: center; font-size: 1.4rem; font-weight: bold; background: rgba(255,255,255,0.05); border: 2px solid rgba(255,255,255,0.2); border-radius: 10px; color: #fff; outline: none;">
+                        <input type="text" id="pix-digit-4" class="pix-digit-input" maxlength="1" inputmode="numeric" pattern="[0-9]" oninput="pixFocus(this, 'pix-digit-5')" style="width: 48px; height: 56px; text-align: center; font-size: 1.4rem; font-weight: bold; background: rgba(255,255,255,0.05); border: 2px solid rgba(255,255,255,0.2); border-radius: 10px; color: #fff; outline: none;">
+                        <input type="text" id="pix-digit-5" class="pix-digit-input" maxlength="1" inputmode="numeric" pattern="[0-9]" oninput="pixFocus(this, null)" style="width: 48px; height: 56px; text-align: center; font-size: 1.4rem; font-weight: bold; background: rgba(255,255,255,0.05); border: 2px solid rgba(255,255,255,0.2); border-radius: 10px; color: #fff; outline: none;">
+                    </div>
+                    <button onclick="window.confirmPix()" class="action-btn" style="margin-top: 10px; padding: 12px 32px; font-size: 0.9rem;">✅ Confirmar PIX</button>
+                    <p id="pix-status" style="color: #2ecc71; font-size: 0.8rem; min-height: 20px;"></p>
+                </div>
             </div>
 
             <div id="bank-status-panel" class="bank-panel">
@@ -216,6 +277,16 @@
                         <span data-t="bank_yield">Rendimento Previsto</span>
                         <h3 id="bank-yield-val">R$ 0</h3>
                     </div>
+                </div>
+                <!-- Auto-Debit Toggle -->
+                <div class="bank-auto-debit-container" style="background: rgba(41, 128, 185, 0.1); border: 1px solid rgba(41, 128, 185, 0.3); border-radius: 12px; padding: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong style="color: #fff; font-size: 0.9rem; display: block; margin-bottom: 4px;">Débito Automático</strong>
+                        <small style="color: #8b949e; font-size: 0.75rem;">💰 BÔNUS: +30% de Limite de Crédito se ativado.</small>
+                    </div>
+                    <button id="btn-toggle-autodebit" onclick="window.toggleAutoDebit()" class="action-btn" style="min-width: 140px; font-size: 0.75rem; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2);">
+                        DESATIVADO
+                    </button>
                 </div>
                 <div id="bank-active-items" class="active-items-list">
                     <!-- Dynamic list here -->
@@ -235,6 +306,8 @@
                             <label><input type="radio" name="loan-installments" value="6"> 6x</label>
                             <label><input type="radio" name="loan-installments" value="12"> 12x</label>
                             <label><input type="radio" name="loan-installments" value="24"> 24x</label>
+                            <label><input type="radio" name="loan-installments" value="36"> 36x</label>
+                            <label><input type="radio" name="loan-installments" value="50"> 50x</label>
                         </div>
                     </div>
                     <div class="loan-info">
@@ -247,6 +320,27 @@
             </div>
 
             <div id="bank-investments-panel" class="bank-panel hidden">
+                <!-- Pontos de Brinde -->
+                <div id="invest-bonus-card" style="background: linear-gradient(135deg, rgba(241,196,15,0.15), rgba(241,196,15,0.05)); border: 1px solid rgba(241,196,15,0.4); border-radius: 10px; padding: 14px 16px; margin-bottom: 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <div>
+                            <strong style="color: #f1c40f; font-size: 0.9rem;">🎁 Pontos de Brinde</strong>
+                            <small style="display: block; color: #8b949e; font-size: 0.72rem; margin-top: 2px;">Use para melhorar qualquer área gratuitamente.</small>
+                        </div>
+                        <span id="invest-bonus-points" style="font-size: 1.8rem; font-weight: bold; color: #f1c40f;">0</span>
+                    </div>
+                    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                        <select id="bonus-area-select" style="flex: 1; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; padding: 8px 10px; font-size: 0.8rem; min-width: 160px;">
+                            <option value="infra">🖥️ Infraestrutura</option>
+                            <option value="machines">⚙️ Máquinas</option>
+                            <option value="training">📚 Treinamento</option>
+                            <option value="marketing">📢 Propaganda</option>
+                            <option value="logistics">🚚 Logística</option>
+                            <option value="consultants">👔 Consultores</option>
+                        </select>
+                        <button onclick="window.useBonusPoint()" style="background: linear-gradient(135deg, #f1c40f, #e67e22); border: none; border-radius: 8px; color: #000; font-weight: bold; padding: 8px 16px; font-size: 0.8rem; cursor: pointer; white-space: nowrap;">✅ Usar Ponto</button>
+                    </div>
+                </div>
                 <div class="bank-form">
                     <div class="form-group">
                         <label data-t="invest_amount_label">Valor do Investimento (R$)</label>
@@ -254,13 +348,37 @@
                     </div>
                     <div class="form-group">
                         <label data-t="invest_duration_label">Prazo (Rodadas)</label>
-                        <input type="number" id="invest-duration" placeholder="Ex: 5" min="1" max="10">
+                        <input type="number" id="invest-duration" placeholder="Ex: 5" min="1" max="50">
                     </div>
                     <div class="invest-info">
                         <p><span data-t="invest_rate">Rendimento</span>: <span id="invest-rate">3%</span></p>
                         <p><span data-t="invest_final">Valor final</span>: <span id="invest-total">R$ 0</span></p>
                     </div>
                     <button id="btn-confirm-invest" class="action-btn" data-t="btn_do_invest">Realizar Investimento</button>
+                </div>
+            </div>
+
+            <div id="bank-consortium-panel" class="bank-panel hidden">
+                <div class="bank-form">
+                    <div class="form-group">
+                        <label>Valor do Consórcio (R$)</label>
+                        <input type="number" id="consortium-amount" placeholder="Ex: 5000" min="1000">
+                    </div>
+                    <div class="form-group">
+                        <label>Parcelas</label>
+                        <div class="radio-group" id="consortium-installments-group" style="flex-wrap: wrap;">
+                            <label><input type="radio" name="consortium-installments" value="6" checked> 6x</label>
+                            <label><input type="radio" name="consortium-installments" value="12"> 12x</label>
+                            <label><input type="radio" name="consortium-installments" value="18"> 18x</label>
+                            <label><input type="radio" name="consortium-installments" value="24"> 24x</label>
+                            <label><input type="radio" name="consortium-installments" value="36"> 36x</label>
+                        </div>
+                    </div>
+                    <div class="loan-info">
+                        <p>Taxa de Adm (0,5%): <span id="consortium-fee">R$ 0</span></p>
+                        <p>Parcela Mensal: <span id="consortium-installment-val">R$ 0</span></p>
+                    </div>
+                    <button id="btn-confirm-consortium" class="action-btn" onclick="window.confirmConsortium()">📌 Contratar Consórcio</button>
                 </div>
             </div>
 
@@ -581,6 +699,46 @@
 
             <div class="modal-footer">
                 <button id="btn-close-expenses" class="action-btn" onclick="if(window.closeExpenses) closeExpenses();" data-t="btn_close">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- E-mail Modal (Retro Outlook Style) -->
+    <div id="email-modal" class="modal-overlay hidden retro-skin">
+        <div class="modal-content glass" style="max-width: 800px; padding: 2px !important; display: flex; flex-direction: column; height: 500px;">
+            <!-- Retro Title Bar -->
+            <div id="retro-title-bar" style="display: flex;">
+                <div style="display: flex; align-items: center; gap: 5px;">
+                    <span style="font-size: 12px;">📬 MailPlus Pro v1.0</span>
+                </div>
+                <div class="close-btn-retro" onclick="window.closeEmail()">×</div>
+            </div>
+
+            <div style="display: flex; flex: 1; min-height: 0; background: #c0c0c0; border: 2px inset #fff; margin: 5px;">
+                <!-- Sidebar -->
+                <div id="email-sidebar" style="width: 180px; border-right: 2px groove #fff; padding: 10px; display: flex; flex-direction: column; gap: 8px; background: #d0d0d0;">
+                    <button id="btn-inbox-email" class="retro-folder-btn active" onclick="window.switchEmailFolder('inbox')">📥 Entrada</button>
+                    <button class="retro-folder-btn" onclick="window.switchEmailFolder('outbox')">📤 Saída</button>
+                    <button id="btn-compose-email" class="retro-folder-btn" onclick="window.switchEmailFolder('compose')" style="margin-top: 10px; background: #eee; font-weight: bold;">📝 ESCREVER</button>
+                    <div style="flex: 1;"></div>
+                    <button class="retro-folder-btn" onclick="window.switchEmailFolder('trash')">🗑️ Lixeira</button>
+                </div>
+
+                <!-- Content Area -->
+                <div id="email-main-view" style="flex: 1; display: flex; flex-direction: column; background: #fff; border: 2px inset #808080; margin: 5px; overflow: hidden;">
+                    <div id="email-list-header" style="background: #e0e0e0; padding: 5px 10px; border-bottom: 2px groove #fff; font-size: 10px; display: flex; justify-content: space-between; font-weight: bold;">
+                        <span>Assunto</span>
+                        <span>Data</span>
+                    </div>
+                    <div id="email-list" style="flex: 1; overflow-y: auto; padding: 5px;">
+                        <!-- Emails rendered here -->
+                    </div>
+                </div>
+            </div>
+
+            <div style="padding: 10px; background: #c0c0c0; border-top: 2px groove #fff; text-align: right;">
+                <span style="font-size: 9px; float: left; margin-top: 5px; color: #444;">Status: Online</span>
+                <button class="action-btn" onclick="window.closeEmail()" style="font-size: 10px; padding: 5px 15px; border-radius: 0; margin: 0;">FECHAR</button>
             </div>
         </div>
     </div>
