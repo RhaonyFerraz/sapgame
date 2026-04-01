@@ -1791,3 +1791,208 @@ button:disabled {
     to { background: #f1c40f; color: #000; box-shadow: 0 0 15px rgba(241, 196, 15, 0.8); }
 }
 
+/* =============================================
+   MOBILE RESPONSIVO - MELHORIAS GERAIS
+   Otimizações para smartphones (max 768px)
+   ============================================= */
+@media (max-width: 768px) {
+
+    /* --- BODY & LAYOUT --- */
+    body {
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* --- HUD HEADER --- */
+    .hud-header {
+        position: sticky;
+        top: 0;
+        z-index: 10000;
+    }
+
+    .hud {
+        flex-wrap: wrap;
+        justify-content: center;
+        padding: 6px 8px;
+        gap: 6px;
+    }
+
+    /* Esconde separadores e textos dos botões */
+    .hud-sep { display: none !important; }
+    .icon-btn span { display: none !important; }
+    .btn-iniciar span { font-size: 0.75rem !important; }
+
+    /* Ícones menores e toque mais fácil */
+    .icon-btn {
+        padding: 8px 10px !important;
+        min-width: 40px;
+        min-height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .icon-btn img.menu-icon {
+        width: 22px !important;
+        height: 22px !important;
+    }
+
+    /* Saldo de caixa legível */
+    .val-money {
+        font-size: 0.65rem !important;
+    }
+
+    .btn-iniciar {
+        padding: 8px 16px !important;
+        font-size: 0.8rem !important;
+    }
+
+    /* --- MODAIS --- */
+    .modal-overlay {
+        align-items: flex-end !important;  /* Desliza de baixo como sheet nativo */
+        padding: 0 !important;
+    }
+
+    .modal-content {
+        width: 100% !important;
+        max-width: 100% !important;
+        border-radius: 20px 20px 0 0 !important;
+        padding: 1.2rem 1rem !important;
+        max-height: 92dvh !important;
+        overflow-y: auto !important;
+        margin: 0 !important;
+    }
+
+    /* Título menor */
+    #modal-title { font-size: 1.1rem !important; }
+    #modal-text  { font-size: 0.95rem !important; line-height: 1.5 !important; }
+
+    /* Opções: coluna única, botões grandes (toque fácil) */
+    .options-container {
+        flex-direction: column !important;
+        gap: 10px !important;
+    }
+
+    .option-btn {
+        width: 100% !important;
+        padding: 1rem 1.2rem !important;
+        font-size: 0.9rem !important;
+        text-align: left !important;
+        min-height: 52px;
+    }
+
+    /* Botões de ação em coluna */
+    .modal-actions {
+        flex-direction: column !important;
+        gap: 10px !important;
+        margin-top: 1rem !important;
+    }
+    .modal-actions button, .action-btn {
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0.9rem !important;
+        font-size: 1rem !important;
+    }
+
+    /* --- BANCO --- */
+    .bank-content, .invest-content {
+        width: 100% !important;
+        border-radius: 20px 20px 0 0 !important;
+        max-height: 92dvh !important;
+        margin: 0 !important;
+        overflow-y: auto !important;
+    }
+
+    .bank-tabs {
+        overflow-x: auto;
+        flex-wrap: nowrap !important;
+        -webkit-overflow-scrolling: touch;
+        gap: 6px !important;
+        padding-bottom: 0.5rem !important;
+        justify-content: flex-start !important;
+    }
+
+    .bank-tab {
+        flex-shrink: 0;
+        font-size: 0.8rem !important;
+        padding: 0.6rem 1rem !important;
+    }
+
+    .bank-stats-grid {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 10px !important;
+    }
+
+    /* --- INVENTÁRIO / DESPESAS --- */
+    .stats-grid {
+        grid-template-columns: 1fr 1fr !important;
+    }
+
+    /* --- FICHEIRO FINANCEIRO --- */
+    .ficheiro-tabs {
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+    }
+    .ficheiro-tab {
+        flex: 1 1 40% !important;
+        font-size: 0.75rem !important;
+        padding: 0.6rem !important;
+        text-align: center;
+        justify-content: center;
+    }
+
+    /* --- TABULEIRO --- */
+    .board {
+        position: absolute;
+        inset: 0;
+    }
+
+    .space {
+        width: clamp(22px, 7vw, 34px);
+        height: clamp(22px, 7vw, 34px);
+        font-size: 0.55em;
+        border-width: 1px;
+    }
+
+    .company-hub {
+        transform: scale(0.65);
+        transform-origin: center center;
+    }
+
+    /* --- EXTRATO --- */
+    .extrato-content {
+        width: 100% !important;
+        max-height: 92dvh !important;
+        border-radius: 20px 20px 0 0 !important;
+        overflow-y: auto !important;
+    }
+
+    /* --- EMAIL --- */
+    .email-content {
+        width: 100% !important;
+        max-height: 92dvh !important;
+        border-radius: 20px 20px 0 0 !important;
+    }
+
+    /* --- TICKER BAR --- */
+    .pixel-ticker-bar {
+        font-size: 0.65rem !important;
+    }
+}
+
+/* Telas muito pequenas (< 380px, ex: Galaxy A) */
+@media (max-width: 380px) {
+    .icon-btn img.menu-icon {
+        width: 18px !important;
+        height: 18px !important;
+    }
+    .icon-btn {
+        padding: 6px 8px !important;
+        min-width: 34px;
+        min-height: 34px;
+    }
+    #modal-title { font-size: 0.95rem !important; }
+    #modal-text  { font-size: 0.85rem !important; }
+    .option-btn  { font-size: 0.82rem !important; padding: 0.8rem 1rem !important; }
+    .bank-stats-grid { grid-template-columns: 1fr !important; }
+}
