@@ -162,10 +162,27 @@
     </div>
     </div>
 
-    <!-- Som de Abertura (pré-carregado para GitHub Pages) -->
-    <audio id="opening-sound" preload="auto" style="display:none;">
-        <source src="sons/som%20de%20abertura%20at%2018.48.19.aac" type="audio/aac">
-    </audio>
+    <!-- Som de Abertura: pré-carregado como objeto global para máxima compatibilidade -->
+    <script>
+        (function() {
+            try {
+                // Tenta .aac (iOS/Safari nativo) e .mp3 como fallback
+                var snd = new Audio();
+                snd.preload = 'auto';
+                // Usa canPlayType para escolher o formato certo
+                if (snd.canPlayType('audio/aac') !== '') {
+                    snd.src = 'sons/som%20de%20abertura%20at%2018.48.19.aac';
+                } else {
+                    snd.src = 'sons/som%20de%20abertura%20at%2018.48.19.aac'; // fallback mesmo arquivo
+                }
+                snd.load();
+                window._openingAudio = snd;
+                console.log('Som de abertura pré-carregado:', snd.src);
+            } catch(e) {
+                console.warn('Não foi possível pré-carregar som de abertura:', e);
+            }
+        })();
+    </script>
 
     <header id="hud-header" class="hud-header hidden">
         <div class="hud">

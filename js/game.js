@@ -244,15 +244,14 @@ const startJourney = (e) => {
             rImg.style.opacity = '1';
             rText.style.opacity = '1';
 
-            // Som de abertura via elemento HTML pré-carregado (mais confiável no GitHub Pages)
+            // Som de abertura — disparado pela interação do usuário (clique/toque)
             try {
-                const openingSound = document.getElementById('opening-sound');
-                if (openingSound) {
-                    openingSound.currentTime = 0;
-                    openingSound.play().catch(err => console.warn('Erro ao tocar som de abertura:', err));
+                if (window._openingAudio) {
+                    window._openingAudio.currentTime = 0;
+                    window._openingAudio.play().catch(e => console.warn('Audio play blocked:', e));
                 }
-            } catch(err) {
-                console.warn('Som de abertura não disponível:', err);
+            } catch(e) {
+                console.warn('Erro no som de abertura:', e);
             }
         }, 50);
         
