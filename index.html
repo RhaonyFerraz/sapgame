@@ -18,11 +18,16 @@
 </head>
 <body>
     <!-- Game Title Intro -->
-    <div id="title-intro" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 10002; display: flex; justify-content: center; align-items: center; flex-direction: column; transition: opacity 0.8s;">
-        <h1 id="title-text" style="font-family: 'Inter', sans-serif; font-size: 4rem; font-weight: 900; color: #fff; text-transform: uppercase; letter-spacing: 8px; text-align: center; opacity: 0; animation: titleReveal 1.5s ease forwards 0.5s;">
+    <div id="title-intro" onclick="if(window.playIntroChime) { playIntroChime(); } this.onclick=null; document.getElementById('title-text').classList.add('animate'); document.getElementById('intro-line').classList.add('animate'); document.getElementById('intro-prompt').style.opacity='0'; setTimeout(() => { this.style.opacity = '0'; setTimeout(() => { this.style.display = 'none'; }, 800); }, 3800);" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 10002; display: flex; justify-content: center; align-items: center; flex-direction: column; transition: opacity 0.8s; cursor: pointer;">
+        <h1 id="title-text" style="font-family: 'Inter', sans-serif; font-size: 4rem; font-weight: 900; color: #fff; text-transform: uppercase; letter-spacing: 8px; text-align: center; opacity: 0;">
             ACTION <span style="color: var(--accent); text-shadow: 0 0 30px rgba(155,81,224,0.6), 0 0 60px rgba(155,81,224,0.3);">STARTERS</span>
         </h1>
-        <div style="width: 120px; height: 3px; background: linear-gradient(90deg, transparent, var(--accent), transparent); margin-top: 20px; opacity: 0; animation: lineReveal 1s ease forwards 1.2s;"></div>
+        <div id="intro-line" style="width: 120px; height: 3px; background: linear-gradient(90deg, transparent, var(--accent), transparent); margin-top: 20px; opacity: 0;"></div>
+        
+        <div id="intro-prompt" style="position: absolute; bottom: 15%; font-family: 'Inter', sans-serif; font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 4px; opacity: 0; animation: promptPulse 2s infinite ease-in-out 1s; transition: opacity 0.5s; text-align: center;">
+            CLIQUE PARA INICIAR<br><br>
+            <button id="btn-skip-intro-top" onclick="event.stopPropagation(); if(window.skipIntro) skipIntro();" style="background: none; border: 1px solid #444; color: #666; font-size: 0.65rem; padding: 5px 15px; border-radius: 50px; cursor: pointer; letter-spacing: 2px; transition: all 0.3s;">PULAR ANIMAÇÃO</button>
+        </div>
     </div>
 
     <style>
@@ -35,6 +40,13 @@
             0% { opacity: 0; width: 0; }
             100% { opacity: 1; width: 120px; }
         }
+        @keyframes promptPulse {
+            0%, 100% { opacity: 0.2; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.05); }
+        }
+        
+        #title-text.animate { animation: titleReveal 1.5s ease forwards 0.2s; }
+        #intro-line.animate { animation: lineReveal 1s ease forwards 0.5s; }
 
         /* Barrinhas de Progresso (30 níveis) */
         .progress-bar-grid {
@@ -118,13 +130,7 @@
     </style>
 
     <script>
-        setTimeout(() => {
-            const intro = document.getElementById('title-intro');
-            if (intro) {
-                intro.style.opacity = '0';
-                setTimeout(() => { intro.style.display = 'none'; }, 800);
-            }
-        }, 3500);
+        // Automatic fade out removed to allow for sound-on-click interaction
     </script>
 
     <!-- Start Screen -->
@@ -143,7 +149,6 @@
             <br>
             <button id="btn-start-game" class="action-btn" onclick="startJourney()" style="font-size: 1.3rem; padding: 15px 50px; border-radius: 50px; box-shadow: 0 0 30px rgba(155, 81, 224, 0.4);">INICIAR JORNADA</button>
             <br>
-            <button id="btn-skip-intro" class="secondary-btn" onclick="if(window.skipIntro) skipIntro();" style="z-index: 10003; position: relative; font-size: 0.9rem; padding: 10px 30px; margin-top: 15px; border-radius: 50px; background: rgba(255,255,255,0.05); color: #8b949e; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; font-weight: 600; letter-spacing: 1px; transition: all 0.3s ease;">PULAR ANIMAÇÃO</button>
         </div>
     </div>
 
@@ -215,8 +220,6 @@
                         title="Ocultar/Mostrar Letreiro">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="stroke: #8b949e;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                 </button>
-                
-                <button id="btn-lang-toggle" class="lang-btn"><img id="lang-flag" src="faviconsmenu/english-language.png" style="width: 26px; height: 26px; vertical-align: middle;" title="Alterar Idioma"></button>
                 <button id="btn-start-turn" class="btn-iniciar" onclick="console.log('Botão START clicado.'); if(window.startTurn) { startTurn(); } else { alert('Aguarde o carregamento do jogo...'); }" style="display: flex; align-items: center; gap: 8px; cursor: pointer; pointer-events: auto !important; z-index: 10001;">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="fill: transparent;"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> 
                     <span data-t="hud_start">START</span>

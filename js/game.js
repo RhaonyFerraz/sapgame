@@ -225,6 +225,18 @@ const startJourney = (e) => {
         console.warn('Audio unlock blocked', err);
     }
     
+    // Som de abertura — disparado de forma 100% síncrona com o clique do usuário!
+    // Navegadores mobile bloqueiam .play() se ele estiver dentro de um setTimeout.
+    try {
+        if (!window._openingAudio) {
+            window._openingAudio = new Audio('sons/som%20de%20abertura%20at%2018.48.19.aac');
+        }
+        window._openingAudio.currentTime = 0;
+        window._openingAudio.play().catch(e => console.warn('Audio play blocked:', e));
+    } catch(e) {
+        console.warn('Erro no som de abertura:', e);
+    }
+    
     const splash = document.getElementById('splash-screen');
     const reveal = document.getElementById('start-reveal-overlay');
     const rText = document.getElementById('reveal-text-container');
@@ -243,16 +255,6 @@ const startJourney = (e) => {
             reveal.style.opacity = '1';
             rImg.style.opacity = '1';
             rText.style.opacity = '1';
-
-            // Som de abertura — disparado pela interação do usuário (clique/toque)
-            try {
-                if (window._openingAudio) {
-                    window._openingAudio.currentTime = 0;
-                    window._openingAudio.play().catch(e => console.warn('Audio play blocked:', e));
-                }
-            } catch(e) {
-                console.warn('Erro no som de abertura:', e);
-            }
         }, 50);
         
         setTimeout(() => {
@@ -603,7 +605,6 @@ async function initGame() {
     if (UI.btnBuy) UI.btnBuy.addEventListener('click', buyConsultant);
     
     // Bank events
-    if (UI.btnOpenBank) UI.btnOpenBank.addEventListener('click', openBank);
     if (UI.btnCloseBank) UI.btnCloseBank.addEventListener('click', closeBank);
     UI.bankTabs.forEach(tab => tab.addEventListener('click', () => switchBankTab(tab.dataset.tab)));
     
@@ -624,19 +625,15 @@ async function initGame() {
     });
     
     // Extrato events
-    if (UI.btnOpenExtrato) UI.btnOpenExtrato.addEventListener('click', openExtrato);
     if (UI.btnCloseExtrato) UI.btnCloseExtrato.addEventListener('click', closeExtrato);
     
     // Strategic Invest events
-    if (UI.btnOpenInvest) UI.btnOpenInvest.addEventListener('click', () => window.openInvestments());
     if (UI.btnCloseInvest) UI.btnCloseInvest.addEventListener('click', () => window.closeInvest());
     
     // Financeiro events
-    if (UI.btnOpenFinance) UI.btnOpenFinance.addEventListener('click', () => window.openFinance());
     if (UI.btnCloseFinance) UI.btnCloseFinance.addEventListener('click', () => window.closeFinance());
     
     // Email events
-    if (UI.btnOpenEmail) UI.btnOpenEmail.addEventListener('click', () => window.openEmail());
 
     if (UI.ficheiroTabs) {
         UI.ficheiroTabs.forEach(tab => {
@@ -645,19 +642,15 @@ async function initGame() {
     }
     
     // Inventory events
-    if (UI.btnOpenInventory) UI.btnOpenInventory.addEventListener('click', () => window.openInventory());
     if (UI.btnCloseInventory) UI.btnCloseInventory.addEventListener('click', () => window.closeInventory());
     if (UI.btnPawnInventory) UI.btnPawnInventory.addEventListener('click', () => pawnInventory());
     if (UI.btnPatrimonialAgreement) UI.btnPatrimonialAgreement.addEventListener('click', () => performPatrimonialAgreement());
     
     // Expenses events
-    if (UI.btnOpenExpenses) UI.btnOpenExpenses.addEventListener('click', () => window.openExpenses());
     if (UI.btnCloseExpenses) UI.btnCloseExpenses.addEventListener('click', () => window.closeExpenses());
     
     if (UI.btnPayNow) UI.btnPayNow.addEventListener('click', () => payExpensesNow());
     if (UI.btnPayLater) UI.btnPayLater.addEventListener('click', () => postponeExpenses());
-
-    if (UI.btnLangToggle) UI.btnLangToggle.addEventListener('click', toggleLanguage);
     if (UI.btnStartTurn) UI.btnStartTurn.addEventListener('click', () => startTurn());
 
     // Apply translation on load
@@ -980,6 +973,9 @@ window.startTurn = function(skipExpenseCheck = false) {
     }
     window.isTurnProcessing = true;
     setTimeout(() => { window.isTurnProcessing = false; }, 1000); // Failsafe unlock após a renderização do modal
+
+    // Tocar som agradável ao iniciar
+    if (typeof playStartTurnSound === 'function') playStartTurnSound();
 
     console.log("startTurn: INICIANDO TURNO na casa", state.pos);
     
@@ -1964,19 +1960,26 @@ function buyConsultant() {
 function closeAllModals() {
     if (UI.bankModal) UI.bankModal.classList.add('hidden');
     if (UI.investModal) UI.investModal.classList.add('hidden');
-window.closeInventory = function() {
     if (UI.inventoryModal) UI.inventoryModal.classList.add('hidden');
-}
     if (UI.expensesModal) UI.expensesModal.classList.add('hidden');
     if (UI.extratoModal) UI.extratoModal.classList.add('hidden');
+    if (UI.financeModal) UI.financeModal.classList.add('hidden');
+    if (UI.emailModal) UI.emailModal.classList.add('hidden');
+}
+
+window.closeInventory = function() {
+    if (UI.inventoryModal) UI.inventoryModal.classList.add('hidden');
 }
 
 // --- Extrato Logic ---
 
 window.openExtrato = function() {
+    const isHidden = UI.extratoModal.classList.contains('hidden');
     closeAllModals();
-    renderExtrato();
-    UI.extratoModal.classList.remove('hidden');
+    if (isHidden) {
+        renderExtrato();
+        UI.extratoModal.classList.remove('hidden');
+    }
 }
 
 window.closeExtrato = function() {
@@ -2015,9 +2018,12 @@ function renderExtrato() {
 // --- Bank Logic ---
 
 window.openBank = function() {
+    const isHidden = UI.bankModal.classList.contains('hidden');
     closeAllModals();
-    updateBankUI();
-    UI.bankModal.classList.remove('hidden');
+    if (isHidden) {
+        updateBankUI();
+        UI.bankModal.classList.remove('hidden');
+    }
 }
 
 window.closeBank = function() {
@@ -2526,11 +2532,14 @@ function processBankTurn() {
 /* --- E-mail System Logic --- */
 
 window.openEmail = function() {
+    const isHidden = UI.emailModal.classList.contains('hidden');
     closeAllModals();
-    state.emailTaskActive = false; // Clear notification
-    updateHUD(); 
-    window.switchEmailFolder('inbox'); // Start at inbox
-    UI.emailModal.classList.remove('hidden');
+    if (isHidden) {
+        state.emailTaskActive = false; // Clear notification
+        updateHUD(); 
+        window.switchEmailFolder('inbox'); // Start at inbox
+        UI.emailModal.classList.remove('hidden');
+    }
 }
 
 window.closeEmail = function() {
@@ -2854,9 +2863,12 @@ window.trashEmail = function(id) {
 // --- Strategic Investments Logic ---
 
 window.openInvestments = function() {
+    const isHidden = UI.investModal.classList.contains('hidden');
     closeAllModals();
-    updateInvestUI();
-    UI.investModal.classList.remove('hidden');
+    if (isHidden) {
+        updateInvestUI();
+        UI.investModal.classList.remove('hidden');
+    }
 }
 
 window.closeInvest = function() {
@@ -2865,10 +2877,13 @@ window.closeInvest = function() {
 
 /* --- Expenses Logic --- */
 window.openExpenses = function() {
+    const isHidden = UI.expensesModal.classList.contains('hidden');
     closeAllModals();
-    updateExpensesUI();
-    UI.expensesModal.classList.remove('hidden');
-    forceScrollToTop(); // Adicionado para garantir visibilidade do topo
+    if (isHidden) {
+        updateExpensesUI();
+        UI.expensesModal.classList.remove('hidden');
+        forceScrollToTop(); // Adicionado para garantir visibilidade do topo
+    }
 }
 
 window.closeExpenses = function() {
@@ -2877,8 +2892,12 @@ window.closeExpenses = function() {
 
 /* --- Inventory Logic --- */
 window.openInventory = function() {
-    updateInventoryUI();
-    UI.inventoryModal.classList.remove('hidden');
+    const isHidden = UI.inventoryModal.classList.contains('hidden');
+    closeAllModals();
+    if (isHidden) {
+        updateInventoryUI();
+        UI.inventoryModal.classList.remove('hidden');
+    }
 }
 
 function getUpgradeCost(area, level) {
@@ -3116,14 +3135,87 @@ function playSuccessSound() {
     });
 }
 
+function playStartTurnSound() {
+    initAudio();
+    audioCtx.resume().then(() => {
+        const now = audioCtx.currentTime;
+        
+        // Nota 1 (Dó 5 - C5) - Suave
+        const osc1 = audioCtx.createOscillator();
+        const gain1 = audioCtx.createGain();
+        osc1.connect(gain1);
+        gain1.connect(audioCtx.destination);
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(523.25, now); 
+        gain1.gain.setValueAtTime(0, now);
+        gain1.gain.linearRampToValueAtTime(0.15, now + 0.05); // Ataque suave
+        gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.8); // Decaimento longo
+        osc1.start(now);
+        osc1.stop(now + 0.8);
+        
+        // Nota 2 (Mi 5 - E5) - Logo em seguida para criar um intervalo harmonioso
+        const osc2 = audioCtx.createOscillator();
+        const gain2 = audioCtx.createGain();
+        osc2.connect(gain2);
+        gain2.connect(audioCtx.destination);
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(659.25, now + 0.15); 
+        gain2.gain.setValueAtTime(0, now + 0.15);
+        gain2.gain.linearRampToValueAtTime(0.12, now + 0.2);
+        gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.9);
+        osc2.start(now + 0.15);
+        osc2.stop(now + 0.9);
+    });
+}
+
+/**
+ * Novo: Som de introdução cinemático (Action Starters Reveal)
+ * Um acorde suave com ondas senoidais e decaimento longo para criar uma 
+ * atmosfera profissional e agradável.
+ */
+function playIntroChime() {
+    initAudio();
+    audioCtx.resume().then(() => {
+        const now = audioCtx.currentTime;
+        
+        // Nota única, minimalista e extremamente suave
+        const notes = [
+            440.00  // Lá 4 (A4) - Uma nota "pura" e calma
+        ];
+
+        notes.forEach((freq, idx) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, now); 
+            
+            gain.gain.setValueAtTime(0, now);
+            gain.gain.linearRampToValueAtTime(0.015, now + 0.2); // Pico de volume ultra-suave
+            gain.gain.exponentialRampToValueAtTime(0.005, now + 1.5); // Começa o fade-out (1.5s)
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + 4.5); // Desaparece gradualmente (4.5s)
+            
+            osc.start(now);
+            osc.stop(now + 5.0); // Garante que não haja corte brusco
+        });
+    });
+}
+
 // End of file
 // Finance Modal Functions
 window.openFinance = function() {
-    renderFinanceiro();
-    UI.financeModal.classList.remove('hidden');
-    // Pre-select first tab
-    switchFicheiroTab('pagar');
-    forceScrollToTop();
+    const isHidden = UI.financeModal.classList.contains('hidden');
+    closeAllModals();
+    if (isHidden) {
+        renderFinanceiro();
+        UI.financeModal.classList.remove('hidden');
+        // Pre-select first tab
+        switchFicheiroTab('pagar');
+        forceScrollToTop();
+    }
 }
 
 window.closeFinance = function() {
