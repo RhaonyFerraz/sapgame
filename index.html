@@ -730,7 +730,7 @@
     </div>
 
     <!-- E-mail Modal (Retro Outlook Style) -->
-    <div id="email-modal" class="modal-overlay hidden retro-skin">
+    <div id="email-modal" class="modal-overlay hidden retro-skin" onclick="if(event.target===this) window.closeEmail();">
         <div class="modal-content email-content glass" style="max-width: 800px; padding: 2px !important; display: flex; flex-direction: column;">
             <!-- Retro Title Bar -->
             <div id="retro-title-bar" style="display: flex;">
