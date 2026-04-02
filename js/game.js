@@ -2668,15 +2668,30 @@ window.openEmail = function() {
         state.emailTaskActive = false; // Clear notification
         updateHUD(); 
         window.switchEmailFolder('inbox'); // Start at inbox
+        
         UI.emailModal.classList.remove('hidden');
+        UI.emailModal.classList.add('restoring');
         document.body.classList.add('modal-active');
+        
+        setTimeout(() => {
+            UI.emailModal.classList.remove('restoring');
+        }, 400);
     }
 }
 
 window.closeEmail = function() {
-    UI.emailModal.classList.add('hidden');
-    updateTickerVisibility();
-    document.body.classList.remove('modal-active');
+    if (UI.emailModal.classList.contains('hidden')) return;
+
+    // Adiciona classe de animação
+    UI.emailModal.classList.add('minimizing');
+    
+    // Aguarda animação de 350ms antes de esconder de fato
+    setTimeout(() => {
+        UI.emailModal.classList.add('hidden');
+        UI.emailModal.classList.remove('minimizing');
+        updateTickerVisibility();
+        document.body.classList.remove('modal-active');
+    }, 350);
 }
 
 window.switchEmailFolder = function(folder) {
