@@ -1931,6 +1931,7 @@ function openModal(title, text) {
 
     // Auto-hide ticker when ANY modal opens
     updateTickerVisibility(true);
+    document.body.classList.add('modal-active');
 }
 window.openModal = openModal;
 
@@ -1939,6 +1940,7 @@ function closeModal() {
     UI.modal.classList.add('hidden');
     UI.mFeedback.classList.add('hidden');
     UI.mBtnNo.classList.add('hidden');
+    document.body.classList.remove('modal-active');
 
     // Restore ticker visibility based on preferences
     updateTickerVisibility();
@@ -2078,11 +2080,13 @@ function closeAllModals() {
 
     // Auto-collapse ticker bar when ANY modal is opened (since open calls closeAll first)
     updateTickerVisibility(true);
+    document.body.classList.remove('modal-active');
 }
 
 window.closeInventory = function() {
     if (UI.inventoryModal) UI.inventoryModal.classList.add('hidden');
     updateTickerVisibility(); // Restaura conforme preferência se sem modais (idealmente)
+    document.body.classList.remove('modal-active');
 }
 
 // --- Extrato Logic ---
@@ -2093,12 +2097,14 @@ window.openExtrato = function() {
     if (isHidden) {
         renderExtrato();
         UI.extratoModal.classList.remove('hidden');
+        document.body.classList.add('modal-active');
     }
 }
 
 window.closeExtrato = function() {
     UI.extratoModal.classList.add('hidden');
     updateTickerVisibility();
+    document.body.classList.remove('modal-active');
 }
 
 function renderExtrato() {
@@ -2138,12 +2144,14 @@ window.openBank = function() {
     if (isHidden) {
         updateBankUI();
         UI.bankModal.classList.remove('hidden');
+        document.body.classList.add('modal-active');
     }
 }
 
 window.closeBank = function() {
     UI.bankModal.classList.add('hidden');
     updateTickerVisibility();
+    document.body.classList.remove('modal-active');
 }
 
 function switchBankTab(tabId) {
@@ -2655,12 +2663,14 @@ window.openEmail = function() {
         updateHUD(); 
         window.switchEmailFolder('inbox'); // Start at inbox
         UI.emailModal.classList.remove('hidden');
+        document.body.classList.add('modal-active');
     }
 }
 
 window.closeEmail = function() {
     UI.emailModal.classList.add('hidden');
     updateTickerVisibility();
+    document.body.classList.remove('modal-active');
 }
 
 window.switchEmailFolder = function(folder) {
@@ -2987,12 +2997,14 @@ window.openInvestments = function() {
     if (isHidden) {
         updateInvestUI();
         UI.investModal.classList.remove('hidden');
+        document.body.classList.add('modal-active');
     }
 }
 
 window.closeInvest = function() {
     UI.investModal.classList.add('hidden');
     updateTickerVisibility();
+    document.body.classList.remove('modal-active');
 }
 
 /* --- Expenses Logic --- */
@@ -3003,12 +3015,14 @@ window.openExpenses = function() {
         updateExpensesUI();
         UI.expensesModal.classList.remove('hidden');
         forceScrollToTop(); // Adicionado para garantir visibilidade do topo
+        document.body.classList.add('modal-active');
     }
 }
 
 window.closeExpenses = function() {
     if (UI.expensesModal) UI.expensesModal.classList.add('hidden');
     updateTickerVisibility();
+    document.body.classList.remove('modal-active');
 }
 
 /* --- Inventory Logic --- */
@@ -3018,6 +3032,7 @@ window.openInventory = function() {
     if (isHidden) {
         updateInventoryUI();
         UI.inventoryModal.classList.remove('hidden');
+        document.body.classList.add('modal-active');
     }
 }
 
@@ -3412,12 +3427,14 @@ window.openFinance = function() {
         // Pre-select first tab
         switchFicheiroTab('pagar');
         forceScrollToTop();
+        document.body.classList.add('modal-active');
     }
 }
 
 window.closeFinance = function() {
     UI.financeModal.classList.add('hidden');
     updateTickerVisibility();
+    document.body.classList.remove('modal-active');
 }
 
 function switchFicheiroTab(fichaName) {

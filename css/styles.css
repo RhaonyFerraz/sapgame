@@ -1822,6 +1822,12 @@ button:disabled {
         position: sticky;
         top: 0;
         z-index: 10000;
+        transition: opacity 0.3s ease;
+    }
+
+    /* Oculta o HUD quando um modal (quadro) estiver aberto em telas pequenas */
+    body.modal-active .hud-header {
+        display: none !important;
     }
 
     .hud {
@@ -2007,34 +2013,36 @@ button:disabled {
         flex-direction: column !important; /* O título fica no topo */
     }
 
-    /* Transforma o container que segura a sidebar e o conteúdo principal em coluna */
+    /* Container interno do e-mail (sidebar + conteúdo) */
     .email-content > div:nth-child(2) {
-        flex-direction: column !important;
+        flex-direction: row !important; /* Volta para horizontal (sidebar à esquerda) */
+        min-height: 350px !important;
     }
 
     #email-sidebar {
-        width: 100% !important; 
+        width: 60px !important; /* Estreita para mobile */
         height: auto !important;
-        flex-direction: row !important; /* Horizontal para mobile */
-        justify-content: space-around !important;
-        padding: 8px 5px !important;
-        gap: 5px !important;
+        flex-direction: column !important; /* Volta para vertical */
+        justify-content: flex-start !important;
+        padding: 5px !important;
+        gap: 10px !important;
         background: #d0d0d0;
-        border-right: none !important;
-        border-bottom: 2px groove #fff !important; /* Borda embaixo agora */
+        border-right: 2px groove #fff !important;
+        border-bottom: none !important;
     }
 
     /* Ícones apenas no mobile para o e-mail */
     .retro-folder-btn {
-        width: 40px !important;
-        height: 40px !important;
+        width: 44px !important;
+        height: 44px !important;
         padding: 0 !important;
         margin: 0 !important;
-        font-size: 0 !important; /* Esconde o texto */
+        font-size: 1.5rem !important; /* Mostra o emoji */
         display: flex;
         align-items: center;
         justify-content: center;
         overflow: hidden;
+        border: 2px outset #fff !important;
     }
     
     .retro-folder-btn::before {
@@ -2049,8 +2057,9 @@ button:disabled {
 
     #email-main-view {
         flex: 1 !important;
-        margin: 0 !important;
-        border: none !important;
+        margin: 2px !important;
+        border: 2px inset #808080 !important;
+        min-height: 300px !important;
     }
 
     #email-list-content {
