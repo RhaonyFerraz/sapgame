@@ -1871,7 +1871,7 @@ button:disabled {
         width: 100% !important;
         max-width: 100% !important;
         border-radius: 20px 20px 0 0 !important;
-        padding: 1.2rem 1rem !important;
+        padding: 1.2rem 1rem 3rem !important;
         max-height: 92dvh !important;
         overflow-y: auto !important;
         margin: 0 !important;
@@ -1915,6 +1915,7 @@ button:disabled {
         max-height: 92dvh !important;
         margin: 0 !important;
         overflow-y: auto !important;
+        padding-bottom: 3rem !important;
     }
 
     .bank-tabs {
@@ -1979,6 +1980,7 @@ button:disabled {
         max-height: 92dvh !important;
         border-radius: 20px 20px 0 0 !important;
         overflow-y: auto !important;
+        padding-bottom: 3rem !important;
     }
 
     /* --- EMAIL --- */
@@ -1986,6 +1988,7 @@ button:disabled {
         width: 100% !important;
         max-height: 92dvh !important;
         border-radius: 20px 20px 0 0 !important;
+        padding-bottom: 3rem !important;
     }
 
     /* --- TICKER BAR --- */
