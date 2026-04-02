@@ -1871,7 +1871,7 @@ button:disabled {
         width: 100% !important;
         max-width: 100% !important;
         border-radius: 20px 20px 0 0 !important;
-        padding: 1.2rem 1rem 3rem !important;
+        padding: 1.2rem 1rem calc(4rem + env(safe-area-inset-bottom)) !important;
         max-height: 92dvh !important;
         overflow-y: auto !important;
         margin: 0 !important;
@@ -1909,13 +1909,13 @@ button:disabled {
     }
 
     /* --- BANCO --- */
-    .bank-content, .invest-content {
+    .bank-content, .invest-content, .expenses-content {
         width: 100% !important;
         border-radius: 20px 20px 0 0 !important;
         max-height: 92dvh !important;
         margin: 0 !important;
         overflow-y: auto !important;
-        padding-bottom: 3rem !important;
+        padding-bottom: calc(4rem + env(safe-area-inset-bottom)) !important;
     }
 
     .bank-tabs {
@@ -1980,7 +1980,7 @@ button:disabled {
         max-height: 92dvh !important;
         border-radius: 20px 20px 0 0 !important;
         overflow-y: auto !important;
-        padding-bottom: 3rem !important;
+        padding-bottom: calc(4rem + env(safe-area-inset-bottom)) !important;
     }
 
     /* --- EMAIL --- */
@@ -1988,7 +1988,7 @@ button:disabled {
         width: 100% !important;
         max-height: 92dvh !important;
         border-radius: 20px 20px 0 0 !important;
-        padding-bottom: 3rem !important;
+        padding-bottom: calc(4rem + env(safe-area-inset-bottom)) !important;
     }
 
     /* --- TICKER BAR --- */
@@ -2033,4 +2033,11 @@ button:disabled {
     0% { background-color: #8b0000 !important; box-shadow: 0 0 5px rgba(255, 56, 96, 0.4); }
     50% { background-color: #ff3860 !important; box-shadow: 0 0 20px rgba(255, 56, 96, 0.9); }
     100% { background-color: #8b0000 !important; box-shadow: 0 0 5px rgba(255, 56, 96, 0.4); }
+}
+
+/* Desktop specific constraints */
+@media (min-width: 769px) {
+    .email-content {
+        height: 500px !important;
+    }
 }
