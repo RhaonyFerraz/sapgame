@@ -1878,7 +1878,7 @@ button:disabled {
         height: auto !important;
         max-height: 85dvh !important; /* Altura máxima estrita para caber topo/fundo */
         border-radius: 15px !important;
-        padding: 1.5rem 1rem !important;
+        padding: 2.5rem 1rem 1.5rem !important; /* Aumentado padding-top para não cortar o topo */
         overflow-y: auto !important;
         margin: 0 !important;
     }
@@ -1927,7 +1927,7 @@ button:disabled {
         border-radius: 15px !important;
         margin: 0 !important;
         overflow-y: auto !important;
-        padding: 1.2rem;
+        padding: 2rem 1.2rem 1.2rem !important; /* Mais espaço no topo */
     }
 
     .bank-tabs {
@@ -1993,7 +1993,7 @@ button:disabled {
         max-height: 85dvh !important;
         border-radius: 15px !important;
         overflow-y: auto !important;
-        padding: 1.2rem;
+        padding: 2rem 1.2rem 1.2rem !important; /* Mais espaço no topo */
     }
 
     /* --- EMAIL --- */
@@ -2004,24 +2004,32 @@ button:disabled {
         border-radius: 12px !important;
         padding: 2px !important;
         display: flex;
-        flex-direction: row !important; /* Volta para o lado a lado mas compacto */
+        flex-direction: column !important; /* O título fica no topo */
+    }
+
+    /* Transforma o container que segura a sidebar e o conteúdo principal em coluna */
+    .email-content > div:nth-child(2) {
+        flex-direction: column !important;
     }
 
     #email-sidebar {
-        width: 55px !important; /* Extremamente compacto para mobile */
-        height: 100% !important;
-        flex-direction: column !important;
-        padding: 5px !important;
-        gap: 10px !important;
+        width: 100% !important; 
+        height: auto !important;
+        flex-direction: row !important; /* Horizontal para mobile */
+        justify-content: space-around !important;
+        padding: 8px 5px !important;
+        gap: 5px !important;
         background: #d0d0d0;
-        border-right: 1px solid #999 !important;
+        border-right: none !important;
+        border-bottom: 2px groove #fff !important; /* Borda embaixo agora */
     }
 
     /* Ícones apenas no mobile para o e-mail */
     .retro-folder-btn {
-        width: 45px !important;
-        height: 45px !important;
+        width: 40px !important;
+        height: 40px !important;
         padding: 0 !important;
+        margin: 0 !important;
         font-size: 0 !important; /* Esconde o texto */
         display: flex;
         align-items: center;
@@ -2038,6 +2046,12 @@ button:disabled {
     .retro-folder-btn[onclick*="outbox"]::before { content: "📤"; }
     #btn-compose-email::before { content: "📝"; }
     .retro-folder-btn[onclick*="trash"]::before { content: "🗑️"; }
+
+    #email-main-view {
+        flex: 1 !important;
+        margin: 0 !important;
+        border: none !important;
+    }
 
     #email-list-content {
         flex: 1;
