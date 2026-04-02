@@ -18,7 +18,7 @@
 </head>
 <body>
     <!-- Game Title Intro -->
-    <div id="title-intro" onclick="if(window.playIntroChime) { playIntroChime(); } this.onclick=null; document.getElementById('title-text').classList.add('animate'); document.getElementById('intro-line').classList.add('animate'); document.getElementById('intro-prompt').style.opacity='0'; setTimeout(() => { this.style.opacity = '0'; setTimeout(() => { this.style.display = 'none'; }, 800); }, 3800);" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 10002; display: flex; justify-content: center; align-items: center; flex-direction: column; transition: opacity 0.8s; cursor: pointer;">
+    <div id="title-intro" onclick="if(window.playIntroChime) { playIntroChime(); } this.onclick=null; document.getElementById('title-text').classList.add('animate'); document.getElementById('intro-line').classList.add('animate'); document.getElementById('intro-prompt').style.opacity='0'; setTimeout(() => { this.style.opacity = '0'; setTimeout(() => { this.style.display = 'none'; }, 800); }, 3800);" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 99999; display: flex; justify-content: center; align-items: center; flex-direction: column; transition: opacity 0.8s; cursor: pointer;">
         <h1 id="title-text" style="font-family: 'Inter', sans-serif; font-size: 4rem; font-weight: 900; color: #fff; text-transform: uppercase; letter-spacing: 8px; text-align: center; opacity: 0;">
             ACTION <span style="color: var(--accent); text-shadow: 0 0 30px rgba(155,81,224,0.6), 0 0 60px rgba(155,81,224,0.3);">STARTERS</span>
         </h1>

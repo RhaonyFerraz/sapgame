@@ -241,53 +241,59 @@ const startJourney = (e) => {
     
     if (reveal && rText && rImg) {
         console.log("Iniciando sequência de introdução...");
-        // Phase 1: mens3.png + text (4 seconds)
+        // Phase 1: mens3.png + text
         reveal.classList.remove('hidden');
         rImg.classList.remove('hidden');
         rText.classList.remove('hidden');
         
-        // Pequeno delay para garantir que o browser processou o fim do display:none
+        // Início do fade in
         setTimeout(() => {
             reveal.style.opacity = '1';
             rImg.style.opacity = '1';
             rText.style.opacity = '1';
         }, 50);
         
+        // FASE DE TRANSIÇÃO: A imagem começa a sumir ANTES do texto (3s)
         setTimeout(() => {
-            // Phase 2: Fade out text, keep mens3.png alone (4 seconds)
+            console.log("Imagem 1 começando a sumir (antes do texto)...");
+            rImg.style.opacity = '0';
+        }, 3000);
+
+        // O texto começa a sumir no tempo original (4s)
+        setTimeout(() => {
+            console.log("Texto começando a sumir...");
             rText.style.opacity = '0';
             
             setTimeout(() => {
                 rText.classList.add('hidden');
 
+                // Encurtado o tempo de espera da Imagem 2 para agilizar
                 setTimeout(() => {
-                    // Phase 3: Swap to mens.png (4 seconds)
+                    // Fase 3: Troca para mens.png
                     if (rImg2) {
-                        rImg.style.opacity = '0';
                         rImg2.classList.remove('hidden');
                         rImg2.style.opacity = '1';
                     }
 
                     setTimeout(() => {
-                        // Phase 4: Fade out everything and start game
+                        // Fase 4: Fade out final
                         reveal.style.opacity = '0';
                         if (splash) splash.style.opacity = '0';
 
                         setTimeout(() => {
                             reveal.classList.add('hidden');
-                            reveal.style.pointerEvents = 'none'; // Previne bloqueio de clique
+                            reveal.style.pointerEvents = 'none';
                             if (splash) {
                                 splash.style.display = 'none';
-                                splash.style.pointerEvents = 'none'; // Previne bloqueio de clique
+                                splash.style.pointerEvents = 'none';
                             }
-                            console.log("Sequence complete, chamando initGame...");
                             initGame();
                             initTicker();
                         }, 800);
-                    }, 4000); // mens.png por 4 segundos
-                }, 4000); // mens3.png sozinha por 4 segundos
-            }, 800); // Delay para o texto desaparecer
-        }, 4000); // Texto + mens3.png por 4 segundos
+                    }, 2000); // mens.png agora apenas por 2s para fluidez
+                }, 1000); // Reduzido o tempo de espera "sozinho" da primeira fase
+            }, 800);
+        }, 4000);
     } else {
         // Fallback
         if (splash) {
