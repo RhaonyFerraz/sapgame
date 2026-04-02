@@ -108,7 +108,13 @@ const state = {
         payables: [],
         receivables: [],
         nextId: 1
-    }
+    },
+    tickerManuallyCollapsed: false,
+    emailNotificationPending: false,
+    expensesOverdue: false,
+    expenseOverdueRounds: 0,
+    strikePenaltyPending: false,
+    emailAlertRounds: 0
 };
 
 function updateMoney(amount, reasonKey) {
@@ -714,6 +720,42 @@ function applyBlitzPenalty() {
     forceScrollToTop();
 }
 
+// --- Ticker Bar Management ---
+
+/**
+ * Atualiza a visibilidade do letreiro (ticker) baseado no estado do jogo
+ * @param {boolean} forceHide - Força a ocultação idependente de outros fatores
+ */
+function updateTickerVisibility(forceHide = false) {
+    const tickerBar = document.getElementById('ticker-bar');
+    const tickerBtn = document.getElementById('btn-toggle-ticker');
+    if (!tickerBar) return;
+
+    // Se forçado a esconder ou se o usuário colapsou manualmente
+    if (forceHide || state.tickerManuallyCollapsed) {
+        tickerBar.classList.add('collapsed');
+        if (tickerBtn) tickerBtn.classList.remove('active-toggle');
+    } else {
+        // Mostra o letreiro
+        tickerBar.classList.remove('collapsed');
+        if (tickerBtn) tickerBtn.classList.add('active-toggle');
+    }
+}
+
+/**
+ * Função global para o botão do olho no HUD
+ */
+window.toggleTicker = function() {
+    const tickerBar = document.getElementById('ticker-bar');
+    if (!tickerBar) return;
+    
+    // Troca o estado manual
+    state.tickerManuallyCollapsed = !tickerBar.classList.contains('collapsed');
+    
+    // Aplica a visibilidade
+    updateTickerVisibility();
+}
+
 function updateHUD() {
     console.log("updateHUD: Atualizando interface...");
     if (!UI.money) { console.warn("updateHUD: UI.money não disponível"); return; }
@@ -740,18 +782,19 @@ function updateHUD() {
     }
     
     if (UI.btnOpenExpenses) {
-        const expCycleDue = state.pos === 4 || (state.pos >= 14 && (state.pos - 14) % 10 === 0);
-        let shouldPulse = (expCycleDue && !state.expensePaid && state.stats.correctAnswers >= 4);
+        // Garantindo persistência: Se não houver a chave (saves antigos) ou for true
+        // E checando se realmente não foi pago.
+        let shouldPulse = (state.expensesOverdue === true || (!state.expensePaid && state.stats.correctAnswers > 0 && state.stats.correctAnswers % 5 === 0));
         
-        // Usuário solicitou que não pulse caso o débito automático esteja ativado e haja fundos
+        // Se o débito automático estiver ok e tiver saldo, não precisa pulsar
         if (state.bank && state.bank.autoDebit && state.money >= calculateTotalExpenses()) {
             shouldPulse = false;
         }
 
         if (shouldPulse) {
-            UI.btnOpenExpenses.classList.add('pulse-warning');
+            UI.btnOpenExpenses.classList.add('pulse-red');
         } else {
-            UI.btnOpenExpenses.classList.remove('pulse-warning');
+            UI.btnOpenExpenses.classList.remove('pulse-red');
         }
     }
     
@@ -961,11 +1004,49 @@ window.startTurn = function(skipExpenseCheck = false) {
         console.warn("Bloqueio de duplo-clique: Turno já está sendo processado.");
         return;
     }
+
+    // GATILHO DE GREVE: Se as despesas estiverem atrasadas há mais de 3 rodadas corrigidas
+    if (state.expensesOverdue && state.expenseOverdueRounds >= 3) {
+        state.strikePenaltyPending = true; // Marca que uma greve aconteceu para cobrar o prejuízo depois
+        openModal("⚠️ PRODUÇÃO PARALISADA", "<b>Funcionários em greve por falta de pagamento.</b><br><br>Sua equipe cruzou os braços pelo atraso nas despesas operacionais. A produção só será retomada após a quitação dos débitos.<br><br>👉 Vá até <b>BANCO > DESPESAS</b> para regularizar a situação.");
+        
+        UI.mOptions.innerHTML = '';
+        if (UI.mBtnBonus) UI.mBtnBonus.classList.add('hidden');
+        if (UI.mBtnReveal) UI.mBtnReveal.classList.add('hidden');
+        UI.mFeedback.innerHTML = `❌ Operação bloqueada por inadimplência.`;
+        UI.mFeedback.className = 'error';
+        UI.mFeedback.classList.remove('hidden');
+
+        UI.mAction.innerText = "ENTENDIDO";
+        UI.mAction.onclick = () => { closeModal(); };
+        UI.mAction.classList.remove('hidden');
+        return;
+    }
     window.isTurnProcessing = true;
     setTimeout(() => { window.isTurnProcessing = false; }, 1000); // Failsafe unlock após a renderização do modal
 
     // Tocar som agradável ao iniciar
     if (typeof playStartTurnSound === 'function') playStartTurnSound();
+
+    // COBRANÇA DE PREJUÍZO PÓS-GREVE
+    if (state.strikePenaltyPending) {
+        state.strikePenaltyPending = false;
+        updateMoney(-400, "extrato_strike_loss");
+        updateHUD();
+        openModal("📉 PREJUÍZO POR PARALIZAÇÃO", "Devido à greve dos funcionários e à paralização da fábrica, sua empresa teve custos fixos e perda de produtividade totalizando <b>R$ 400,00</b>.<br><br>Mantenha as contas em dia para evitar novas interrupções.");
+        
+        UI.mOptions.innerHTML = '';
+        if (UI.mBtnBonus) UI.mBtnBonus.classList.add('hidden');
+        if (UI.mBtnReveal) UI.mBtnReveal.classList.add('hidden');
+        UI.mFeedback.innerHTML = `💸 Prejuízo financeiro aplicado.`;
+        UI.mFeedback.className = 'error';
+        UI.mFeedback.classList.remove('hidden');
+
+        UI.mAction.innerText = "CONTINUAR";
+        UI.mAction.onclick = () => { closeModal(); startTurn(); }; // Reinicia o startTurn após o prejuízo
+        UI.mAction.classList.remove('hidden');
+        return;
+    }
 
     console.log("startTurn: INICIANDO TURNO na casa", state.pos);
     
@@ -1320,11 +1401,10 @@ function handleAnswer(selectedId, btnElement) {
         state.consecutiveWrong = 0; // Reset na sequência de erros
         state.stats.correctAnswers++; // Track progress for milestones
         
-        // Trigger E-mail task notification at 3 answers
+        // Trigger E-mail task notification at 3 answers (Delayed)
         if (state.stats.correctAnswers === 3 && !state.machineryInquiryUnlocked) {
             state.machineryInquiryUnlocked = true;
-            state.emailTaskActive = true;
-            if (typeof playEmailNotificationSound === 'function') playEmailNotificationSound();
+            state.emailNotificationPending = true; // Agendado para depois do fechamento do modal
             state.emails.push({
                 id: 'unlock_' + Date.now(),
                 from: "SAP Business One",
@@ -1332,7 +1412,6 @@ function handleAnswer(selectedId, btnElement) {
                 content: "Parabéns pelo progresso! Sua fábrica está pronta para expandir.\n\nAgora você já pode negociar equipamentos industriais usados.\n\nVá em ESCREVER e selecione 'Máquinas industriais usadas' para começar.\n\nBoa sorte!",
                 date: new Date().toLocaleDateString()
             });
-            updateHUD();
         }
         
         btnElement.classList.add('correct');
@@ -1347,7 +1426,7 @@ function handleAnswer(selectedId, btnElement) {
         
         state.pos++;
         
-        // Resposta automática de Máquinas (Após a 5ª questão correta)
+        // Resposta automática de Máquinas (Após a 5ª questão correta) - Delayed
         if (state.machineryEmailSentRound !== null && !state.machineryEmailReplied && state.stats.correctAnswers >= 5) {
             state.machineryEmailReplied = true;
             state.machineryReplySeen = false;
@@ -1355,28 +1434,36 @@ function handleAnswer(selectedId, btnElement) {
                 id: 'reply_' + Date.now(),
                 from: "Máquinas industriais usadas",
                 subject: "Re: Comprar máquinas",
-                content: "clique no link que eu vou te enviar as fotos https://wa.me/5511994500277?text=Olá,%20tenho%20interesse",
+                content: "Obrigado pelo seu contato.\n\nPara facilitar e agilizar o atendimento, peço que me chame diretamente no WhatsApp pelo link abaixo. Por lá consigo te enviar todas as informações e materiais de forma rápida:\n\nhttps://wa.me/5511994500277?text=Olá,%20tenho%20interesse\n\nFico à disposição.\n\nAtenciosamente,\nJoão Fernando",
                 date: "31/03/2026"
             });
-            state.emailTaskActive = true;
-            if (typeof playEmailNotificationSound === 'function') playEmailNotificationSound();
-            updateHUD();
+            state.emailNotificationPending = true; // Agendado para depois do fechamento do modal
             // Se o modal de e-mail estiver aberto, força a renderização para piscar a Inbox
             if (UI.emailModal && !UI.emailModal.classList.contains('hidden')) {
                 renderEmails();
             }
-            console.log("Resposta automática recebida: 'oii'");
+            console.log("Resposta automática recebida (Notificação pendente): João Fernando / WhatsApp");
         }
         
-        // Ciclo de Despesas Operacionais:
-        // 1ª vez: Rodada 4 (após 4 acertos)
-        // 2ª vez: Rodada 14 (pedido do usuário)
-        // Seguintes: a cada 10 rodadas após 14 (24, 34, 44...)
-        const expenseTrigger = state.pos === 4 || (state.pos >= 14 && (state.pos - 14) % 10 === 0);
-        if (expenseTrigger && state.stats.correctAnswers >= 4) {
+        // INCREMENTA RODADAS DE COMUNICAÇÃO IGNORADA
+        const isEmailNotificationActive = state.emailTaskActive || (state.machineryEmailReplied && !state.machineryReplySeen);
+        if (isEmailNotificationActive) {
+            state.emailAlertRounds++;
+            console.log(`Comunicação pendente. Rodada ${state.emailAlertRounds}/1 para aviso de reputação.`);
+        }
+
+        // Ciclo de Despesas Operacionais: A cada 5 acertos (5, 10, 15, 20...)
+        const expenseTrigger = (state.stats.correctAnswers > 0 && state.stats.correctAnswers % 5 === 0);
+        
+        if (expenseTrigger) {
             state.expensePaid = false;
+            state.expensesOverdue = true; // Marca como pendente/atrasado
+            state.expenseOverdueRounds = 0; // Inicia nova contagem para este ciclo específico
             console.log(`Nova rodada de faturamento! Ciclo na casa: ${state.pos}`);
             
+            // Som de Alerta de Despesas
+            if (typeof playExpenseAlertSound === 'function') playExpenseAlertSound();
+
             // AUTO-DEBIT LOGIC
             if (state.bank.autoDebit) {
                 const total = calculateTotalExpenses();
@@ -1384,6 +1471,8 @@ function handleAnswer(selectedId, btnElement) {
                     console.log("Finance: Processando Débito Automático...");
                     updateMoney(-total, "extrato_expenses_paid");
                     state.expensePaid = true;
+                    state.expensesOverdue = false; // Pago via débito automático
+                    state.expenseOverdueRounds = 0; // Reset greve
                     const formattedTotal = total.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
                     const msg = `💰 Débito Automático: R$ ${formattedTotal} pagos com sucesso!`;
                     playSuccessSound();
@@ -1462,6 +1551,13 @@ function handleAnswer(selectedId, btnElement) {
     
     UI.mFeedback.classList.remove('hidden');
     state.currentQuestion = null;
+    
+    // INCREMENTA RODADAS EM ATRASO (Apenas se já estiver overdue ANTES deste acerto, ou se acabou de ficar e não pagou)
+    if (state.expensesOverdue) {
+        state.expenseOverdueRounds++;
+        console.log(`Despesas em atraso. Rodada ${state.expenseOverdueRounds}/3 para GREVE.`);
+    }
+
     updateHUD();
     renderBoard();
     
@@ -1832,6 +1928,9 @@ function openModal(title, text) {
     UI.modal.style.pointerEvents = 'auto';
     
     forceScrollToTop();
+
+    // Auto-hide ticker when ANY modal opens
+    updateTickerVisibility(true);
 }
 window.openModal = openModal;
 
@@ -1840,6 +1939,20 @@ function closeModal() {
     UI.modal.classList.add('hidden');
     UI.mFeedback.classList.add('hidden');
     UI.mBtnNo.classList.add('hidden');
+
+    // Restore ticker visibility based on preferences
+    updateTickerVisibility();
+
+    // Notificação de E-mail Retardada (2 segundos após fechar modal)
+    if (state.emailNotificationPending) {
+        state.emailNotificationPending = false;
+        setTimeout(() => {
+            state.emailTaskActive = true;
+            if (typeof playEmailNotificationSound === 'function') playEmailNotificationSound();
+            updateHUD();
+            console.log("Notificação de e-mail disparada (2s após fechar modal)");
+        }, 2000);
+    }
     
     UI.modal.classList.remove('retro-skin');
     UI.mAction.innerText = t("btn_continue");
@@ -1923,10 +2036,12 @@ window.payExpensesNow = function() {
     if (state.money >= total) {
         updateMoney(-total, "extrato_expenses_paid");
         state.expensePaid = true;
+        state.expensesOverdue = false; // Pago agora
+        state.expenseOverdueRounds = 0; // Reset contagem de greve
         alert(t("alert_expenses_paid", { amount: total.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) }));
         updateHUD();
         closeExpenses(); // Fecha a tela de despesas para evitar duplo clique
-        if (UI.btnOpenExpenses) UI.btnOpenExpenses.classList.remove('pulse-warning');
+        if (UI.btnOpenExpenses) UI.btnOpenExpenses.classList.remove('pulse-red');
     } else {
         alert(t("alert_no_funds"));
     }
@@ -1937,6 +2052,9 @@ window.postponeExpenses = function() {
     state.expensePenalty += penaltyGrowth;
     alert(`Pagamento adiado! Multa de R$ ${penaltyGrowth} (Juros sobre dívida) aplicada.`);
     updateHUD();
+    state.expensePaid = true; // Marca como resolvido (pago ou adiado) para parar o alerta
+    state.expensesOverdue = false; // Resolvido
+    state.expenseOverdueRounds = 0; // Reset contagem de greve (adiamento também cancela greve)
     closeExpenses();
 }
 
@@ -1957,10 +2075,14 @@ function closeAllModals() {
     if (UI.extratoModal) UI.extratoModal.classList.add('hidden');
     if (UI.financeModal) UI.financeModal.classList.add('hidden');
     if (UI.emailModal) UI.emailModal.classList.add('hidden');
+
+    // Auto-collapse ticker bar when ANY modal is opened (since open calls closeAll first)
+    updateTickerVisibility(true);
 }
 
 window.closeInventory = function() {
     if (UI.inventoryModal) UI.inventoryModal.classList.add('hidden');
+    updateTickerVisibility(); // Restaura conforme preferência se sem modais (idealmente)
 }
 
 // --- Extrato Logic ---
@@ -1976,6 +2098,7 @@ window.openExtrato = function() {
 
 window.closeExtrato = function() {
     UI.extratoModal.classList.add('hidden');
+    updateTickerVisibility();
 }
 
 function renderExtrato() {
@@ -2020,6 +2143,7 @@ window.openBank = function() {
 
 window.closeBank = function() {
     UI.bankModal.classList.add('hidden');
+    updateTickerVisibility();
 }
 
 function switchBankTab(tabId) {
@@ -2536,6 +2660,7 @@ window.openEmail = function() {
 
 window.closeEmail = function() {
     UI.emailModal.classList.add('hidden');
+    updateTickerVisibility();
 }
 
 window.switchEmailFolder = function(folder) {
@@ -2549,8 +2674,9 @@ window.switchEmailFolder = function(folder) {
         }
     });
 
-    if (folder === 'inbox' && state.emailTaskActive) {
+    if (folder === 'inbox' && (state.emailTaskActive || state.emailAlertRounds > 0)) {
         state.emailTaskActive = false; // Limpa o alerta da HUD assim que entra na Entrada
+        state.emailAlertRounds = 0; // Limpa contagem de negligência
         updateHUD();
     }
 
@@ -2639,6 +2765,7 @@ function renderCompose() {
     const list = document.getElementById('email-list');
     const header = document.getElementById('email-list-header');
     header.style.display = 'none';
+    list.style.textAlign = 'left'; // Garante alinhamento à esquerda no compose
 
     const contacts = [
         "Suporte Técnico",
@@ -2821,7 +2948,7 @@ window.viewEmail = function(id) {
     header.style.display = 'none';
 
     list.innerHTML = `
-        <div style="padding: 15px; font-family: 'Press Start 2P'; color: #000;">
+        <div style="padding: 15px; font-family: 'Press Start 2P'; color: #000; text-align: left;">
             <div style="border-bottom: 2px solid #808080; padding-bottom: 10px; margin-bottom: 15px;">
                 <div style="font-size: 10px; margin-bottom: 5px;"><b>DE/PARA:</b> ${email.from || email.to}</div>
                 <div style="font-size: 10px; margin-bottom: 5px;"><b>ASSUNTO:</b> ${email.subject}</div>
@@ -2865,6 +2992,7 @@ window.openInvestments = function() {
 
 window.closeInvest = function() {
     UI.investModal.classList.add('hidden');
+    updateTickerVisibility();
 }
 
 /* --- Expenses Logic --- */
@@ -2880,6 +3008,7 @@ window.openExpenses = function() {
 
 window.closeExpenses = function() {
     if (UI.expensesModal) UI.expensesModal.classList.add('hidden');
+    updateTickerVisibility();
 }
 
 /* --- Inventory Logic --- */
@@ -3021,39 +3150,42 @@ window.upgradeArea = function(area) {
     }
 
     if (state.money >= cost) {
+        // Captura o custo original para fins de valorização de inventário (mesmo se usar brinde/promo)
+        const nominalCost = getUpgradeCost(area, level);
+        
         const reason = usingBonus ? "extrato_upgrade_bonus" : (cost === 0 ? "extrato_upgrade_free" : "extrato_upgrade_" + area);
         updateMoney(-cost, reason);
         state.upgrades[area]++;
         state.stats.investmentsMade++;
         
         // NOVO: Valorização do Galpão (2x o investimento em Infraestrutura)
-        if (area === 'infra' && cost > 0) {
-            state.inventory.warehouse += (cost * 2);
-            console.log(`Infraestrutura Nível ${state.upgrades[area]}: Galpão valorizado em R$ ${cost * 2}`);
+        if (area === 'infra') {
+            state.inventory.warehouse += (nominalCost * 2);
+            console.log(`Infraestrutura Nível ${state.upgrades[area]}: Galpão valorizado em R$ ${nominalCost * 2}`);
         }
 
         // NOVO: Valorização das Máquinas (Reflexo de 1:1 do investimento)
-        if (area === 'machines' && cost > 0) {
-            state.inventory.machinery += cost;
-            console.log(`Máquinas Nível ${state.upgrades[area]}: Maquinário valorizado em R$ ${cost}`);
+        if (area === 'machines') {
+            state.inventory.machinery += nominalCost;
+            console.log(`Máquinas Nível ${state.upgrades[area]}: Maquinário valorizado em R$ ${nominalCost}`);
         }
 
         // NOVO: Valorização da Propaganda (Reflexo de 1:1 do investimento em Produtos Acabados)
-        if (area === 'marketing' && cost > 0) {
-            state.inventory.finishedGoods += cost;
-            console.log(`Propaganda Nível ${state.upgrades[area]}: Produtos Acabados valorizados em R$ ${cost}`);
+        if (area === 'marketing') {
+            state.inventory.finishedGoods += nominalCost;
+            console.log(`Propaganda Nível ${state.upgrades[area]}: Produtos Acabados valorizados em R$ ${nominalCost}`);
         }
 
         // NOVO: Valorização do Treinamento (Reflexo de 1:1 do investimento em Matéria-Prima)
-        if (area === 'training' && cost > 0) {
-            state.inventory.rawMaterials += cost;
-            console.log(`Treinamento Nível ${state.upgrades[area]}: Matéria-Prima valorizada em R$ ${cost}`);
+        if (area === 'training') {
+            state.inventory.rawMaterials += nominalCost;
+            console.log(`Treinamento Nível ${state.upgrades[area]}: Matéria-Prima valorizada em R$ ${nominalCost}`);
         }
 
         // NOVO: Valorização da Logística (Reflexo de 1:1 do investimento em Frota)
-        if (area === 'logistics' && cost > 0) {
-            state.inventory.fleet += cost;
-            console.log(`Logística Nível ${state.upgrades[area]}: Frota valorizada em R$ ${cost}`);
+        if (area === 'logistics') {
+            state.inventory.fleet += nominalCost;
+            console.log(`Logística Nível ${state.upgrades[area]}: Frota valorizada em R$ ${nominalCost}`);
         }
         
         alert(t('alert_upgrade_success', { name: t(area + '_name'), level: state.upgrades[area] }));
@@ -3088,6 +3220,26 @@ function initTicker() {
     
     // Mudar a dica a cada vez que a animação (16s) terminar e recomeçar
     tickerEl.addEventListener('animationiteration', () => {
+        // GATILHO: Aviso de Negligência de E-mail (Prioridade 1.5)
+        if (state.emailAlertRounds >= 1) {
+            tickerEl.textContent = "Manter uma comunicação ágil é essencial — atrasos podem comprometer oportunidades e sua reputação.";
+            tickerEl.style.color = "#f39c12"; // Laranja/Amarelo Atenção
+            tickerEl.style.textShadow = "0 0 10px rgba(243, 156, 18, 0.4)";
+            return;
+        }
+
+        // Se houver despesas atrasadas, mostra a mensagem crítica fixamente em vermelho
+        if (state.expensesOverdue) {
+            tickerEl.textContent = "DICA : Mantenha as despesas sempre em dia para evitar a paralisação da fábrica.";
+            tickerEl.style.color = "#ff3860"; // Vermelho Neon
+            tickerEl.style.textShadow = "0 0 10px rgba(255, 56, 96, 0.6)";
+            return;
+        }
+
+        // Restaura cor original (Verde Neon) para dicas normais
+        tickerEl.style.color = "#38D31A";
+        tickerEl.style.textShadow = "0 0 10px rgba(56, 211, 26, 0.4)";
+        
         currentTipIndex = (currentTipIndex + 1) % TICKER_TIPS.length;
         tickerEl.textContent = TICKER_TIPS[currentTipIndex];
     });
@@ -3124,6 +3276,27 @@ function playSuccessSound() {
         
         osc.start(now);
         osc.stop(now + 0.4);
+    });
+}
+
+function playExpenseAlertSound() {
+    initAudio();
+    audioCtx.resume().then(() => {
+        const now = audioCtx.currentTime;
+        
+        // Som bips duplos de alerta (tipo Windows antigo / Industrial)
+        const osc1 = audioCtx.createOscillator();
+        const gain1 = audioCtx.createGain();
+        osc1.connect(gain1); gain1.connect(audioCtx.destination);
+        osc1.type = 'square'; // Som mais áspero para alerta
+        osc1.frequency.setValueAtTime(440, now); // Lá 4
+        osc1.frequency.setValueAtTime(330, now + 0.15); // Mi 4
+        gain1.gain.setValueAtTime(0, now);
+        gain1.gain.linearRampToValueAtTime(0.1, now + 0.05);
+        gain1.gain.linearRampToValueAtTime(0, now + 0.3);
+        
+        osc1.start(now);
+        osc1.stop(now + 0.3);
     });
 }
 
@@ -3244,6 +3417,7 @@ window.openFinance = function() {
 
 window.closeFinance = function() {
     UI.financeModal.classList.add('hidden');
+    updateTickerVisibility();
 }
 
 function switchFicheiroTab(fichaName) {
@@ -3474,18 +3648,19 @@ function renderFinanceiro() {
     let hasReceber = false;
     let hasRecAtraso = false;
 
-    // Render Previsão de Despesas (Fixed game expenses)
-    let isCurrentlyDue = (state.pos > 0 && state.pos % 4 === 0 && state.pos !== 8);
+    // Render Previsão de Despesas (Fixed game expenses - Ciclo de 5 acertos)
+    let isCurrentlyDue = (state.stats.correctAnswers > 0 && state.stats.correctAnswers % 5 === 0);
     let roundsUntilDue;
 
     if (isCurrentlyDue) {
         if (!state.expensePaid) {
-            roundsUntilDue = 0; // It's due right now
+            roundsUntilDue = 0; // Vence agora
         } else {
-            roundsUntilDue = 4; // Paid this round, next one is in 4 rounds
+            roundsUntilDue = 5; // Pago neste ciclo, próximo em 5 acertos
         }
     } else {
-        roundsUntilDue = state.pos === 0 ? 4 : (4 - (state.pos % 4));
+        // Calcula quanto falta para o próximo múltiplo de 5 (acertos)
+        roundsUntilDue = 5 - (state.stats.correctAnswers % 5);
     }
     
     // Total expense projection based on current state

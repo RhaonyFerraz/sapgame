@@ -215,8 +215,8 @@
             <!-- System Group -->
             <div style="display: flex; gap: 8px; align-items: center;">
                 <!-- Ticker Toggle Button Moved Here -->
-                <button id="btn-toggle-ticker" class="lang-btn" 
-                        onclick="const bar = document.getElementById('ticker-bar'); bar.classList.toggle('collapsed'); this.classList.toggle('active-toggle');" 
+                <button id="btn-toggle-ticker" class="lang-btn active-toggle" 
+                        onclick="window.toggleTicker();" 
                         title="Ocultar/Mostrar Letreiro">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="stroke: #8b949e;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                 </button>
@@ -751,7 +751,7 @@
                 </div>
 
                 <!-- Content Area -->
-                <div id="email-main-view" style="flex: 1; display: flex; flex-direction: column; background: #fff; border: 2px inset #808080; margin: 5px; overflow: hidden;">
+                <div id="email-main-view" style="flex: 1; display: flex; flex-direction: column; background: #fff; border: 2px inset #808080; margin: 5px; overflow: hidden; text-align: left;">
                     <div id="email-list-header" style="background: #e0e0e0; padding: 5px 10px; border-bottom: 2px groove #fff; font-size: 10px; display: flex; justify-content: space-between; font-weight: bold;">
                         <span>Assunto</span>
                         <span>Data</span>

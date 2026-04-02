@@ -556,12 +556,26 @@ button:disabled {
     transform: scale(1) translateY(0);
 }
 
-.modal-content::-webkit-scrollbar {
-    width: 8px;
+/* Global Scrollbar Styling - Ultra Mínima */
+::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
 }
-.modal-content::-webkit-scrollbar-thumb {
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(155, 81, 224, 0.4); /* Roxo suave */
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
     background: var(--primary);
-    border-radius: 4px;
+}
+
+/* Firefox Support */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(155, 81, 224, 0.4) transparent;
 }
 
 #modal-image {
@@ -1995,4 +2009,25 @@ button:disabled {
     #modal-text  { font-size: 0.85rem !important; }
     .option-btn  { font-size: 0.82rem !important; padding: 0.8rem 1rem !important; }
     .bank-stats-grid { grid-template-columns: 1fr !important; }
+}
+
+
+/* Alerta de Despesas - Botão INTEIRO pulsando vermelho */
+.pulse-red {
+    animation: pulse-red-bg 1.2s infinite ease-in-out !important;
+    color: #ffffff !important;
+    border: 1px solid #ff3860 !important;
+    background: #ff3860 !important; 
+    font-weight: 900 !important;
+}
+
+.pulse-red span {
+    color: #ffffff !important;
+    text-shadow: 1px 1px 2px #000;
+}
+
+@keyframes pulse-red-bg {
+    0% { background-color: #8b0000 !important; box-shadow: 0 0 5px rgba(255, 56, 96, 0.4); }
+    50% { background-color: #ff3860 !important; box-shadow: 0 0 20px rgba(255, 56, 96, 0.9); }
+    100% { background-color: #8b0000 !important; box-shadow: 0 0 5px rgba(255, 56, 96, 0.4); }
 }
