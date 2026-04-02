@@ -1863,16 +1863,16 @@ button:disabled {
 
     /* --- MODAIS --- */
     .modal-overlay {
-        align-items: flex-end !important;  /* Desliza de baixo como sheet nativo */
-        padding: 0 !important;
+        align-items: center !important;  /* Centraliza na tela para melhor visibilidade */
+        padding: 1rem !important;
     }
 
     .modal-content {
         width: 100% !important;
         max-width: 100% !important;
-        border-radius: 20px 20px 0 0 !important;
-        padding: 1.2rem 1rem calc(4rem + env(safe-area-inset-bottom)) !important;
-        max-height: 92dvh !important;
+        border-radius: 20px !important; /* Arredondamento completo agora que está no centro */
+        padding: 1.2rem 1rem calc(2.5rem + env(safe-area-inset-bottom)) !important;
+        max-height: 90dvh !important;
         overflow-y: auto !important;
         margin: 0 !important;
     }
