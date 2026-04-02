@@ -1863,18 +1863,21 @@ button:disabled {
 
     /* --- MODAIS --- */
     .modal-overlay {
-        align-items: center !important;  /* Centraliza na tela para melhor visibilidade */
-        padding: 1rem !important;
+        align-items: flex-start !important; /* Começa do topo no mobile */
+        padding: 0 !important;
+        background: var(--bg-color) !important; /* Fundo sólido para parecer app nativo */
     }
 
     .modal-content {
         width: 100% !important;
         max-width: 100% !important;
-        border-radius: 20px !important; /* Arredondamento completo agora que está no centro */
-        padding: 1.2rem 1rem calc(2.5rem + env(safe-area-inset-bottom)) !important;
-        max-height: 90dvh !important;
+        height: 100dvh !important; /* Ocupa a tela toda */
+        max-height: 100dvh !important;
+        border-radius: 0 !important; /* Sem bordas arredondadas em tela cheia */
+        padding: 1rem 1rem calc(2rem + env(safe-area-inset-bottom)) !important;
         overflow-y: auto !important;
         margin: 0 !important;
+        border: none !important;
     }
 
     /* Título menor */
@@ -1911,11 +1914,13 @@ button:disabled {
     /* --- BANCO --- */
     .bank-content, .invest-content, .expenses-content {
         width: 100% !important;
-        border-radius: 20px 20px 0 0 !important;
-        max-height: 92dvh !important;
+        height: 100dvh !important;
+        max-height: 100dvh !important;
+        border-radius: 0 !important;
         margin: 0 !important;
         overflow-y: auto !important;
-        padding-bottom: calc(4rem + env(safe-area-inset-bottom)) !important;
+        padding: 1rem;
+        padding-bottom: calc(5rem + env(safe-area-inset-bottom)) !important;
     }
 
     .bank-tabs {
@@ -1977,18 +1982,54 @@ button:disabled {
     /* --- EXTRATO --- */
     .extrato-content {
         width: 100% !important;
-        max-height: 92dvh !important;
-        border-radius: 20px 20px 0 0 !important;
+        height: 100dvh !important;
+        max-height: 100dvh !important;
+        border-radius: 0 !important;
         overflow-y: auto !important;
-        padding-bottom: calc(4rem + env(safe-area-inset-bottom)) !important;
+        padding-bottom: calc(5rem + env(safe-area-inset-bottom)) !important;
     }
 
     /* --- EMAIL --- */
     .email-content {
         width: 100% !important;
-        max-height: 92dvh !important;
-        border-radius: 20px 20px 0 0 !important;
-        padding-bottom: calc(4rem + env(safe-area-inset-bottom)) !important;
+        height: 100dvh !important;
+        max-height: 100dvh !important;
+        border-radius: 0 !important;
+        padding: 0 !important;
+        display: flex;
+        flex-direction: column !important; /* Muda layout para stack vertical */
+    }
+
+    #email-sidebar {
+        width: 100% !important;
+        height: auto !important;
+        flex-direction: row !important; /* Sidebar vira barra horizontal */
+        flex-wrap: wrap;
+        justify-content: center;
+        border-right: none !important;
+        border-bottom: 2px groove #fff;
+        padding: 5px !important;
+        gap: 5px !important;
+    }
+
+    .retro-folder-btn {
+        padding: 4px 8px !important;
+        font-size: 0.75rem !important;
+        min-width: 80px;
+    }
+
+    #email-list-content {
+        flex: 1;
+        overflow-y: auto;
+    }
+
+    .email-item {
+        padding: 12px 8px !important;
+    }
+
+    .email-subject {
+        font-size: 0.85rem !important;
+        white-space: normal !important; /* Permite quebrar linha para ler o assunto */
     }
 
     /* --- TICKER BAR --- */
