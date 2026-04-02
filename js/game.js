@@ -225,17 +225,7 @@ const startJourney = (e) => {
         console.warn('Audio unlock blocked', err);
     }
     
-    // Som de abertura — disparado de forma 100% síncrona com o clique do usuário!
-    // Navegadores mobile bloqueiam .play() se ele estiver dentro de um setTimeout.
-    try {
-        if (!window._openingAudio) {
-            window._openingAudio = new Audio('sons/som%20de%20abertura%20at%2018.48.19.aac');
-        }
-        window._openingAudio.currentTime = 0;
-        window._openingAudio.play().catch(e => console.warn('Audio play blocked:', e));
-    } catch(e) {
-        console.warn('Erro no som de abertura:', e);
-    }
+    // Sound removed as requested
     
     const splash = document.getElementById('splash-screen');
     const reveal = document.getElementById('start-reveal-overlay');
@@ -1334,6 +1324,7 @@ function handleAnswer(selectedId, btnElement) {
         if (state.stats.correctAnswers === 3 && !state.machineryInquiryUnlocked) {
             state.machineryInquiryUnlocked = true;
             state.emailTaskActive = true;
+            if (typeof playEmailNotificationSound === 'function') playEmailNotificationSound();
             state.emails.push({
                 id: 'unlock_' + Date.now(),
                 from: "SAP Business One",
@@ -1368,6 +1359,7 @@ function handleAnswer(selectedId, btnElement) {
                 date: "31/03/2026"
             });
             state.emailTaskActive = true;
+            if (typeof playEmailNotificationSound === 'function') playEmailNotificationSound();
             updateHUD();
             // Se o modal de e-mail estiver aberto, força a renderização para piscar a Inbox
             if (UI.emailModal && !UI.emailModal.classList.contains('hidden')) {
@@ -3200,6 +3192,38 @@ function playIntroChime() {
             
             osc.start(now);
             osc.stop(now + 5.0); // Garante que não haja corte brusco
+        });
+    });
+}
+
+/**
+ * Novo: Som de notificação de E-mail / Missão
+ * Um "ping" duplo suave e cristalino para alertar sobre novas mensagens.
+ */
+function playEmailNotificationSound() {
+    initAudio();
+    audioCtx.resume().then(() => {
+        const now = audioCtx.currentTime;
+        
+        // Duas notas rápidas e agudas (Mi 6 e Lá 6) - Estilo sininho
+        const notes = [1318.51, 1760.00]; 
+
+        notes.forEach((freq, idx) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, now + (idx * 0.1)); 
+            
+            gain.gain.setValueAtTime(0, now + (idx * 0.1));
+            gain.gain.linearRampToValueAtTime(0.04, now + (idx * 0.1) + 0.05); // Volume suave (0.04)
+            gain.gain.exponentialRampToValueAtTime(0.001, now + (idx * 0.1) + 0.4); // Decaimento rápido
+            
+            osc.start(now + (idx * 0.1));
+            osc.stop(now + (idx * 0.1) + 0.4);
         });
     });
 }
