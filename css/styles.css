@@ -2206,3 +2206,35 @@ button:disabled {
         height: 500px !important;
     }
 }
+/* --- Comercial Dashboard Styles --- */
+#comercial-modal .market-bar-container {
+    width: 100px;
+    height: 6px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 3px;
+    position: relative;
+    overflow: hidden;
+}
+
+#comercial-modal .market-bar-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    border-radius: 3px;
+    transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#comercial-modal .bank-stat-card h3 {
+    font-family: 'Press Start 2P', cursive;
+    font-size: 0.9rem;
+    margin-top: 10px;
+    text-shadow: 0 0 10px rgba(255,255,255,0.2);
+}
+
+/* Glassmorphism subtle effect for commercial items */
+#comercial-modal .finance-item:hover {
+    background: rgba(255,255,255,0.05) !important;
+    transform: translateX(5px);
+    transition: all 0.3s ease;
+}

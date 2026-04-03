@@ -114,7 +114,17 @@ const state = {
     expensesOverdue: false,
     expenseOverdueRounds: 0,
     strikePenaltyPending: false,
-    emailAlertRounds: 0
+    emailAlertRounds: 0,
+    comercial: {
+        salesTarget: 5000,
+        salesCurrent: 0,
+        regions: [
+            { id: 1, name: "Região Sul", performance: 85 },
+            { id: 2, name: "Região Norte", performance: 45 },
+            { id: 3, name: "Região Sudeste", performance: 92 },
+            { id: 4, name: "Exportação", performance: 20 }
+        ]
+    }
 };
 
 function updateMoney(amount, reasonKey) {
@@ -488,6 +498,20 @@ function updateUIReferences() {
         btnPayLater: document.getElementById('btn-pay-later'),
         
         // Emails
+        emailModal: document.getElementById('email-modal'),
+        emailList: document.getElementById('email-list'),
+        btnOpenEmail: document.getElementById('btn-open-email'),
+
+        // Comercial
+        comercialModal: document.getElementById('comercial-modal'),
+        btnOpenComercial: document.getElementById('btn-open-comercial'),
+        btnCloseComercial: document.getElementById('btn-close-comercial'),
+        comSalesTarget: document.getElementById('com-sales-target'),
+        comSalesCurrent: document.getElementById('com-sales-current'),
+        comConversionRate: document.getElementById('com-conversion-rate'),
+        marketPerformanceList: document.getElementById('market-performance-list'),
+
+        // New Pill HUD elements
         emailModal: document.getElementById('email-modal'),
         emailList: document.getElementById('email-list'),
         btnOpenEmail: document.getElementById('btn-open-email'),
@@ -2102,6 +2126,7 @@ function closeAllModals() {
     if (UI.extratoModal) UI.extratoModal.classList.add('hidden');
     if (UI.financeModal) UI.financeModal.classList.add('hidden');
     if (UI.emailModal) UI.emailModal.classList.add('hidden');
+    if (UI.comercialModal) UI.comercialModal.classList.add('hidden');
 
     // Auto-collapse ticker bar when ANY modal is opened (since open calls closeAll first)
     updateTickerVisibility(true);
@@ -3849,5 +3874,54 @@ function renderFinanceiro() {
     if (!hasRecAtraso) {
         listFaturasVencidas.innerHTML = `<div style="color:#8b949e; text-align:center; width:100%; font-size: 0.9rem; padding: 10px;">${t("empty_list_msg")}</div>`;
     }
+}
+
+// --- Comercial Module Logic ---
+
+window.openComercial = function() {
+    const isHidden = UI.comercialModal.classList.contains('hidden');
+    closeAllModals();
+    if (isHidden) {
+        renderComercial();
+        UI.comercialModal.classList.remove('hidden');
+        document.body.classList.add('modal-active');
+    }
+}
+
+window.closeComercial = function() {
+    UI.comercialModal.classList.add('hidden');
+    document.body.classList.remove('modal-active');
+}
+
+function renderComercial() {
+    if (!UI.comercialModal || !state.comercial) return;
+
+    // Atualiza Stats principais
+    UI.comSalesTarget.innerText = `R$ ${state.comercial.salesTarget.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+    UI.comSalesCurrent.innerText = `R$ ${state.comercial.salesCurrent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+    
+    // Cálculo de conversão baseado no nível de marketing
+    const marketingLevel = state.upgrades.marketing || 0;
+    const baseConversion = 5 + (marketingLevel * 2);
+    UI.comConversionRate.innerText = `${baseConversion}%`;
+
+    // Renderiza Performance de Mercado
+    UI.marketPerformanceList.innerHTML = '';
+    state.comercial.regions.forEach(reg => {
+        const color = reg.performance > 70 ? '#2ecc71' : (reg.performance > 40 ? '#f1c40f' : '#e74c3c');
+        UI.marketPerformanceList.innerHTML += `
+            <div class="finance-item" style="border-left: 4px solid ${color}; background: rgba(255,255,255,0.02); margin-bottom: 10px; padding: 12px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <strong style="color: #fff; font-size: 0.95rem;">${reg.name}</strong>
+                </div>
+                <div style="text-align: right;">
+                    <div style="color: ${color}; font-weight: bold; font-family: 'Press Start 2P', cursive; font-size: 0.7rem;">${reg.performance}%</div>
+                    <div style="width: 100px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 5px; position: relative;">
+                        <div style="position: absolute; left: 0; top: 0; height: 100%; width: ${reg.performance}%; background: ${color}; border-radius: 2px; box-shadow: 0 0 5px ${color}80;"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
 }
 

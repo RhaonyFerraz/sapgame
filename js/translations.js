@@ -9,6 +9,7 @@ window.translations = {
         hire_cost: "+2s questões, +1% val. penhora e +10% limite crédito.",
         bank: "Banco",
         finance: "Financeiro",
+        comercial: "Comercial",
         investments: "Melhorias",
         invest_title: "Melhorias Estratégicas",
         invest_subtitle: "Aprimore sua operação para aumentar a eficiência e o lucro por rodada.",
@@ -69,6 +70,14 @@ window.translations = {
         alert_protest_success: "Sucesso! O cliente pagou após o protesto. R$ {amount} recebidos.",
         alert_protest_fail: "O protesto foi registrado, mas o cliente ainda não realizou o pagamento.",
         empty_list_msg: "Todas as faturas estão em dia. Faturas atrasadas aparecerão aqui para protesto.",
+
+        // Comercial Modal
+        comercial_title: "Painel Comercial",
+        comercial_subtitle: "Gestão de vendas, metas e performance do time.",
+        sales_target: "Meta Mensal",
+        sales_current: "Vendas Acumuladas",
+        conversion_rate: "Taxa de Conversão",
+        market_performance: "Performance por Região",
 
         // Decision Modal
         pay_expenses_msg: "Nova rodada de faturamento alcançada! Deseja pagar as despesas agora? Valor Total: R$ {total}",
@@ -233,6 +242,7 @@ window.translations = {
         hire_cost: "+2s questions, +1% pawn value, +10% credit limit.",
         bank: "Bank",
         finance: "Financial",
+        comercial: "Commercial",
         investments: "Upgrades",
         invest_title: "Strategic Upgrades",
         invest_subtitle: "Improve your operation to increase efficiency and profit per round.",
@@ -293,6 +303,14 @@ window.translations = {
         alert_protest_success: "Success! The client paid after the protest. R$ {amount} received.",
         alert_protest_fail: "The protest was registered, but the client has not made the payment yet.",
         empty_list_msg: "All invoices are up to date. Late invoices will appear here for legal protest.",
+
+        // Comercial Modal
+        comercial_title: "Commercial Dashboard",
+        comercial_subtitle: "Sales management, targets, and team performance.",
+        sales_target: "Monthly Target",
+        sales_current: "Accumulated Sales",
+        conversion_rate: "Conversion Rate",
+        market_performance: "Performance by Region",
 
         // Decision Modal
         pay_expenses_msg: "New billing round reached! Would you like to pay your expenses now? Total: R$ {total}",

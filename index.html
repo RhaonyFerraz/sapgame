@@ -208,6 +208,7 @@
                 <button id="btn-open-invest" class="icon-btn" onclick="if(window.openInvestments) openInvestments();"><img src="faviconsmenu/investment.png" class="menu-icon" alt="Melhorias" style="width: 26px; height: 26px; filter: drop-shadow(0 0 5px rgba(255,255,255,0.3)); display: block;"> <span data-t="investments">MELHORIAS</span></button>
                 <button id="btn-open-expenses" class="icon-btn" onclick="if(window.openExpenses) openExpenses();"><img src="faviconsmenu/asset-allocation.png" class="menu-icon" alt="Despesas" style="width: 26px; height: 26px; filter: drop-shadow(0 0 5px rgba(255,255,255,0.3)); display: block;"> <span data-t="expenses">DESPESAS</span></button>
                 <button id="btn-open-email" class="icon-btn" onclick="if(window.openEmail) openEmail();"><img src="faviconsmenu/mail.png" class="menu-icon" alt="E-mail" style="width: 26px; height: 26px; filter: drop-shadow(0 0 5px rgba(255,255,255,0.3)); display: block;"> <span data-t="email">E-MAIL</span></button>
+                <button id="btn-open-comercial" class="icon-btn" onclick="if(window.openComercial) openComercial();"><img src="faviconsmenu/management.png" class="menu-icon" alt="Comercial" style="width: 26px; height: 26px; filter: drop-shadow(0 0 5px rgba(255,255,255,0.3)); display: block;"> <span data-t="comercial">COMERCIAL</span></button>
             </div>
 
             <div class="hud-sep"></div>
@@ -768,6 +769,46 @@
             <div style="padding: 10px; background: #c0c0c0; border-top: 2px groove #fff; text-align: right;">
                 <span style="font-size: 9px; float: left; margin-top: 5px; color: #444;">Status: Online</span>
                 <button class="action-btn" onclick="window.closeEmail()" style="font-size: 10px; padding: 5px 15px; border-radius: 0; margin: 0;">FECHAR</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comercial Modal (Dashboard Style) -->
+    <div id="comercial-modal" class="modal-overlay hidden" onclick="if(event.target===this) window.closeComercial();">
+        <div class="finance-title-bar" style="border-color: #3498db; background: rgba(20, 30, 45, 0.95);">
+            <h2 class="finance-main-title" data-t="comercial_title">COMERCIAL</h2>
+        </div>
+        <div class="modal-content ficheiro-content glass" style="max-width: 900px; padding: 2.5rem; border-color: #3498db;">
+            <div class="ficheiro-header">
+                <h3 data-t="comercial_title">Gestão Comercial</h3>
+                <p data-t="comercial_subtitle">Monitore suas metas de vendas e performance de mercado.</p>
+            </div>
+
+            <!-- Dashboard Grid -->
+            <div class="bank-stats-grid" style="margin-top: 20px;">
+                <div class="bank-stat-card" style="border-top: 4px solid #3498db;">
+                    <span data-t="sales_target">Meta de Vendas</span>
+                    <h3 id="com-sales-target">R$ 0,00</h3>
+                </div>
+                <div class="bank-stat-card" style="border-top: 4px solid #f1c40f;">
+                    <span data-t="sales_current">Vendas Realizadas</span>
+                    <h3 id="com-sales-current">R$ 0,00</h3>
+                </div>
+                <div class="bank-stat-card" style="border-top: 4px solid #2ecc71;">
+                    <span data-t="conversion_rate">Taxa de Conversão</span>
+                    <h3 id="com-conversion-rate">0%</h3>
+                </div>
+            </div>
+
+            <div style="margin-top: 30px;">
+                <h4 style="color: #fff; margin-bottom: 15px; font-size: 1.1rem;" data-t="market_performance">Performance de Mercado</h4>
+                <div id="market-performance-list" class="finance-list">
+                    <!-- Dinamicamente preenchido -->
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button id="btn-close-comercial" class="action-btn" onclick="window.closeComercial();" data-t="btn_close" style="background: #3498db;">Fechar</button>
             </div>
         </div>
     </div>
