@@ -525,7 +525,7 @@ button:disabled {
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 50;
+    z-index: 2000; /* Aumentado para ficar acima do HUD (z-index 100) */
     opacity: 1;
     transition: opacity 0.3s;
 }
@@ -1634,10 +1634,44 @@ button:disabled {
 /* Ficheiro (Financeiro) Styles */
 .finance-content {
     max-width: 900px;
-    padding: 0; /* Let the ficheiro tabs dictate padding */
-    background: transparent;
+    padding: 2.5rem 1rem 1rem !important; /* Espaço extra para o título */
+    background: rgba(0, 0, 0, 0.4); /* Fundo sutil para o modal todo */
     border: none;
     box-shadow: none;
+    max-height: 92vh !important; /* Limita altura para caber na tela */
+    overflow-y: auto !important; /* Permite rolar o conteúdo sem cortar o topo */
+    border-radius: 20px;
+    scrollbar-width: thin;
+}
+
+/* Garante que o topo do modal não suba para fora da viewport */
+#finance-modal.modal-overlay {
+    align-items: flex-start !important;
+    padding-top: 5vh !important;
+}
+
+.finance-title-bar {
+    background: rgba(20, 20, 35, 0.95);
+    border: 2px solid var(--primary);
+    border-bottom: none;
+    border-radius: 12px 12px 0 0;
+    padding: 20px 10px;
+    margin-bottom: 0;
+    box-shadow: 0 -5px 15px rgba(155, 81, 224, 0.2);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.finance-main-title {
+    color: #fff;
+    text-align: center;
+    margin: 0;
+    font-family: 'Outfit', sans-serif; /* Fonte normal (limpa) */
+    font-weight: 700;
+    font-size: 1.6rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
 }
 
 .finance-content-inner {
@@ -1647,7 +1681,7 @@ button:disabled {
 .ficheiro-container {
     display: flex;
     flex-direction: column;
-    margin-top: 1rem;
+    margin-top: -2px; /* Encaixa no title-bar sem folga */
     text-align: left;
 }
 
@@ -1895,12 +1929,11 @@ button:disabled {
         font-size: 0.8rem !important;
     }
 
-    /* --- MODAIS --- */
     .modal-overlay {
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        padding: 10px !important;
+        padding: 40px 10px !important; /* Espaço extra no topo e fundo para mobile */
         background: rgba(0,0,0,0.85) !important;
         backdrop-filter: blur(8px);
         z-index: 20000 !important;
