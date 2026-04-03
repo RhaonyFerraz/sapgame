@@ -57,7 +57,7 @@ const state = {
     bank: {
         loans: [],
         investments: [],
-        creditLimit: 2000,
+        creditLimit: 3000,
         isDefaulting: false, // Bloqueio de novos créditos
         autoDebit: false,
         consortiums: []
@@ -571,7 +571,8 @@ async function initGame() {
     if (UI.hudHeader) UI.hudHeader.classList.remove('hidden');
     console.log("initGame: Referências UI atualizadas.");
 
-    // Start background slideshow (20s) - Moved to top of initGame to prevent blocking
+    // Automatic background slideshow removed as per user request (Rotation now happens on correct answer)
+    /*
     try {
         if (!window.bgInterval) {
             window.bgInterval = setInterval(() => {
@@ -583,6 +584,7 @@ async function initGame() {
             console.log("initGame: Slideshow de fundo iniciado (20s).");
         }
     } catch(e) { console.warn("Erro no slideshow:", e); }
+    */
 
     try {
         console.log(`initGame: Carregando perguntas para idioma: ${state.language}`);
@@ -821,7 +823,21 @@ function updateHUD() {
     
     // Limits
     if (UI.btnBuy) UI.btnBuy.disabled = state.money < 500 || state.consultants >= 2;
+    
+    // Novo: Limite de Empréstimo Dinâmico (70% do Inventário Total)
+    const totalInv = calculateTotalInventory();
+    state.bank.creditLimit = Math.floor(totalInv * 0.6);
+    
     updateInventoryUI();
+}
+
+function calculateTotalInventory() {
+    return (state.inventory.warehouse || 0) + 
+           (state.inventory.machinery || 0) + 
+           (state.inventory.packaging || 0) + 
+           (state.inventory.rawMaterials || 0) + 
+           (state.inventory.finishedGoods || 0) + 
+           (state.inventory.fleet || 0);
 }
 
 function updateInventoryUI() {
@@ -842,9 +858,7 @@ function updateInventoryUI() {
         else btnInvest.classList.remove('blink-bonus');
     }
     
-    const totalValue = state.inventory.warehouse + state.inventory.machinery + 
-                       state.inventory.packaging + state.inventory.rawMaterials + 
-                       state.inventory.finishedGoods + state.inventory.fleet;
+    const totalValue = calculateTotalInventory();
     if (UI.invTotal) UI.invTotal.innerText = totalValue.toLocaleString();
 
     // Toggle Acordo Patrimonial vs Penhorar
@@ -1406,6 +1420,11 @@ function handleAnswer(selectedId, btnElement) {
     if (isCorrect) {
         state.consecutiveWrong = 0; // Reset na sequência de erros
         state.stats.correctAnswers++; // Track progress for milestones
+        
+        // Mudar imagem de fundo ao acertar (Nova lógica solicitada)
+        if (typeof GRAVITY_IMAGES !== 'undefined' && GRAVITY_IMAGES.length > 0) {
+            state.bgIndex = (state.bgIndex + 1) % GRAVITY_IMAGES.length;
+        }
         
         // Trigger E-mail task notification at 3 answers (Delayed)
         if (state.stats.correctAnswers === 3 && !state.machineryInquiryUnlocked) {
