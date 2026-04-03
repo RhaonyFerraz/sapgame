@@ -3601,6 +3601,46 @@ function anticipateReceivable(elementId, amount, name, financeId) {
 }
 window.anticipateReceivable = anticipateReceivable;
 
+function protestReceivable(elementId, amount, name, financeId) {
+    const feePercent = 0.10;
+    const feeValue = amount * feePercent;
+    const successChance = 0.60;
+
+    if (state.money < feeValue) {
+        alert(t("alert_no_funds"));
+        return;
+    }
+
+    let confirmMsg = `Deseja protestar o título de ${name}?\n\nCusto de Cartório (10%): R$ ${feeValue.toFixed(2)}\nChance de Recuperação: 60%`;
+    if (translations[state.language] && translations[state.language]["confirm_protest"]) {
+        confirmMsg = t("confirm_protest", { 
+            name: name,
+            fee: feeValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })
+        });
+    }
+
+    if (confirm(confirmMsg)) {
+        updateMoney(-feeValue, t("extrato_protest", { name: name }) || `Protesto de Título: ${name}`);
+        
+        if (Math.random() < successChance) {
+            const netAmount = amount; // O cliente paga o valor total do título (os 10% foram taxa de cartório paga pelo jogador)
+            updateMoney(netAmount, `Recebimento após Protesto: ${name}`);
+            
+            // Remove from state
+            if (state.finance && state.finance.receivables) {
+                state.finance.receivables = state.finance.receivables.filter(r => r.id !== financeId);
+            }
+            alert(t("alert_protest_success", { amount: netAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) }));
+        } else {
+            alert(t("alert_protest_fail"));
+        }
+
+        renderFinanceiro();
+        updateHUD();
+    }
+}
+window.protestReceivable = protestReceivable;
+
 // --- Dynamic Finance Core Engine ---
 
 function generateFinanceId() {
@@ -3797,6 +3837,7 @@ function renderFinanceiro() {
                     </div>
                     <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 5px;">
                         <div style="color: #f1c40f; font-weight: bold;">R$ ${r.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                        <button class="action-btn" style="font-size: 0.7rem; padding: 0.4rem 0.8rem; margin: 0; min-width: auto; background: linear-gradient(135deg, #f1c40f, #d4ac0d); box-shadow: 0 4px 10px rgba(241, 196, 15, 0.3); color: #000;" onclick="protestReceivable('${r.id}', ${r.amount}, '${r.name.replace(/'/g, "\\'")}', '${r.id}')">${t("btn_protest")}</button>
                     </div>
                 </div>`;
         }
@@ -3805,6 +3846,8 @@ function renderFinanceiro() {
     if (!hasPagar) listPagar.innerHTML = `<div style="color:#8b949e; text-align:center; width:100%; font-size: 0.9rem; padding: 10px;">Nenhuma conta a pagar no momento.</div>`;
     if (!hasVencidas) listVencidas.innerHTML = `<div style="color:#8b949e; text-align:center; width:100%; font-size: 0.9rem; padding: 10px;">Nenhuma conta vencida.</div>`;
     if (!hasReceber) listReceber.innerHTML = `<div style="color:#8b949e; text-align:center; width:100%; font-size: 0.9rem; padding: 10px;">Nenhum recebimento provisionado.</div>`;
-    if (!hasRecAtraso) listFaturasVencidas.innerHTML = `<div style="color:#8b949e; text-align:center; width:100%; font-size: 0.9rem; padding: 10px;">Todas as faturas estão em dia.</div>`;
+    if (!hasRecAtraso) {
+        listFaturasVencidas.innerHTML = `<div style="color:#8b949e; text-align:center; width:100%; font-size: 0.9rem; padding: 10px;">${t("empty_list_msg")}</div>`;
+    }
 }
 

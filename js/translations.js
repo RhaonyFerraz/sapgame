@@ -63,6 +63,12 @@ window.translations = {
         btn_anticipate: "Antecipar (-3% Taxa)",
         confirm_anticipate: "Deseja antecipar o recebimento de {name}?\n\nValor original: R$ {amount}\nTaxa de Antecipação (-3%): - R$ {fee}\nTotal a receber: R$ {finalAmount}",
         extrato_anticipate: "Antecipação: {name} (-3% taxa)",
+        btn_protest: "Protestar em Cartório",
+        confirm_protest: "Deseja protestar {name}?\n\nCusto de Cartório (10%): R$ {fee}\nChance de Recuperação: 60%",
+        extrato_protest: "Protesto de Título: {name}",
+        alert_protest_success: "Sucesso! O cliente pagou após o protesto. R$ {amount} recebidos.",
+        alert_protest_fail: "O protesto foi registrado, mas o cliente ainda não realizou o pagamento.",
+        empty_list_msg: "Todas as faturas estão em dia. Faturas atrasadas aparecerão aqui para protesto.",
 
         // Decision Modal
         pay_expenses_msg: "Nova rodada de faturamento alcançada! Deseja pagar as despesas agora? Valor Total: R$ {total}",
@@ -281,6 +287,12 @@ window.translations = {
         btn_anticipate: "Advance (-3% Fee)",
         confirm_anticipate: "Do you want to advance the receivable of {name}?\n\nOriginal value: R$ {amount}\nAdvance Fee (-3%): - R$ {fee}\nTotal to receive: R$ {finalAmount}",
         extrato_anticipate: "Advance: {name} (-3% fee)",
+        btn_protest: "Protest with Notary",
+        confirm_protest: "Do you want to protest {name}?\n\nNotary Fee (10%): R$ {fee}\nRecovery Chance: 60%",
+        extrato_protest: "Protested Invoice: {name}",
+        alert_protest_success: "Success! The client paid after the protest. R$ {amount} received.",
+        alert_protest_fail: "The protest was registered, but the client has not made the payment yet.",
+        empty_list_msg: "All invoices are up to date. Late invoices will appear here for legal protest.",
 
         // Decision Modal
         pay_expenses_msg: "New billing round reached! Would you like to pay your expenses now? Total: R$ {total}",
